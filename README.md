@@ -35,6 +35,30 @@ Support du DSL Kraken `.rules` ([eisgroup/kraken-rules](https://github.com/eisgr
 
 Le plugin empaqueté se trouve dans `build/distributions/kraken-rules-plugin-0.1.0.zip`.
 
+> 💡 Pas envie de builder ? Chaque push sur `main` produit le zip automatiquement
+> sur GitHub Actions — voir [Récupérer un build depuis GitHub Actions](#récupérer-un-build-depuis-github-actions).
+
+### Build sur Ubuntu
+
+```bash
+# 1. Prérequis (JDK 17 + git)
+sudo apt update && sudo apt install -y openjdk-17-jdk git
+
+# 2. Récupérer les sources
+git clone https://github.com/Mrodrigue14/kraken-rules-plugin.git
+cd kraken-rules-plugin
+
+# 3. Rendre le wrapper exécutable (si cloné depuis un commit fait sous Windows)
+chmod +x gradlew
+
+# 4. Tests + build
+./gradlew test
+./gradlew buildPlugin
+```
+
+Le zip est généré au même endroit : `build/distributions/kraken-rules-plugin-0.1.0.zip`.
+Pour tester dans un IDE sandbox : `./gradlew runIde`.
+
 ### Autres tâches utiles
 
 ```bash
@@ -109,7 +133,25 @@ mots-clés utilisables comme identifiants (`info`, `to`, `context`, …).
 ## Intégration continue
 
 Le workflow GitHub Actions `.github/workflows/build.yml` build et teste le plugin
-sur **Ubuntu** à chaque push/PR sur `main` (JDK 17, cache Gradle). Le zip du plugin
-est publié comme artefact de build : onglet *Actions* du repo → dernier run →
-section *Artifacts* → `kraken-rules-plugin`. Le workflow peut aussi être lancé
-manuellement (*Run workflow*).
+sur **Ubuntu** (ubuntu-latest, JDK 17 Temurin, cache Gradle) :
+
+- à chaque **push** sur `main` ;
+- à chaque **pull request** vers `main` ;
+- **manuellement** : onglet *Actions* → workflow *Build* → bouton *Run workflow*.
+
+Étapes exécutées : `test` → `buildPlugin` → `verifyPluginConfiguration` →
+publication du zip en artefact (et du rapport de tests en cas d'échec).
+
+### Récupérer un build depuis GitHub Actions
+
+Les zips du plugin buildés par la CI sont téléchargeables sans rien installer :
+
+1. Ouvrir <https://github.com/Mrodrigue14/kraken-rules-plugin/actions>
+2. Cliquer sur le dernier run vert du workflow **Build**
+3. Descendre à la section **Artifacts** → télécharger `kraken-rules-plugin`
+4. ⚠️ GitHub emballe l'artefact dans un zip supplémentaire : **extraire**
+   `kraken-rules-plugin.zip` pour obtenir `kraken-rules-plugin-0.1.0.zip`
+   (le nom du plugin contient toujours le numéro de version)
+5. Installer ce zip *intérieur* via *Settings → Plugins → ⚙ → Install Plugin from Disk…*
+
+Les artefacts sont conservés 90 jours par défaut.
