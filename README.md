@@ -105,3 +105,11 @@ Overridable), `EntryPoint(s)` (imbriqués, références), `Dimension`, `Function
 `@NotStrict` / `@ForbidTarget` / `@ForbidReference`, littéraux date/datetime
 (`2020-01-01T00:00:00Z`), chaînes multi-lignes avec templates `${...}`,
 mots-clés utilisables comme identifiants (`info`, `to`, `context`, …).
+
+## Intégration continue
+
+Le workflow GitHub Actions `.github/workflows/build.yml` build et teste le plugin
+sur **Ubuntu** à chaque push/PR sur `main` (JDK 17, cache Gradle). Le zip du plugin
+est publié comme artefact de build : onglet *Actions* du repo → dernier run →
+section *Artifacts* → `kraken-rules-plugin`. Le workflow peut aussi être lancé
+manuellement (*Run workflow*).
