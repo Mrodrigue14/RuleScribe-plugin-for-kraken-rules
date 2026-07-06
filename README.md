@@ -28,7 +28,9 @@ Support du DSL Kraken `.rules` ([eisgroup/kraken-rules](https://github.com/eisgr
 - **Résolution par namespace** : `Namespace`/`Include` délimitent la visibilité des règles.
 - **Quick documentation** (Ctrl+Q) sur les règles ; icône de gouttière vers les EntryPoints référents.
 - **6 inspections** : règle sans nom, référence inconnue, contexte inconnu, règles dupliquées, règle jamais référencée, dimension non déclarée.
-- Voir [ROADMAP.md](ROADMAP.md) pour la suite (grammaire KEL typée, runner, stub index).
+- **Index par stubs** : la résolution des règles passe par un index persistant
+  (rapide même sur des centaines de fichiers).
+- Voir [ROADMAP.md](ROADMAP.md) pour la suite (type-checking KEL, runner).
 
 ## Prérequis
 
@@ -45,7 +47,7 @@ Support du DSL Kraken `.rules` ([eisgroup/kraken-rules](https://github.com/eisgr
 ./gradlew buildPlugin
 ```
 
-Le plugin empaqueté se trouve dans `build/distributions/kraken-rules-plugin-0.3.0.zip`.
+Le plugin empaqueté se trouve dans `build/distributions/kraken-rules-plugin-0.4.0.zip`.
 
 > 💡 Pas envie de builder ? Chaque push sur `main` produit le zip automatiquement
 > sur GitHub Actions — voir [Récupérer un build depuis GitHub Actions](#récupérer-un-build-depuis-github-actions).
@@ -68,7 +70,7 @@ chmod +x gradlew
 ./gradlew buildPlugin
 ```
 
-Le zip est généré au même endroit : `build/distributions/kraken-rules-plugin-0.3.0.zip`.
+Le zip est généré au même endroit : `build/distributions/kraken-rules-plugin-0.4.0.zip`.
 Pour tester dans un IDE sandbox : `./gradlew runIde`.
 
 ### Autres tâches utiles
@@ -84,7 +86,7 @@ Pour tester dans un IDE sandbox : `./gradlew runIde`.
 
 1. `.\gradlew.bat buildPlugin`
 2. Dans IntelliJ : *Settings → Plugins → ⚙ → Install Plugin from Disk…*
-3. Sélectionner `build/distributions/kraken-rules-plugin-0.3.0.zip`
+3. Sélectionner `build/distributions/kraken-rules-plugin-0.4.0.zip`
 4. Redémarrer l'IDE et ouvrir un fichier `.rules` (par ex. `examples/demo.rules`,
    ou le mini-projet `examples/multi/` pour tester la navigation inter-fichiers —
    checklist complète dans [TESTING.md](TESTING.md))
@@ -165,7 +167,7 @@ Les zips du plugin buildés par la CI sont téléchargeables sans rien installer
 2. Cliquer sur le dernier run vert du workflow **Build**
 3. Descendre à la section **Artifacts** → télécharger `kraken-rules-plugin`
 4. ⚠️ GitHub emballe l'artefact dans un zip supplémentaire : **extraire**
-   `kraken-rules-plugin.zip` pour obtenir `kraken-rules-plugin-0.3.0.zip`
+   `kraken-rules-plugin.zip` pour obtenir `kraken-rules-plugin-0.4.0.zip`
    (le nom du plugin contient toujours le numéro de version)
 5. Installer ce zip *intérieur* via *Settings → Plugins → ⚙ → Install Plugin from Disk…*
 

@@ -168,7 +168,7 @@ external_field_decl ::= id STAR? id
 
 rules_block ::= annotation* RULES_KW LBRACE rules_member* RBRACE {pin=2}
 private rules_member ::= rules_block | rule_decl
-rule_decl ::= annotation* RULE_KW rule_name? rule_target? rule_body {pin=2}
+rule_decl ::= annotation* RULE_KW rule_name? rule_target? rule_body {pin=2 elementTypeClass="com.kraken.plugin.psi.stubs.KrakenRuleStubElementType"}
 rule_name ::= STRING
 rule_target ::= ON_KW id (DOT path_expr)? {pin=1}
 rule_body ::= LBRACE rule_clauses RBRACE {pin=1}

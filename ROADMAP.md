@@ -20,7 +20,7 @@ la vraie grammaire KEL, portée depuis `Kel.g4` / `Value.g4` du repo eisgroup.
 - Risque principal : régressions de tolérance. Garder le fallback permissif en
   cas d'échec de parse d'expression (recoverWhile sur la clause).
 
-## v0.4.0 — Runner de règles
+## Runner de règles (reporté — non planifié pour l'instant)
 
 Exécuter un `EntryPoint` sur un payload JSON de test depuis l'IDE.
 
@@ -31,7 +31,7 @@ Exécuter un `EntryPoint` sur un payload JSON de test depuis l'IDE.
 - Affichage des résultats dans une Tool Window (règles évaluées, échecs de
   validation, erreurs d'expression).
 
-## v0.5.0 — Performances sur gros projets
+## v0.4.0 — Performances sur gros projets ✅ (stub index des Rule livré ; CachedValues et stubs Context/EntryPoint restent à faire)
 
 - Stub index pour `Rule`, `EntryPoint`, `Context`, `Dimension` (résolution O(1)
   au lieu du scan des fichiers).

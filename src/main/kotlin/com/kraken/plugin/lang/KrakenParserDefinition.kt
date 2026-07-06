@@ -10,7 +10,9 @@ import com.intellij.psi.FileViewProvider
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.TokenType
+import com.intellij.psi.stubs.PsiFileStub
 import com.intellij.psi.tree.IFileElementType
+import com.intellij.psi.tree.IStubFileElementType
 import com.intellij.psi.tree.TokenSet
 import com.kraken.plugin.parser.KrakenLexer
 import com.kraken.plugin.parser.KrakenParser
@@ -46,7 +48,13 @@ class KrakenParserDefinition : ParserDefinition {
 
     companion object {
         @JvmField
-        val FILE = IFileElementType(KrakenLanguage)
+        val FILE: IFileElementType = object : IStubFileElementType<PsiFileStub<KrakenFile>>(
+            "kraken.FILE", KrakenLanguage
+        ) {
+            // À incrémenter à chaque évolution de la grammaire ou des stubs
+            override fun getStubVersion(): Int = 1
+            override fun getExternalId(): String = "kraken.FILE"
+        }
 
         @JvmField
         val WHITE_SPACES: TokenSet = TokenSet.create(TokenType.WHITE_SPACE)

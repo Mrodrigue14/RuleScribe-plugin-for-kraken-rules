@@ -8,11 +8,13 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.stubs.StubIndex
 import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.lang.KrakenFile
 import com.kraken.plugin.lang.KrakenFileType
 import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.psi.stubs.KrakenRuleNameIndex
 
 object KrakenPsiUtil {
 
@@ -111,8 +113,24 @@ object KrakenPsiUtil {
         visibleFiles(from.containingFile)
             .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenRuleDecl::class.java) }
 
-    fun findRuleVisible(from: PsiElement, name: String): KrakenRuleDecl? =
-        findRulesVisible(from).firstOrNull { it.name == name }
+    fun findRuleVisible(from: PsiElement, name: String): KrakenRuleDecl? {
+        // 1. Chemin rapide : stub index (O(1), sans charger les AST)
+        val project = from.project
+        val virtualFiles = visibleFiles(from.containingFile).mapNotNull { it.virtualFile }
+        if (virtualFiles.isNotEmpty()) {
+            val scope = GlobalSearchScope.filesScope(project, virtualFiles)
+            val indexed = StubIndex.getElements(
+                KrakenRuleNameIndex.KEY, name, project, scope, KrakenRuleDecl::class.java
+            )
+            indexed.firstOrNull()?.let { return it }
+        }
+        // 2. Repli : fichiers non indexés (éditeur léger, fragments, tests)
+        return findRulesVisible(from).firstOrNull { it.name == name }
+    }
+
+    /** Tous les noms de règles connus de l'index (projet entier). */
+    fun allIndexedRuleNames(project: Project): Collection<String> =
+        StubIndex.getInstance().getAllKeys(KrakenRuleNameIndex.KEY, project)
 
     /** Toutes les références (items d'EntryPoint) portant ce nom, projet entier. */
     fun findRuleRefs(project: Project, name: String): List<KrakenRuleRef> =
