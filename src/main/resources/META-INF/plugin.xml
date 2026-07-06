@@ -14,6 +14,9 @@
             <li>Navigation between EntryPoint items and Rule declarations</li>
             <li>Rename refactoring for rules</li>
         </ul>
+        <p><i>This is an independent community plugin. It is not affiliated with,
+        endorsed by, or sponsored by EIS Group. "Kraken" refers to the open-source
+        Kraken Rules engine (Apache-2.0).</i></p>
     ]]></description>
 
     <change-notes><![CDATA[

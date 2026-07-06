@@ -2,6 +2,11 @@
 
 Support du DSL Kraken `.rules` ([eisgroup/kraken-rules](https://github.com/eisgroup/kraken-rules)) pour IntelliJ IDEA.
 
+> Plugin communautaire indépendant, sans affiliation avec EIS Group ni approbation
+> de leur part. « Kraken » désigne le moteur open source Kraken Rules (Apache-2.0) ;
+> la grammaire de ce plugin est dérivée de la grammaire ANTLR publiée dans ce repo,
+> conformément à sa licence.
+
 ## Fonctionnalités
 
 - **Coloration syntaxique** : mots-clés, chaînes, nombres, commentaires (`//`, `/* */`, `/** */`), annotations `@Dimension`, opérateurs. Personnalisable dans *Settings → Editor → Color Scheme → Kraken Rules*.
