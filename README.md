@@ -45,7 +45,7 @@ Support du DSL Kraken `.rules` ([eisgroup/kraken-rules](https://github.com/eisgr
 ./gradlew buildPlugin
 ```
 
-Le plugin empaqueté se trouve dans `build/distributions/kraken-rules-plugin-0.2.0.zip`.
+Le plugin empaqueté se trouve dans `build/distributions/kraken-rules-plugin-0.3.0.zip`.
 
 > 💡 Pas envie de builder ? Chaque push sur `main` produit le zip automatiquement
 > sur GitHub Actions — voir [Récupérer un build depuis GitHub Actions](#récupérer-un-build-depuis-github-actions).
@@ -68,7 +68,7 @@ chmod +x gradlew
 ./gradlew buildPlugin
 ```
 
-Le zip est généré au même endroit : `build/distributions/kraken-rules-plugin-0.2.0.zip`.
+Le zip est généré au même endroit : `build/distributions/kraken-rules-plugin-0.3.0.zip`.
 Pour tester dans un IDE sandbox : `./gradlew runIde`.
 
 ### Autres tâches utiles
@@ -84,7 +84,7 @@ Pour tester dans un IDE sandbox : `./gradlew runIde`.
 
 1. `.\gradlew.bat buildPlugin`
 2. Dans IntelliJ : *Settings → Plugins → ⚙ → Install Plugin from Disk…*
-3. Sélectionner `build/distributions/kraken-rules-plugin-0.2.0.zip`
+3. Sélectionner `build/distributions/kraken-rules-plugin-0.3.0.zip`
 4. Redémarrer l'IDE et ouvrir un fichier `.rules` (par ex. `examples/demo.rules`,
    ou le mini-projet `examples/multi/` pour tester la navigation inter-fichiers —
    checklist complète dans [TESTING.md](TESTING.md))
@@ -108,15 +108,16 @@ du repo kraken-rules. Elle est volontairement **plus tolérante** que l'original
 
 - le nom d'une règle et sa clause `On` sont optionnels au niveau du parser
   (ce sont les inspections qui signalent leur absence) ;
-- les expressions KEL (`When`, `Assert`, `Default To`…) sont analysées de manière
-  permissive : suite de tokens avec parenthèses/crochets/accolades équilibrés,
-  sans validation sémantique du langage d'expression.
+- les expressions KEL sont analysées avec une grammaire structurée portée de
+  `Kel.g4`/`Value.g4` (if/then/else, for/return, every/some/satisfies, appels,
+  chaînes d'accès avec filtres `[...]` et spread `[*]`, `?.`/`?[`, `**`,
+  littéraux de collection, blocs `set x to … return …`) — sans type-checking.
 
 ## Limitations connues (v0.1.0)
 
 - `Import Rule … From …` est parsé mais n'affine pas encore la résolution
   (la visibilité est calculée au niveau des namespaces via `Include`).
-- Les expressions KEL ne sont pas validées (pas de type-checking).
+- Les expressions KEL sont parsées structurellement mais pas typées (pas de type-checking).
 - Les bornes génériques de `Function` (`<T is SomeType>`) sont supportées
   syntaxiquement mais sans sémantique.
 
@@ -164,7 +165,7 @@ Les zips du plugin buildés par la CI sont téléchargeables sans rien installer
 2. Cliquer sur le dernier run vert du workflow **Build**
 3. Descendre à la section **Artifacts** → télécharger `kraken-rules-plugin`
 4. ⚠️ GitHub emballe l'artefact dans un zip supplémentaire : **extraire**
-   `kraken-rules-plugin.zip` pour obtenir `kraken-rules-plugin-0.2.0.zip`
+   `kraken-rules-plugin.zip` pour obtenir `kraken-rules-plugin-0.3.0.zip`
    (le nom du plugin contient toujours le numéro de version)
 5. Installer ce zip *intérieur* via *Settings → Plugins → ⚙ → Install Plugin from Disk…*
 

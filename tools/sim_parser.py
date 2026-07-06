@@ -16,8 +16,9 @@ KEYWORDS = {
  'forbidtarget':'FORBID_TARGET_KW','forbidreference':'FORBID_REFERENCE_KW','serversideonly':'SERVER_SIDE_ONLY_KW',
  'true':'TRUE_KW','false':'FALSE_KW','null':'NULL_KW',
 }
-for k in ['and','or','not','if','then','else','for','every','some','return','this','instanceof','typeof','satisfies']:
-    KEYWORDS[k]='KEL_KW'
+KEYWORDS.update({'and':'AND_KW','or':'OR_KW','not':'NOT_KW','if':'IF_KW','then':'THEN_KW',
+ 'else':'ELSE_KW','for':'FOR_KW','every':'EVERY_KW','some':'SOME_KW','return':'RETURN_KW',
+ 'this':'THIS_KW','instanceof':'INSTANCEOF_KW','typeof':'TYPEOF_KW','satisfies':'SATISFIES_KW'})
 SINGLE = {'{':'LBRACE','}':'RBRACE','(':'LPAREN',')':'RPAREN','[':'LBRACKET',']':'RBRACKET',
           ',':'COMMA','.':'DOT',':':'COLON','@':'AT','*':'STAR','<':'LT','>':'GT','/':'OP'}
 OPCHARS = set('+-=!?|&%^~')
@@ -58,8 +59,14 @@ def lex(s):
             while j<n and (s[j].isalnum() or s[j]=='_'): j+=1
             w=s[i:j]
             toks.append((KEYWORDS.get(w.lower(),'IDENTIFIER'),w)); i=j; continue
+        if c=='*' and i+1<n and s[i+1]=='*':
+            toks.append(('OP','**')); i+=2; continue
         if c in SINGLE:
             toks.append((SINGLE[c],c)); i+=1; continue
+        if c=='?' and i+1<n and s[i+1]=='.':
+            toks.append(('QDOT','?.')); i+=2; continue
+        if c=='?' and i+1<n and s[i+1]=='[':
+            toks.append(('QLBRACKET','?[')); i+=2; continue
         if c in OPCHARS:
             j=i+1
             while j<n and s[j] in OPCHARS: j+=1
@@ -134,18 +141,37 @@ define('expr_id', alt(*[tk(t) for t in ['IDENTIFIER','ON_KW','FROM_KW','TO_KW','
  'NUMBER_KW','EMPTY_KW','MANDATORY_KW','DISABLED_KW','HIDDEN_KW','DESCRIPTION_KW','PRIORITY_KW','EXTERNAL_KW',
  'CHILD_KW','ROOT_KW','SYSTEM_KW','CONTEXT_KW','DIMENSION_KW','FUNCTION_KW','MATCHES_KW','INCLUDE_KW','NAMESPACE_KW']]))
 define('id', alt(R('expr_id'),tk('ERROR_KW'),tk('WARN_KW'),tk('INFO_KW')))
-define('set_in_expr', seq(not_(seq(tk('SET_KW'),R('set_kind'))),tk('SET_KW')))
-define('severity_in_expr', seq(not_(R('payload_message')),R('message_severity')))
 
-# ---- expressions ----
-define('expr_token', alt(R('expr_id'),tk('STRING'),tk('NUMBER_LIT'),tk('TRUE_KW'),tk('FALSE_KW'),tk('NULL_KW'),
- tk('KEL_KW'),tk('IN_KW'),tk('IS_KW'),R('set_in_expr'),R('severity_in_expr'),tk('OP'),tk('LT'),tk('GT'),tk('STAR'),tk('DOT')))
-define('group_inner', alt(R('group_expr'),R('bracket_expr'),R('brace_expr'),R('expr_token'),tk('COMMA'),tk('COLON')))
-define('group_expr', seq(tk('LPAREN'),many(R('group_inner')),tk('RPAREN')))
-define('bracket_expr', seq(tk('LBRACKET'),many(R('group_inner')),tk('RBRACKET')))
-define('brace_expr', seq(tk('LBRACE'),many(R('group_inner')),tk('RBRACE')))
-define('expr_item', alt(R('group_expr'),R('bracket_expr'),R('brace_expr'),R('expr_token')))
-define('expression', many1(R('expr_item')))
+# ---- expressions (KEL structuré, v0.3) ----
+define('literal', alt(tk('STRING'),tk('NUMBER_LIT'),tk('TRUE_KW'),tk('FALSE_KW'),tk('NULL_KW')))
+define('call_args', seq(tk('LPAREN'),opt(seq(R('expression'),many(seq(tk('COMMA'),R('expression'))))),tk('RPAREN')))
+define('function_call', seq(R('expr_id'),R('call_args')))
+define('sev_ref', seq(not_(R('payload_message')),R('message_severity')))
+define('group_expr', seq(tk('LPAREN'),opt(R('expression')),tk('RPAREN')))
+define('collection_lit', seq(tk('LBRACE'),opt(seq(R('expression'),many(seq(tk('COMMA'),R('expression'))))),tk('RBRACE')))
+define('primary_expr', alt(R('literal'),tk('THIS_KW'),R('function_call'),R('sev_ref'),R('expr_id'),
+ R('group_expr'),R('collection_lit')))
+define('path_segment', seq(R('id'),opt(R('call_args'))))
+define('bracket_access', seq(alt(tk('LBRACKET'),tk('QLBRACKET')),opt(alt(tk('STAR'),R('expression'))),tk('RBRACKET')))
+define('postfix_part', alt(seq(alt(tk('DOT'),tk('QDOT')),R('path_segment')),R('bracket_access')))
+define('postfix_expr', seq(R('primary_expr'),many(R('postfix_part'))))
+define('prefix_op', alt(tk('OP'),tk('NOT_KW')))
+define('simple_operand', seq(many(R('prefix_op')),R('postfix_expr')))
+define('if_expr', seq(tk('IF_KW'),R('expression'),tk('THEN_KW'),R('expression'),opt(seq(tk('ELSE_KW'),R('expression')))))
+define('for_expr', seq(tk('FOR_KW'),R('id'),tk('IN_KW'),R('expression'),tk('RETURN_KW'),R('expression')))
+define('quantifier_expr', seq(alt(tk('EVERY_KW'),tk('SOME_KW')),R('id'),
+ opt(seq(tk('IN_KW'),R('expression'))),opt(seq(tk('SATISFIES_KW'),R('expression')))))
+define('expr_operand', alt(R('if_expr'),R('for_expr'),R('quantifier_expr'),R('simple_operand')))
+define('binary_op', alt(tk('OP'),tk('LT'),tk('GT'),tk('STAR'),tk('COLON'),tk('IN_KW'),tk('IS_KW'),
+ tk('AND_KW'),tk('OR_KW'),tk('INSTANCEOF_KW'),tk('TYPEOF_KW'),tk('SATISFIES_KW'),tk('MATCHES_KW')))
+define('value_chain', seq(R('expr_operand'),many(seq(R('binary_op'),R('expr_operand')))))
+define('set_var', seq(not_(seq(tk('SET_KW'),R('set_kind'))),tk('SET_KW'),R('id'),opt(tk('TO_KW')),R('value_chain')))
+define('expression', alt(
+ seq(many1(R('set_var')),opt(seq(tk('RETURN_KW'),R('value_chain')))),
+ seq(tk('RETURN_KW'),R('value_chain')),
+ R('value_chain')))
+# compat : nav_value utilise collection_lit désormais (alias brace_expr)
+define('brace_expr', R('collection_lit'))
 
 # ---- header ----
 define('qualified_name', seq(R('id'),many(seq(tk('DOT'),R('id')))))

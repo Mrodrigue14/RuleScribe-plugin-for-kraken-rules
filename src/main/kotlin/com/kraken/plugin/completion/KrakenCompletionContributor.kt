@@ -73,6 +73,18 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
                     }
                 }
             }
+            prev != null && (prev.node?.elementType == KrakenTypes.DOT ||
+                    prev.node?.elementType == KrakenTypes.QDOT) -> {
+                // "Contexte.<caret>" dans une expression (When, Assert, Default To…)
+                val headName = prevVisibleLeaf(prev)?.text
+                if (headName != null) {
+                    for (field in KrakenPsiUtil.contextFieldNames(file, headName)) {
+                        result.addElement(
+                            LookupElementBuilder.create(field).withTypeText("field", true)
+                        )
+                    }
+                }
+            }
             isInside(position, KrakenTypes.ENTRY_POINT_DECL) -> {
                 for (rule in KrakenPsiUtil.findRulesVisible(file)) {
                     val name = rule.name ?: continue

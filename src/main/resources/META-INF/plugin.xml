@@ -20,6 +20,16 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.3.0</b>
+        <ul>
+            <li>Structured KEL expression grammar (ported from the official Kel.g4/Value.g4):
+            if/then/else, for/return, every/some/satisfies, function calls,
+            access chains with filters and spread (a.b[*].c[filter]), null-safe
+            access (?. and ?[), exponent (**), collection literals, variable blocks
+            (set x to ... return ...).</li>
+            <li>Field completion now also works inside expressions (When Policy.&lt;caret&gt;).</li>
+            <li>Grammar still validated 103/103 against the official kraken-rules corpus.</li>
+        </ul>
         <b>0.2.0</b>
         <ul>
             <li>Structure view, code folding, code formatter and live templates (rule, ep, ctx, dim).</li>

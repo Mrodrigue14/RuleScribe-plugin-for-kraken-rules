@@ -70,8 +70,12 @@ class KrakenSyntaxHighlighter : SyntaxHighlighterBase() {
                 KrakenTypes.FUNCTION_KW, KrakenTypes.PRIORITY_KW, KrakenTypes.DESCRIPTION_KW,
                 KrakenTypes.NOT_STRICT_KW, KrakenTypes.FORBID_TARGET_KW,
                 KrakenTypes.FORBID_REFERENCE_KW, KrakenTypes.SERVER_SIDE_ONLY_KW,
-                KrakenTypes.KEL_KW, KrakenTypes.TRUE_KW, KrakenTypes.FALSE_KW,
-                KrakenTypes.NULL_KW
+                KrakenTypes.TRUE_KW, KrakenTypes.FALSE_KW, KrakenTypes.NULL_KW,
+                KrakenTypes.AND_KW, KrakenTypes.OR_KW, KrakenTypes.NOT_KW,
+                KrakenTypes.IF_KW, KrakenTypes.THEN_KW, KrakenTypes.ELSE_KW,
+                KrakenTypes.FOR_KW, KrakenTypes.EVERY_KW, KrakenTypes.SOME_KW,
+                KrakenTypes.RETURN_KW, KrakenTypes.THIS_KW, KrakenTypes.INSTANCEOF_KW,
+                KrakenTypes.TYPEOF_KW, KrakenTypes.SATISFIES_KW
             )) {
                 map[keyword] = KEYWORD
             }
@@ -94,6 +98,8 @@ class KrakenSyntaxHighlighter : SyntaxHighlighterBase() {
             map[KrakenTypes.RBRACKET] = BRACKETS
             map[KrakenTypes.COMMA] = COMMA
             map[KrakenTypes.DOT] = DOT
+            map[KrakenTypes.QDOT] = DOT
+            map[KrakenTypes.QLBRACKET] = BRACKETS
             map[TokenType.BAD_CHARACTER] = BAD_CHARACTER
             map
         }

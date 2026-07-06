@@ -33,7 +33,7 @@ Rule "Policy code is mandatory" On Policy.policyCd {
 Rule "Effective date in the past" On Policy.effectiveDate {
     Description "La date d'effet doit être passée"
     Priority 10
-    When Policy.policyCd != null
+    When Policy
     Assert effectiveDate < Today()
     Error "date_code" : "La date doit être dans le passé"
     Overridable

@@ -34,6 +34,25 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
         assertTrue("Expected inherited field in $strings", strings.contains("inheritedField"))
     }
 
+    fun testFieldCompletionInWhenExpression() {
+        myFixture.configureByText(
+            "test.rules",
+            """
+            Context Policy {
+                String policyCd
+                String state
+            }
+
+            Rule "r" On Policy.state {
+                When Policy.<caret>
+            }
+            """.trimIndent()
+        )
+        myFixture.complete(CompletionType.BASIC)
+        val strings = myFixture.lookupElementStrings.orEmpty()
+        assertTrue("Expected 'policyCd' in $strings", strings.contains("policyCd"))
+    }
+
     fun testUnknownContextInspection() {
         myFixture.enableInspections(KrakenUnknownContextInspection())
         myFixture.configureByText(

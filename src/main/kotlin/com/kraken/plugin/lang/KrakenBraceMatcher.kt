@@ -18,7 +18,8 @@ class KrakenBraceMatcher : PairedBraceMatcher {
         private val PAIRS = arrayOf(
             BracePair(KrakenTypes.LBRACE, KrakenTypes.RBRACE, true),
             BracePair(KrakenTypes.LPAREN, KrakenTypes.RPAREN, false),
-            BracePair(KrakenTypes.LBRACKET, KrakenTypes.RBRACKET, false)
+            BracePair(KrakenTypes.LBRACKET, KrakenTypes.RBRACKET, false),
+            BracePair(KrakenTypes.QLBRACKET, KrakenTypes.RBRACKET, false)
         )
     }
 }

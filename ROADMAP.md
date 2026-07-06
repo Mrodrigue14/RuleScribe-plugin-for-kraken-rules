@@ -6,7 +6,7 @@ Structure view, folding, formatter, live templates, complétion des champs aprè
 `On Contexte.` (héritage compris), résolution par namespace (`Namespace`/`Include`),
 line markers de références, quick documentation (Ctrl+Q), 6 inspections.
 
-## v0.3.0 — Grammaire KEL complète
+## v0.3.0 — Grammaire KEL complète ✅ (livrée — reste le type-checking, déplacé en v0.5+)
 
 Remplacer l'analyse permissive des expressions (`expression ::= expr_item+`) par
 la vraie grammaire KEL, portée depuis `Kel.g4` / `Value.g4` du repo eisgroup.

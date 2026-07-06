@@ -18,4 +18,6 @@ class KrakenParsingTest : ParsingTestCase("", "rules", KrakenParserDefinition())
     fun testContexts() = doTest(false, true)
 
     fun testHeader() = doTest(false, true)
+
+    fun testKel() = doTest(false, true)
 }

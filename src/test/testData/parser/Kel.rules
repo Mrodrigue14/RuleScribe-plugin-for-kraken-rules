@@ -1,0 +1,32 @@
+Namespace Test
+
+Rule "math" On Policy.premium {
+    Reset To 2.2 ** (Ceil(10.1) % 3) - -4
+}
+
+Rule "spread and filter" On Policy.total {
+    Assert Count(Vehicle[*].coverages[this.limitAmount > 100]) > 0
+}
+
+Rule "null safe" On Policy.insuredName {
+    When Insured?.name != null
+    Assert Policy.vehicles?[this.included = true].model != null
+}
+
+Rule "variable block" On Policy.summary {
+    Default To set vehicles to Policy.vehicles set total to Count(vehicles) return NumberToString(total)
+}
+
+Rule "iteration" On Policy.allCovered {
+    When some item in Policy.riskItems satisfies item typeof RiskItem
+    Assert every c in Policy.riskItems[*].coverages satisfies c.limit > 0
+}
+
+Rule "conditional" On Policy.state {
+    Default To if AddressInfo.state != null and Policy.active = true then AddressInfo.state else "CA"
+}
+
+Rule "regexp in expression" On Policy.code {
+    When Policy.code Matches "^Q[0-9]+$"
+    Assert Length(Policy.code) in {5, 10}
+}

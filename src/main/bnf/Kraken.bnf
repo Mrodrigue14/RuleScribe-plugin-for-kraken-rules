@@ -79,7 +79,22 @@
     FORBID_TARGET_KW='ForbidTarget'
     FORBID_REFERENCE_KW='ForbidReference'
     SERVER_SIDE_ONLY_KW='ServerSideOnly'
-    KEL_KW='kel_keyword'
+    AND_KW='and'
+    OR_KW='or'
+    NOT_KW='not'
+    IF_KW='if'
+    THEN_KW='then'
+    ELSE_KW='else'
+    FOR_KW='for'
+    EVERY_KW='every'
+    SOME_KW='some'
+    RETURN_KW='return'
+    THIS_KW='this'
+    INSTANCEOF_KW='instanceof'
+    TYPEOF_KW='typeof'
+    SATISFIES_KW='satisfies'
+    QDOT='?.'
+    QLBRACKET='?['
     TRUE_KW='true'
     FALSE_KW='false'
     NULL_KW='null'
@@ -139,7 +154,7 @@ child_decl ::= annotation* CHILD_KW STAR? id (COLON nav_value)? {pin=2}
 field_decl ::= annotation* EXTERNAL_KW? id STAR? id (COLON nav_value)?
 path_expr ::= id (DOT id)*
 // Cible de navigation : chemin simple ou ensemble de chemins entre accolades
-private nav_value ::= brace_expr | path_expr
+private nav_value ::= collection_lit | path_expr
 
 external_context_decl ::= EXTERNAL_CONTEXT_KW LBRACE external_context_items? RBRACE {pin=1}
 external_context_items ::= external_context_item (COMMA external_context_item)*
@@ -235,37 +250,50 @@ return_type ::= COLON type_ref {pin=1}
 type_ref ::= id (LT type_ref (COMMA type_ref)* GT)? (LBRACKET RBRACKET)?
 function_body ::= LBRACE expression RBRACE {pin=1}
 
-// ---------- Expressions KEL (permissives) ----------
+// ---------- Expressions KEL (structurées, v0.3) ----------
+// Portées depuis Value.g4 : valueBlock = variable* RETURN? value?
 
-expression ::= expr_item+
-private expr_item ::= group_expr | bracket_expr | brace_expr | expr_token
-group_expr ::= LPAREN group_inner* RPAREN {pin=1}
-bracket_expr ::= LBRACKET group_inner* RBRACKET {pin=1}
-brace_expr ::= LBRACE group_inner* RBRACE {pin=1}
-private group_inner ::= group_expr | bracket_expr | brace_expr | expr_token | COMMA | COLON
-private expr_token ::= expr_id
-                     | STRING
-                     | NUMBER_LIT
-                     | TRUE_KW
-                     | FALSE_KW
-                     | NULL_KW
-                     | KEL_KW
-                     | IN_KW
-                     | IS_KW
-                     | set_in_expr
-                     | severity_in_expr
-                     | OP
-                     | LT
-                     | GT
-                     | STAR
-                     | DOT
+expression ::= variable_block | return_block | value_chain
+private variable_block ::= set_var+ (RETURN_KW value_chain)?
+private return_block ::= RETURN_KW value_chain
+// "set x to y" est une expression KEL, mais "Set Mandatory/Hidden/Disabled"
+// reste un payload : lookahead négatif.
+set_var ::= !(SET_KW set_kind) SET_KW id TO_KW? value_chain {pin=2}
 
-// "set x to y" est une expression KEL valide, mais "Set Mandatory/Hidden/Disabled"
-// doit rester un payload : lookahead négatif.
-private set_in_expr ::= !(SET_KW set_kind) SET_KW
+value_chain ::= expr_operand (binary_op expr_operand)*
+private binary_op ::= OP | LT | GT | STAR | COLON
+                    | IN_KW | IS_KW | AND_KW | OR_KW
+                    | INSTANCEOF_KW | TYPEOF_KW | SATISFIES_KW | MATCHES_KW
+
+private expr_operand ::= if_expr | for_expr | quantifier_expr | simple_operand
+if_expr ::= IF_KW expression THEN_KW expression (ELSE_KW expression)? {pin=1}
+for_expr ::= FOR_KW id IN_KW expression RETURN_KW expression {pin=1}
+quantifier_expr ::= (EVERY_KW | SOME_KW) id (IN_KW expression)? (SATISFIES_KW expression)? {pin=1}
+private simple_operand ::= prefix_op* postfix_expr
+private prefix_op ::= OP | NOT_KW
+
+postfix_expr ::= primary_expr postfix_part*
+private postfix_part ::= dot_access | bracket_access
+dot_access ::= (DOT | QDOT) path_segment {pin=1}
+path_segment ::= id call_args?
+bracket_access ::= (LBRACKET | QLBRACKET) (STAR | expression)? RBRACKET {pin=1}
+
+private primary_expr ::= literal
+                       | THIS_KW
+                       | function_call
+                       | sev_ref
+                       | ref_expr
+                       | group_expr
+                       | collection_lit
+private literal ::= STRING | NUMBER_LIT | TRUE_KW | FALSE_KW | NULL_KW
+function_call ::= expr_id call_args
+call_args ::= LPAREN (expression (COMMA expression)*)? RPAREN {pin=1}
 // "Info.additionalInfo" est une expression valide, mais "Info \"code\"" est un
 // message de payload : lookahead négatif.
-private severity_in_expr ::= !payload_message message_severity
+private sev_ref ::= !payload_message message_severity
+ref_expr ::= expr_id
+group_expr ::= LPAREN expression? RPAREN {pin=1}
+collection_lit ::= LBRACE (expression (COMMA expression)*)? RBRACE {pin=1}
 
 // Identifiant "élargi" : mots-clés Kraken utilisables comme identifiants
 // (aligné sur krakenModelReservedWord de la grammaire ANTLR)
