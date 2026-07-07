@@ -217,7 +217,10 @@ step_bound ::= STEP_KW signed_number {pin=1}
 in_assert ::= IN_KW value_list assert_suffix?
 expr_assert ::= expression assert_suffix?
 private assert_suffix ::= payload_message override_clause? | override_clause
-payload_message ::= message_severity STRING (COLON STRING)? {pin=1}
+// PAS de pin ici : payload_message sert aussi de lookahead négatif dans les
+// expressions (sev_ref). Un pin transformerait la sonde en erreur quand
+// Info/Error/Warn est une référence ("Assert Info.additionalInfo = ...").
+payload_message ::= message_severity STRING (COLON STRING)?
 private message_severity ::= ERROR_KW | WARN_KW | INFO_KW
 override_clause ::= OVERRIDABLE_KW STRING? {pin=1}
 value_list ::= value_item (COMMA value_item)*
@@ -286,7 +289,9 @@ private primary_expr ::= literal
                        | group_expr
                        | collection_lit
 private literal ::= STRING | NUMBER_LIT | TRUE_KW | FALSE_KW | NULL_KW
-function_call ::= expr_id call_args
+function_call ::= call_head call_args
+// Info/Error/Warn peuvent aussi être des noms de fonctions ("Warn(x)")
+private call_head ::= expr_id | message_severity
 call_args ::= LPAREN (expression (COMMA expression)*)? RPAREN {pin=1}
 // "Info.additionalInfo" est une expression valide, mais "Info \"code\"" est un
 // message de payload : lookahead négatif.

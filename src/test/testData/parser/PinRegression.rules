@@ -1,0 +1,23 @@
+Namespace Test
+
+Context Info {
+    String additionalInfo
+}
+
+Rule "severity word as reference" On Party.relationToPrimaryInsured {
+    Assert Info.additionalInfo = this.relationToPrimaryInsured
+}
+
+Rule "instanceof severity-named context" On Policy.sameHomeAddress {
+    When AddressInfo.street = null and PersonInfo instanceof Info
+    Set Mandatory
+    Error "code" : "message"
+}
+
+Rule "severity word as function call" On Policy.x {
+    Assert Warn(Policy.x) != null and Error(Policy.y) = false
+}
+
+Rule "quantifier with typeof" On Policy.allCovered {
+    Assert every currentCov in RiskItem.coverages satisfies currentCov typeof COLLCoverage
+}

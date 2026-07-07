@@ -20,6 +20,14 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.4.1</b>
+        <ul>
+            <li>Fixed false-positive syntax errors when Info/Error/Warn is used as a
+            reference or context name in expressions ("Assert Info.additionalInfo = ...",
+            "x instanceof Info") or as a function call ("Warn(x)").</li>
+            <li>The bundled grammar simulator (tools/sim_parser.py) now emulates
+            Grammar-Kit pin semantics to catch this class of bug.</li>
+        </ul>
         <b>0.4.0</b>
         <ul>
             <li>Stub-based index for rule declarations: reference resolution,

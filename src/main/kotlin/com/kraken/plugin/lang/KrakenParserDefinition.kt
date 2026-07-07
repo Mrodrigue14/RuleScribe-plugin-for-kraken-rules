@@ -52,7 +52,7 @@ class KrakenParserDefinition : ParserDefinition {
             "kraken.FILE", KrakenLanguage
         ) {
             // À incrémenter à chaque évolution de la grammaire ou des stubs
-            override fun getStubVersion(): Int = 1
+            override fun getStubVersion(): Int = 2
             override fun getExternalId(): String = "kraken.FILE"
         }
 

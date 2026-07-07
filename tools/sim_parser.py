@@ -128,6 +128,23 @@ def not_(p):
         return not r
     return f
 
+
+ERRORS = []
+
+def seqp(pin, rule, *ps):
+    def f(s):
+        save = s.p
+        for i, p in enumerate(ps):
+            if not p(s):
+                if i + 1 > pin:
+                    ERRORS.append((s.p, f"[{rule}] elem#{i} attendu, token #{s.p}: " +
+                                   " ".join(t[1] for t in s.t[max(0,s.p-5):s.p+3])))
+                    return True
+                s.p = save
+                return False
+        return True
+    return f
+
 def ref(name):
     def f(s): return RULES[name](s)
     return f
@@ -144,28 +161,28 @@ define('id', alt(R('expr_id'),tk('ERROR_KW'),tk('WARN_KW'),tk('INFO_KW')))
 
 # ---- expressions (KEL structuré, v0.3) ----
 define('literal', alt(tk('STRING'),tk('NUMBER_LIT'),tk('TRUE_KW'),tk('FALSE_KW'),tk('NULL_KW')))
-define('call_args', seq(tk('LPAREN'),opt(seq(R('expression'),many(seq(tk('COMMA'),R('expression'))))),tk('RPAREN')))
-define('function_call', seq(R('expr_id'),R('call_args')))
+define('call_args', seqp(1, 'call_args', tk('LPAREN'),opt(seq(R('expression'),many(seq(tk('COMMA'),R('expression'))))),tk('RPAREN')))
+define('function_call', seq(alt(R('expr_id'),R('message_severity')),R('call_args')))
 define('sev_ref', seq(not_(R('payload_message')),R('message_severity')))
-define('group_expr', seq(tk('LPAREN'),opt(R('expression')),tk('RPAREN')))
-define('collection_lit', seq(tk('LBRACE'),opt(seq(R('expression'),many(seq(tk('COMMA'),R('expression'))))),tk('RBRACE')))
+define('group_expr', seqp(1, 'group_expr', tk('LPAREN'),opt(R('expression')),tk('RPAREN')))
+define('collection_lit', seqp(1, 'collection_lit', tk('LBRACE'),opt(seq(R('expression'),many(seq(tk('COMMA'),R('expression'))))),tk('RBRACE')))
 define('primary_expr', alt(R('literal'),tk('THIS_KW'),R('function_call'),R('sev_ref'),R('expr_id'),
  R('group_expr'),R('collection_lit')))
 define('path_segment', seq(R('id'),opt(R('call_args'))))
-define('bracket_access', seq(alt(tk('LBRACKET'),tk('QLBRACKET')),opt(alt(tk('STAR'),R('expression'))),tk('RBRACKET')))
+define('bracket_access', seqp(1, 'bracket_access', alt(tk('LBRACKET'),tk('QLBRACKET')),opt(alt(tk('STAR'),R('expression'))),tk('RBRACKET')))
 define('postfix_part', alt(seq(alt(tk('DOT'),tk('QDOT')),R('path_segment')),R('bracket_access')))
 define('postfix_expr', seq(R('primary_expr'),many(R('postfix_part'))))
 define('prefix_op', alt(tk('OP'),tk('NOT_KW')))
 define('simple_operand', seq(many(R('prefix_op')),R('postfix_expr')))
-define('if_expr', seq(tk('IF_KW'),R('expression'),tk('THEN_KW'),R('expression'),opt(seq(tk('ELSE_KW'),R('expression')))))
-define('for_expr', seq(tk('FOR_KW'),R('id'),tk('IN_KW'),R('expression'),tk('RETURN_KW'),R('expression')))
-define('quantifier_expr', seq(alt(tk('EVERY_KW'),tk('SOME_KW')),R('id'),
+define('if_expr', seqp(1, 'if_expr', tk('IF_KW'),R('expression'),tk('THEN_KW'),R('expression'),opt(seq(tk('ELSE_KW'),R('expression')))))
+define('for_expr', seqp(1, 'for_expr', tk('FOR_KW'),R('id'),tk('IN_KW'),R('expression'),tk('RETURN_KW'),R('expression')))
+define('quantifier_expr', seqp(1, 'quantifier_expr', alt(tk('EVERY_KW'),tk('SOME_KW')),R('id'),
  opt(seq(tk('IN_KW'),R('expression'))),opt(seq(tk('SATISFIES_KW'),R('expression')))))
 define('expr_operand', alt(R('if_expr'),R('for_expr'),R('quantifier_expr'),R('simple_operand')))
 define('binary_op', alt(tk('OP'),tk('LT'),tk('GT'),tk('STAR'),tk('COLON'),tk('IN_KW'),tk('IS_KW'),
  tk('AND_KW'),tk('OR_KW'),tk('INSTANCEOF_KW'),tk('TYPEOF_KW'),tk('SATISFIES_KW'),tk('MATCHES_KW')))
 define('value_chain', seq(R('expr_operand'),many(seq(R('binary_op'),R('expr_operand')))))
-define('set_var', seq(not_(seq(tk('SET_KW'),R('set_kind'))),tk('SET_KW'),R('id'),opt(tk('TO_KW')),R('value_chain')))
+define('set_var', seqp(2, 'set_var', not_(seq(tk('SET_KW'),R('set_kind'))),tk('SET_KW'),R('id'),opt(tk('TO_KW')),R('value_chain')))
 define('expression', alt(
  seq(many1(R('set_var')),opt(seq(tk('RETURN_KW'),R('value_chain')))),
  seq(tk('RETURN_KW'),R('value_chain')),
@@ -175,62 +192,62 @@ define('brace_expr', R('collection_lit'))
 
 # ---- header ----
 define('qualified_name', seq(R('id'),many(seq(tk('DOT'),R('id')))))
-define('namespace_decl', seq(tk('NAMESPACE_KW'),R('qualified_name')))
-define('include_decl', seq(tk('INCLUDE_KW'),R('qualified_name')))
+define('namespace_decl', seqp(1, 'namespace_decl', tk('NAMESPACE_KW'),R('qualified_name')))
+define('include_decl', seqp(1, 'include_decl', tk('INCLUDE_KW'),R('qualified_name')))
 define('import_rule_names', seq(tk('STRING'),many(seq(tk('COMMA'),tk('STRING')))))
-define('rule_import_decl', seq(tk('IMPORT_KW'),tk('RULE_KW'),R('import_rule_names'),tk('FROM_KW'),R('qualified_name')))
+define('rule_import_decl', seqp(1, 'rule_import_decl', tk('IMPORT_KW'),tk('RULE_KW'),R('import_rule_names'),tk('FROM_KW'),R('qualified_name')))
 define('import_decl', alt(R('include_decl'),R('rule_import_decl')))
 
 # ---- annotations ----
 define('signed_number', seq(opt(tk('OP')),tk('NUMBER_LIT')))
 define('annotation_arg', alt(tk('STRING'),R('signed_number'),tk('TRUE_KW'),tk('FALSE_KW'),R('qualified_name')))
-define('dimension_annotation', seq(tk('DIMENSION_KW'),tk('LPAREN'),R('annotation_arg'),tk('COMMA'),R('annotation_arg'),tk('RPAREN')))
+define('dimension_annotation', seqp(2, 'dimension_annotation', tk('DIMENSION_KW'),tk('LPAREN'),R('annotation_arg'),tk('COMMA'),R('annotation_arg'),tk('RPAREN')))
 define('annotation_body', alt(R('dimension_annotation'),tk('NOT_STRICT_KW'),tk('SERVER_SIDE_ONLY_KW'),
  tk('FORBID_TARGET_KW'),tk('FORBID_REFERENCE_KW'),R('id')))
-define('annotation', seq(tk('AT'),R('annotation_body')))
+define('annotation', seqp(1, 'annotation', tk('AT'),R('annotation_body')))
 
 # ---- contexts ----
 define('path_expr', seq(R('id'),many(seq(tk('DOT'),R('id')))))
 define('nav_value', alt(R('brace_expr'),R('path_expr')))
-define('inherited_contexts', seq(tk('IS_KW'),R('id'),many(seq(tk('COMMA'),R('id')))))
-define('child_decl', seq(many(R('annotation')),tk('CHILD_KW'),opt(tk('STAR')),R('id'),opt(seq(tk('COLON'),R('nav_value')))))
+define('inherited_contexts', seqp(1, 'inherited_contexts', tk('IS_KW'),R('id'),many(seq(tk('COMMA'),R('id')))))
+define('child_decl', seqp(2, 'child_decl', many(R('annotation')),tk('CHILD_KW'),opt(tk('STAR')),R('id'),opt(seq(tk('COLON'),R('nav_value')))))
 define('field_decl', seq(many(R('annotation')),opt(tk('EXTERNAL_KW')),R('id'),opt(tk('STAR')),R('id'),opt(seq(tk('COLON'),R('nav_value')))))
 define('context_member', alt(R('child_decl'),R('field_decl')))
-define('context_decl', seq(many(R('annotation')),opt(tk('ROOT_KW')),opt(tk('SYSTEM_KW')),tk('CONTEXT_KW'),R('id'),
+define('context_decl', seqp(4, 'context_decl', many(R('annotation')),opt(tk('ROOT_KW')),opt(tk('SYSTEM_KW')),tk('CONTEXT_KW'),R('id'),
  opt(R('inherited_contexts')),tk('LBRACE'),many(R('context_member')),tk('RBRACE')))
 define('contexts_member', alt(R('contexts_block'),R('context_decl')))
-define('contexts_block', seq(tk('CONTEXTS_KW'),tk('LBRACE'),many(R('contexts_member')),tk('RBRACE')))
+define('contexts_block', seqp(1, 'contexts_block', tk('CONTEXTS_KW'),tk('LBRACE'),many(R('contexts_member')),tk('RBRACE')))
 define('external_context_value', alt(seq(tk('LBRACE'),opt(R('external_context_items')),tk('RBRACE')),R('id')))
-define('external_context_item', seq(R('id'),tk('COLON'),R('external_context_value')))
+define('external_context_item', seqp(2, 'external_context_item', R('id'),tk('COLON'),R('external_context_value')))
 define('external_context_items', seq(R('external_context_item'),many(seq(tk('COMMA'),R('external_context_item')))))
-define('external_context_decl', seq(tk('EXTERNAL_CONTEXT_KW'),tk('LBRACE'),opt(R('external_context_items')),tk('RBRACE')))
+define('external_context_decl', seqp(1, 'external_context_decl', tk('EXTERNAL_CONTEXT_KW'),tk('LBRACE'),opt(R('external_context_items')),tk('RBRACE')))
 define('external_field_decl', seq(R('id'),opt(tk('STAR')),R('id')))
-define('external_entity_decl', seq(tk('EXTERNAL_ENTITY_KW'),R('id'),tk('LBRACE'),many(R('external_field_decl')),tk('RBRACE')))
+define('external_entity_decl', seqp(1, 'external_entity_decl', tk('EXTERNAL_ENTITY_KW'),R('id'),tk('LBRACE'),many(R('external_field_decl')),tk('RBRACE')))
 
 # ---- rules ----
 define('rule_name', tk('STRING'))
-define('rule_target', seq(tk('ON_KW'),R('id'),opt(seq(tk('DOT'),R('path_expr')))))
-define('description_clause', seq(tk('DESCRIPTION_KW'),tk('STRING')))
+define('rule_target', seqp(1, 'rule_target', tk('ON_KW'),R('id'),opt(seq(tk('DOT'),R('path_expr')))))
+define('description_clause', seqp(1, 'description_clause', tk('DESCRIPTION_KW'),tk('STRING')))
 define('priority_value', alt(tk('MIN_KW'),tk('MAX_KW'),R('signed_number')))
-define('priority_clause', seq(tk('PRIORITY_KW'),R('priority_value')))
-define('when_clause', seq(tk('WHEN_KW'),R('expression')))
+define('priority_clause', seqp(1, 'priority_clause', tk('PRIORITY_KW'),R('priority_value')))
+define('when_clause', seqp(1, 'when_clause', tk('WHEN_KW'),R('expression')))
 define('message_severity', alt(tk('ERROR_KW'),tk('WARN_KW'),tk('INFO_KW')))
 define('payload_message', seq(R('message_severity'),tk('STRING'),opt(seq(tk('COLON'),tk('STRING')))))
-define('override_clause', seq(tk('OVERRIDABLE_KW'),opt(tk('STRING'))))
+define('override_clause', seqp(1, 'override_clause', tk('OVERRIDABLE_KW'),opt(tk('STRING'))))
 define('assert_suffix', alt(seq(R('payload_message'),opt(R('override_clause'))),R('override_clause')))
 define('set_kind', alt(tk('MANDATORY_KW'),tk('DISABLED_KW'),tk('HIDDEN_KW')))
-define('set_payload', seq(tk('SET_KW'),R('set_kind'),opt(R('payload_message')),opt(R('override_clause'))))
+define('set_payload', seqp(1, 'set_payload', tk('SET_KW'),R('set_kind'),opt(R('payload_message')),opt(R('override_clause'))))
 define('default_kind', alt(tk('DEFAULT_KW'),tk('RESET_KW')))
-define('default_payload', seq(R('default_kind'),tk('TO_KW'),R('expression')))
+define('default_payload', seqp(2, 'default_payload', R('default_kind'),tk('TO_KW'),R('expression')))
 define('empty_assert', seq(tk('EMPTY_KW'),opt(R('assert_suffix'))))
 define('matches_assert', seq(tk('MATCHES_KW'),tk('STRING'),opt(R('assert_suffix'))))
 define('length_assert', seq(tk('LENGTH_KW'),tk('NUMBER_LIT'),opt(R('assert_suffix'))))
 define('size_spec', alt(seq(tk('MIN_KW'),tk('NUMBER_LIT'),tk('MAX_KW'),tk('NUMBER_LIT')),
  seq(tk('MIN_KW'),tk('NUMBER_LIT')),seq(tk('MAX_KW'),tk('NUMBER_LIT')),tk('NUMBER_LIT')))
 define('size_assert', seq(tk('SIZE_KW'),R('size_spec'),opt(R('assert_suffix'))))
-define('min_bound', seq(tk('MIN_KW'),R('signed_number')))
-define('max_bound', seq(tk('MAX_KW'),R('signed_number')))
-define('step_bound', seq(tk('STEP_KW'),R('signed_number')))
+define('min_bound', seqp(1, 'min_bound', tk('MIN_KW'),R('signed_number')))
+define('max_bound', seqp(1, 'max_bound', tk('MAX_KW'),R('signed_number')))
+define('step_bound', seqp(1, 'step_bound', tk('STEP_KW'),R('signed_number')))
 define('number_spec', alt(seq(R('min_bound'),opt(R('max_bound')),opt(R('step_bound'))),
  seq(R('max_bound'),opt(R('step_bound')))))
 define('number_assert', seq(tk('NUMBER_KW'),R('number_spec'),opt(R('assert_suffix'))))
@@ -240,36 +257,36 @@ define('in_assert', seq(tk('IN_KW'),R('value_list'),opt(R('assert_suffix'))))
 define('expr_assert', seq(R('expression'),opt(R('assert_suffix'))))
 define('assert_kind', alt(R('empty_assert'),R('matches_assert'),R('length_assert'),R('size_assert'),
  R('number_assert'),R('in_assert'),R('expr_assert')))
-define('assert_payload', seq(tk('ASSERT_KW'),R('assert_kind')))
+define('assert_payload', seqp(1, 'assert_payload', tk('ASSERT_KW'),R('assert_kind')))
 define('rule_clause', alt(R('description_clause'),R('priority_clause'),R('when_clause'),R('set_payload'),
  R('default_payload'),R('assert_payload'),R('payload_message'),R('override_clause')))
-define('rule_body', seq(tk('LBRACE'),many(R('rule_clause')),tk('RBRACE')))
-define('rule_decl', seq(many(R('annotation')),tk('RULE_KW'),opt(R('rule_name')),opt(R('rule_target')),R('rule_body')))
+define('rule_body', seqp(1, 'rule_body', tk('LBRACE'),many(R('rule_clause')),tk('RBRACE')))
+define('rule_decl', seqp(2, 'rule_decl', many(R('annotation')),tk('RULE_KW'),opt(R('rule_name')),opt(R('rule_target')),R('rule_body')))
 define('rules_member', alt(R('rules_block'),R('rule_decl')))
-define('rules_block', seq(many(R('annotation')),tk('RULES_KW'),tk('LBRACE'),many(R('rules_member')),tk('RBRACE')))
+define('rules_block', seqp(2, 'rules_block', many(R('annotation')),tk('RULES_KW'),tk('LBRACE'),many(R('rules_member')),tk('RBRACE')))
 
 # ---- entry points ----
 define('ep_name', tk('STRING'))
-define('ep_ref', seq(tk('ENTRYPOINT_KW'),tk('STRING')))
+define('ep_ref', seqp(1, 'ep_ref', tk('ENTRYPOINT_KW'),tk('STRING')))
 define('rule_ref', tk('STRING'))
 define('entry_point_item', alt(R('ep_ref'),R('rule_ref')))
 define('entry_point_items', seq(R('entry_point_item'),many(seq(tk('COMMA'),R('entry_point_item')))))
-define('entry_point_decl', seq(many(R('annotation')),tk('ENTRYPOINT_KW'),opt(R('ep_name')),tk('LBRACE'),
+define('entry_point_decl', seqp(2, 'entry_point_decl', many(R('annotation')),tk('ENTRYPOINT_KW'),opt(R('ep_name')),tk('LBRACE'),
  opt(R('entry_point_items')),tk('RBRACE')))
 define('ep_block_member', alt(R('entry_points_block'),R('entry_point_decl')))
-define('entry_points_block', seq(many(R('annotation')),tk('ENTRYPOINTS_KW'),tk('LBRACE'),many(R('ep_block_member')),tk('RBRACE')))
+define('entry_points_block', seqp(2, 'entry_points_block', many(R('annotation')),tk('ENTRYPOINTS_KW'),tk('LBRACE'),many(R('ep_block_member')),tk('RBRACE')))
 
 # ---- dimension / function ----
-define('dimension_decl', seq(tk('DIMENSION_KW'),tk('STRING'),tk('COLON'),R('id')))
+define('dimension_decl', seqp(1, 'dimension_decl', tk('DIMENSION_KW'),tk('STRING'),tk('COLON'),R('id')))
 define('type_ref', seq(R('id'),opt(seq(tk('LT'),R('type_ref'),many(seq(tk('COMMA'),R('type_ref'))),tk('GT'))),
  opt(seq(tk('LBRACKET'),tk('RBRACKET')))))
-define('generic_bound', seq(R('id'),tk('IS_KW'),R('type_ref')))
-define('generic_bounds', seq(tk('LT'),R('generic_bound'),many(seq(tk('COMMA'),R('generic_bound'))),tk('GT')))
+define('generic_bound', seqp(2, 'generic_bound', R('id'),tk('IS_KW'),R('type_ref')))
+define('generic_bounds', seqp(1, 'generic_bounds', tk('LT'),R('generic_bound'),many(seq(tk('COMMA'),R('generic_bound'))),tk('GT')))
 define('function_param', seq(R('type_ref'),opt(R('id'))))
 define('function_params', seq(R('function_param'),many(seq(tk('COMMA'),R('function_param')))))
-define('return_type', seq(tk('COLON'),R('type_ref')))
-define('function_body', seq(tk('LBRACE'),R('expression'),tk('RBRACE')))
-define('function_decl', seq(tk('FUNCTION_KW'),opt(R('generic_bounds')),R('id'),tk('LPAREN'),
+define('return_type', seqp(1, 'return_type', tk('COLON'),R('type_ref')))
+define('function_body', seqp(1, 'function_body', tk('LBRACE'),R('expression'),tk('RBRACE')))
+define('function_decl', seqp(1, 'function_decl', tk('FUNCTION_KW'),opt(R('generic_bounds')),R('id'),tk('LPAREN'),
  opt(R('function_params')),tk('RPAREN'),opt(R('return_type')),opt(R('function_body'))))
 
 define('model_item', alt(R('contexts_block'),R('context_decl'),R('external_context_decl'),R('external_entity_decl'),
@@ -280,12 +297,16 @@ def parse_file(path):
     src=open(path,encoding='utf-8').read()
     toks=lex(src)
     bad=[t for t in toks if t[0]=='BAD']
+    ERRORS.clear()
     s=S(toks)
     ok=RULES['kraken_file'](s)
     full = ok and s.p==len(toks)
+    if ERRORS:
+        full=False
     status='OK' if (full and not bad) else 'ECHEC'
     print(f"{status}  {path}  ({len(toks)} tokens)")
     if bad: print("   tokens invalides:",bad[:5])
+    for off,msg in ERRORS[:4]: print("   FAUX POSITIF:", msg)
     if not full:
         i=max(s.p,s.maxp)
         ctx=' '.join(t[1] for t in toks[max(0,i-6):i+6])
