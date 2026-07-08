@@ -6,6 +6,7 @@ import com.intellij.codeInsight.completion.CompletionProvider
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.completion.CompletionType
 import com.intellij.codeInsight.lookup.LookupElementBuilder
+import com.intellij.icons.AllIcons
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiElement
@@ -15,7 +16,10 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.ProcessingContext
 import com.kraken.plugin.lang.KrakenFile
 import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.psi.KrakenEntryPointDecl
+import com.kraken.plugin.psi.KrakenEpRef
 import com.kraken.plugin.psi.KrakenPsiUtil
+import com.kraken.plugin.psi.KrakenRuleRef
 
 class KrakenCompletionContributor : CompletionContributor() {
 
@@ -86,14 +90,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
                 }
             }
             isInside(position, KrakenTypes.ENTRY_POINT_DECL) -> {
-                for (rule in KrakenPsiUtil.findRulesVisible(file)) {
-                    val name = rule.name ?: continue
-                    result.addElement(
-                        LookupElementBuilder.create("\"$name\"")
-                            .withPresentableText(name)
-                            .withTypeText("rule", true)
-                    )
-                }
+                addEntryPointItemCompletions(position, file, result)
             }
             isInside(position, KrakenTypes.RULE_BODY) -> {
                 addKeywords(result, RULE_BODY_KEYWORDS)
@@ -101,6 +98,51 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
             else -> {
                 addKeywords(result, TOP_LEVEL_KEYWORDS)
             }
+        }
+    }
+
+    /**
+     * Complétion dans un bloc `EntryPoint { ... }` :
+     * - règles visibles (icône méthode, fichier d'origine en légende) ;
+     * - autres entry points sous la forme `EntryPoint "nom"` (icône plugin) ;
+     * - sans les items déjà listés ni l'entry point courant (cycle direct).
+     */
+    private fun addEntryPointItemCompletions(
+        position: PsiElement,
+        file: KrakenFile,
+        result: CompletionResultSet
+    ) {
+        val currentDecl = PsiTreeUtil.getParentOfType(position, KrakenEntryPointDecl::class.java, false)
+        val currentName = currentDecl?.name
+        val alreadyListed: Set<String> = if (currentDecl != null) {
+            val rules = PsiTreeUtil.findChildrenOfType(currentDecl, KrakenRuleRef::class.java)
+                .map { it.ruleName }
+            val entryPoints = PsiTreeUtil.findChildrenOfType(currentDecl, KrakenEpRef::class.java)
+                .mapNotNull { it.entryPointName }
+            (rules + entryPoints).toSet()
+        } else {
+            emptySet()
+        }
+
+        for (rule in KrakenPsiUtil.findRulesVisible(file)) {
+            val name = rule.name ?: continue
+            if (name in alreadyListed) continue
+            result.addElement(
+                LookupElementBuilder.create("\"$name\"")
+                    .withPresentableText(name)
+                    .withIcon(AllIcons.Nodes.Method)
+                    .withTypeText(rule.containingFile.name, true)
+            )
+        }
+        for (entryPoint in KrakenPsiUtil.findEntryPointsVisible(file)) {
+            val name = entryPoint.name ?: continue
+            if (name == currentName || name in alreadyListed) continue
+            result.addElement(
+                LookupElementBuilder.create("EntryPoint \"$name\"")
+                    .withPresentableText("EntryPoint $name")
+                    .withIcon(AllIcons.Nodes.Plugin)
+                    .withTypeText(entryPoint.containingFile.name, true)
+            )
         }
     }
 

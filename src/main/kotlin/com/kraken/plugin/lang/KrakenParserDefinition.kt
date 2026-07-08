@@ -19,6 +19,7 @@ import com.kraken.plugin.parser.KrakenParser
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenDimensionDecl
 import com.kraken.plugin.psi.KrakenEntryPointDecl
+import com.kraken.plugin.psi.KrakenEpRef
 import com.kraken.plugin.psi.KrakenRuleDecl
 import com.kraken.plugin.psi.KrakenRuleRef
 
@@ -40,6 +41,7 @@ class KrakenParserDefinition : ParserDefinition {
         KrakenTypes.RULE_DECL -> KrakenRuleDecl(node)
         KrakenTypes.ENTRY_POINT_DECL -> KrakenEntryPointDecl(node)
         KrakenTypes.RULE_REF -> KrakenRuleRef(node)
+        KrakenTypes.EP_REF -> KrakenEpRef(node)
         KrakenTypes.DIMENSION_DECL -> KrakenDimensionDecl(node)
         else -> ASTWrapperPsiElement(node)
     }

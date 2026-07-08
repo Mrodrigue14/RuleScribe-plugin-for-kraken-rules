@@ -5,6 +5,7 @@ import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
+import com.kraken.plugin.psi.KrakenEpRef
 import com.kraken.plugin.psi.KrakenRuleRef
 
 /**
@@ -19,6 +20,13 @@ class KrakenUnresolvedRuleRefInspection : LocalInspectionTool() {
                     holder.registerProblem(
                         element,
                         "Unknown rule '${element.ruleName}'",
+                        ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
+                    )
+                }
+                if (element is KrakenEpRef && element.reference?.resolve() == null) {
+                    holder.registerProblem(
+                        element,
+                        "Unknown entry point '${element.entryPointName}'",
                         ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
                     )
                 }

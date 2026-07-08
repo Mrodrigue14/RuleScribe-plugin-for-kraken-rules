@@ -15,17 +15,24 @@ Support du DSL Kraken `.rules` ([eisgroup/kraken-rules](https://github.com/eisgr
   - corps de règle : `Assert`, `Set Mandatory`, `Default To`, `Reset To`, `When`, `Priority`, `Error`…
   - dans `@Dimension(...)` : les dimensions déclarées dans le projet
   - après `On` : les noms de contextes déclarés
-  - dans un `EntryPoint { ... }` : les noms de règles existantes
+  - dans un `EntryPoint { ... }` : règles et autres EntryPoints visibles (avec icônes
+    et fichier d'origine), sans les items déjà listés ni l'EntryPoint courant
 - **Inspections** :
   - `Rule` sans nom (erreur)
   - référence de règle introuvable dans un `EntryPoint` (avertissement)
 - **Intention** : *Add missing 'On' clause* (Alt+Entrée dans une règle sans cible)
-- **Navigation** : Ctrl+B / Ctrl+clic depuis un nom de règle dans un `EntryPoint` vers la déclaration `Rule` ; Find Usages.
-- **Renommage** : renommer une `Rule` (Maj+F6) met à jour ses références dans les `EntryPoint`.
+- **Navigation** : Ctrl+B / Ctrl+clic dans les deux sens — d'un item
+  d'EntryPoint vers la déclaration, et du nom d'une `Rule`/`EntryPoint` vers
+  les EntryPoints qui la référencent (popup si plusieurs) ; Find Usages
+  (y compris noms multi-mots) ; icônes de gouttière.
+- **Renommage** : renommer une `Rule` ou un `EntryPoint` (Maj+F6) met à jour toutes leurs références.
 - **Structure View** (Alt+7), **repli de code** et **formateur** (Ctrl+Alt+L).
 - **Live templates** : `rule`, `ep`, `ctx`, `dim` + Tab.
 - **Complétion des champs** après `On Contexte.` (héritage `Is` et `Child` compris).
-- **Résolution par namespace** : `Namespace`/`Include` délimitent la visibilité des règles.
+- **Résolution par namespace** : `Namespace`/`Include` délimitent la visibilité
+  dans les deux sens — une référence issue d'un namespace qui ne voit pas la
+  déclaration ne compte ni pour la navigation, ni pour Find Usages, ni pour
+  l'inspection « règle jamais référencée ».
 - **Quick documentation** (Ctrl+Q) sur les règles ; icône de gouttière vers les EntryPoints référents.
 - **6 inspections** : règle sans nom, référence inconnue, contexte inconnu, règles dupliquées, règle jamais référencée, dimension non déclarée.
 - **Index par stubs** : la résolution des règles passe par un index persistant
@@ -47,7 +54,7 @@ Support du DSL Kraken `.rules` ([eisgroup/kraken-rules](https://github.com/eisgr
 ./gradlew buildPlugin
 ```
 
-Le plugin empaqueté se trouve dans `build/distributions/kraken-rules-plugin-0.4.1.zip`.
+Le plugin empaqueté se trouve dans `build/distributions/kraken-rules-plugin-0.5.2.zip`.
 
 > 💡 Pas envie de builder ? Chaque push sur `main` produit le zip automatiquement
 > sur GitHub Actions — voir [Récupérer un build depuis GitHub Actions](#récupérer-un-build-depuis-github-actions).
@@ -70,7 +77,7 @@ chmod +x gradlew
 ./gradlew buildPlugin
 ```
 
-Le zip est généré au même endroit : `build/distributions/kraken-rules-plugin-0.4.1.zip`.
+Le zip est généré au même endroit : `build/distributions/kraken-rules-plugin-0.5.2.zip`.
 Pour tester dans un IDE sandbox : `./gradlew runIde`.
 
 ### Autres tâches utiles
@@ -86,7 +93,7 @@ Pour tester dans un IDE sandbox : `./gradlew runIde`.
 
 1. `.\gradlew.bat buildPlugin`
 2. Dans IntelliJ : *Settings → Plugins → ⚙ → Install Plugin from Disk…*
-3. Sélectionner `build/distributions/kraken-rules-plugin-0.4.1.zip`
+3. Sélectionner `build/distributions/kraken-rules-plugin-0.5.2.zip`
 4. Redémarrer l'IDE et ouvrir un fichier `.rules` (par ex. `examples/demo.rules`,
    ou le mini-projet `examples/multi/` pour tester la navigation inter-fichiers —
    checklist complète dans [TESTING.md](TESTING.md))
@@ -167,7 +174,7 @@ Les zips du plugin buildés par la CI sont téléchargeables sans rien installer
 2. Cliquer sur le dernier run vert du workflow **Build**
 3. Descendre à la section **Artifacts** → télécharger `kraken-rules-plugin`
 4. ⚠️ GitHub emballe l'artefact dans un zip supplémentaire : **extraire**
-   `kraken-rules-plugin.zip` pour obtenir `kraken-rules-plugin-0.4.1.zip`
+   `kraken-rules-plugin.zip` pour obtenir `kraken-rules-plugin-0.5.2.zip`
    (le nom du plugin contient toujours le numéro de version)
 5. Installer ce zip *intérieur* via *Settings → Plugins → ⚙ → Install Plugin from Disk…*
 

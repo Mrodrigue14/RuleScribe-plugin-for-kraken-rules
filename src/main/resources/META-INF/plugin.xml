@@ -20,6 +20,29 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.5.2</b>
+        <ul>
+            <li>Strict namespace semantics for reverse references: gutter icons,
+            declaration-to-usage navigation, Find Usages and the unused-rule
+            inspection now only count references whose namespace can actually
+            see the declaration (mirrors the Kraken engine).</li>
+        </ul>
+        <b>0.5.1</b>
+        <ul>
+            <li>Ctrl+click on a Rule or EntryPoint declaration name now navigates to
+            the entry point items referencing it (popup when several).</li>
+            <li>Find Usages now works reliably for multi-word names
+            ("Policy code mandatory") via a dedicated references searcher.</li>
+        </ul>
+        <b>0.5.0</b>
+        <ul>
+            <li>Nested EntryPoint items ("EntryPoint \"X\"") are now real references:
+            Ctrl+B navigation, rename refactoring, unknown-reference inspection,
+            gutter icon on entry points included by others.</li>
+            <li>Reworked completion inside EntryPoint blocks: icons, origin file,
+            other entry points suggested, already-listed items and the current
+            entry point excluded.</li>
+        </ul>
         <b>0.4.1</b>
         <ul>
             <li>Fixed false-positive syntax errors when Info/Error/Warn is used as a
@@ -106,9 +129,16 @@
         <gotoDeclarationHandler
                 implementation="com.kraken.plugin.navigation.KrakenGotoDeclarationHandler"/>
 
+        <referencesSearch
+                implementation="com.kraken.plugin.navigation.KrakenReferencesSearcher"/>
+
         <lang.elementManipulator
                 forClass="com.kraken.plugin.psi.KrakenRuleRef"
                 implementationClass="com.kraken.plugin.psi.KrakenRuleRefManipulator"/>
+
+        <lang.elementManipulator
+                forClass="com.kraken.plugin.psi.KrakenEpRef"
+                implementationClass="com.kraken.plugin.psi.KrakenEpRefManipulator"/>
 
         <localInspection
                 language="Kraken"

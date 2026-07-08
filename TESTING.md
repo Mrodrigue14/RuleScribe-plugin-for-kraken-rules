@@ -23,6 +23,9 @@ contextes, règles et EntryPoints dans des fichiers séparés, trois namespaces
       `Other` n'est pas inclus par `Policy`)
 - [ ] Dans **policy-rules.rules** : icône de gouttière sur chaque règle référencée →
       clic = navigation vers les items d'EntryPoint
+- [ ] Dans **other.rules** : `"Hidden elsewhere"` n'a PAS d'icône de gouttière et
+      est signalée « not referenced » — sa seule référence vient d'un namespace
+      qui ne la voit pas (sémantique stricte)
 
 ### Complétion
 - [ ] Dans un `EntryPoint { }` : Ctrl+Espace propose les règles visibles (pas `"Hidden elsewhere"`)

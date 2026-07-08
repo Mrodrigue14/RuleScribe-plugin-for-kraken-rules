@@ -122,8 +122,8 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
             """.trimIndent()
         )
         val highlights = myFixture.doHighlighting()
-        assertTrue(highlights.any { it.description == "Rule 'Dead' is not referenced by any entry point" })
-        assertFalse(highlights.any { it.description == "Rule 'Used' is not referenced by any entry point" })
+        assertTrue(highlights.any { it.description?.startsWith("Rule 'Dead' is not referenced") == true })
+        assertFalse(highlights.any { it.description?.startsWith("Rule 'Used' is not referenced") == true })
     }
 
     fun testQuickDocumentationForRule() {

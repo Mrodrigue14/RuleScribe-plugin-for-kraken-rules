@@ -19,10 +19,10 @@ class KrakenUnusedRuleInspection : LocalInspectionTool() {
             override fun visitElement(element: PsiElement) {
                 if (element !is KrakenRuleDecl) return
                 val name = element.name ?: return
-                if (KrakenPsiUtil.findRuleRefs(element.project, name).isEmpty()) {
+                if (KrakenPsiUtil.findRuleRefsVisibleTo(element).isEmpty()) {
                     holder.registerProblem(
                         element.nameIdentifier ?: element,
-                        "Rule '$name' is not referenced by any entry point",
+                        "Rule '$name' is not referenced by any entry point that can see its namespace",
                         ProblemHighlightType.LIKE_UNUSED_SYMBOL
                     )
                 }

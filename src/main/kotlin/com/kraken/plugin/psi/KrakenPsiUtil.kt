@@ -132,6 +132,47 @@ object KrakenPsiUtil {
     fun allIndexedRuleNames(project: Project): Collection<String> =
         StubIndex.getInstance().getAllKeys(KrakenRuleNameIndex.KEY, project)
 
+    // ------------------------------------------------------------------
+    // Entry points
+    // ------------------------------------------------------------------
+
+    fun findEntryPointsVisible(from: PsiElement): List<KrakenEntryPointDecl> =
+        visibleFiles(from.containingFile)
+            .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenEntryPointDecl::class.java) }
+
+    fun findEntryPointVisible(from: PsiElement, name: String): KrakenEntryPointDecl? =
+        findEntryPointsVisible(from).firstOrNull { it.name == name }
+
+    /** Vrai si le fichier de [refElement] peut voir [declarationFile] (namespaces). */
+    private fun refSees(refElement: PsiElement, declarationFile: PsiFile?): Boolean {
+        if (declarationFile == null) return false
+        return visibleFiles(refElement.containingFile).any { it.isEquivalentTo(declarationFile) }
+    }
+
+    /**
+     * Références de règles qui peuvent effectivement voir [declaration] :
+     * une référence située dans un namespace qui n'inclut pas celui de la
+     * déclaration ne compte pas (cohérent avec la résolution du moteur).
+     */
+    fun findRuleRefsVisibleTo(declaration: KrakenRuleDecl): List<KrakenRuleRef> {
+        val name = declaration.name ?: return emptyList()
+        val declarationFile = declaration.containingFile
+        return findRuleRefs(declaration.project, name).filter { refSees(it, declarationFile) }
+    }
+
+    /** Idem pour les références d'entry points imbriquées. */
+    fun findEpRefsVisibleTo(declaration: KrakenEntryPointDecl): List<KrakenEpRef> {
+        val name = declaration.name ?: return emptyList()
+        val declarationFile = declaration.containingFile
+        return findEpRefs(declaration.project, name).filter { refSees(it, declarationFile) }
+    }
+
+    /** Références `EntryPoint "nom"` imbriquées portant ce nom, projet entier. */
+    fun findEpRefs(project: Project, name: String): List<KrakenEpRef> =
+        krakenFiles(project)
+            .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenEpRef::class.java) }
+            .filter { it.entryPointName == name }
+
     /** Toutes les références (items d'EntryPoint) portant ce nom, projet entier. */
     fun findRuleRefs(project: Project, name: String): List<KrakenRuleRef> =
         krakenFiles(project)

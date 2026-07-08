@@ -45,3 +45,9 @@ EntryPoint "Validation" {
     "Policy code is mandatory",
     "Effective date in the past"
 }
+
+// Sans cet EntryPoint, la règle "Set AddressInfo..." serait signalée
+// « not referenced » : une règle jamais listée n'est jamais évaluée.
+EntryPoint "Defaults" {
+    "Set AddressInfo.postalCode to state name"
+}

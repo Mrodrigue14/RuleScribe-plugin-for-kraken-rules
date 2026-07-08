@@ -90,8 +90,10 @@ print(f"[4] Lexer: produit {len(lexer_tokens)} types de tokens")
 # ---------- 5. Braces équilibrées dans les .kt ----------
 for f in kt_files:
     src = open(f, encoding="utf-8").read()
-    src2 = re.sub(r'"([^"\\]|\\.)*"', '""', src)
-    src2 = re.sub(r"'([^'\\]|\\.)'", "''", src2)
+    src2 = re.sub(r'"""', '@@@', src)
+    src2 = re.sub(r'@@@.*?@@@', '""', src2, flags=re.S)
+    src2 = re.sub(r"'([^'\\]|\\.)'", "''", src2)   # chars AVANT strings ('"' sinon casse l'appariement)
+    src2 = re.sub(r'"([^"\\]|\\.)*"', '""', src2)
     src2 = re.sub(r'//[^\n]*', '', src2)
     src2 = re.sub(r'/\*.*?\*/', '', src2, flags=re.S)
     if src2.count('{') != src2.count('}'):
