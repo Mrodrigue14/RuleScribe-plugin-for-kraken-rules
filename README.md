@@ -1,7 +1,8 @@
-# Kraken Rules — IntelliJ Plugin
+# RuleScribe — Kraken Rules DSL support for IntelliJ
 
-IntelliJ IDEA language support for Kraken `.rules` files
-([eisgroup/kraken-rules](https://github.com/eisgroup/kraken-rules) DSL).
+**RuleScribe** brings IntelliJ IDEA language support to the Kraken Rules DSL
+(`.rules` files / KEL,
+[eisgroup/kraken-rules](https://github.com/eisgroup/kraken-rules)).
 
 > Independent community plugin, not affiliated with or endorsed by EIS Group.
 > "Kraken" refers to the open-source Kraken Rules engine (Apache-2.0); this
@@ -59,7 +60,7 @@ IntelliJ IDEA language support for Kraken `.rules` files
 ./gradlew buildPlugin
 ```
 
-The packaged plugin is written to `build/distributions/kraken-rules-plugin-0.5.4.zip`.
+The packaged plugin is written to `build/distributions/rulescribe-0.5.5.zip`.
 
 > 💡 Don't want to build? Every push to `main` produces the zip automatically
 > on GitHub Actions — see [Grabbing a build from GitHub Actions](#grabbing-a-build-from-github-actions).
@@ -82,7 +83,7 @@ chmod +x gradlew
 ./gradlew buildPlugin
 ```
 
-The zip lands in the same place: `build/distributions/kraken-rules-plugin-0.5.4.zip`.
+The zip lands in the same place: `build/distributions/rulescribe-0.5.5.zip`.
 To try it in a sandbox IDE: `./gradlew runIde`.
 
 ### Other useful tasks
@@ -98,7 +99,7 @@ To try it in a sandbox IDE: `./gradlew runIde`.
 
 1. `.\gradlew.bat buildPlugin`
 2. In IntelliJ: *Settings → Plugins → ⚙ → Install Plugin from Disk…*
-3. Select `build/distributions/kraken-rules-plugin-0.5.4.zip`
+3. Select `build/distributions/rulescribe-0.5.5.zip`
 4. Restart the IDE and open a `.rules` file (e.g. `examples/demo.rules`, or the
    multi-file sample project `examples/multi/` to try cross-file navigation —
    full manual checklist in [TESTING.md](TESTING.md))
@@ -182,9 +183,9 @@ CI-built plugin zips can be downloaded without installing anything:
 
 1. Open <https://github.com/Mrodrigue14/kraken-rules-plugin/actions>
 2. Click the latest green run of the **Build** workflow
-3. Scroll to the **Artifacts** section → download `kraken-rules-plugin`
+3. Scroll to the **Artifacts** section → download `rulescribe`
 4. ⚠️ GitHub wraps artifacts in an extra zip: **extract**
-   `kraken-rules-plugin.zip` to get `kraken-rules-plugin-0.5.4.zip`
+   `rulescribe.zip` to get `rulescribe-0.5.5.zip`
    (the plugin's name always contains the version number)
 5. Install that *inner* zip via *Settings → Plugins → ⚙ → Install Plugin from Disk…*
 

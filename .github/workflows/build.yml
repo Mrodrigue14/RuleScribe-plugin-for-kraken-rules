@@ -39,7 +39,7 @@ jobs:
       - name: Publier l'artefact
         uses: actions/upload-artifact@v4
         with:
-          name: kraken-rules-plugin
+          name: rulescribe
           path: build/distributions/*.zip
 
       - name: Rapport de tests (en cas d'échec)

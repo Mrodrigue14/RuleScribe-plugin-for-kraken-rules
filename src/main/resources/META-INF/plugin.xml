@@ -1,11 +1,12 @@
 <idea-plugin>
     <id>io.github.mrodrigue14.kraken-rules</id>
-    <name>Kraken Rules</name>
+    <name>RuleScribe for Kraken Rules</name>
     <vendor email="masterketchup144@gmail.com">Miguel</vendor>
 
     <description><![CDATA[
-        Language support for Kraken <code>.rules</code> files
-        (<a href="https://github.com/eisgroup/kraken-rules">eisgroup/kraken-rules</a> DSL).
+        <b>RuleScribe</b> — IntelliJ language support for the Kraken Rules DSL
+        (<code>.rules</code> files / KEL,
+        <a href="https://github.com/eisgroup/kraken-rules">eisgroup/kraken-rules</a>).
         <ul>
             <li>Syntax highlighting</li>
             <li>Code completion (keywords, payloads, @Dimension, rule names)</li>
@@ -20,12 +21,16 @@
     ]]></description>
 
     <change-notes><![CDATA[
-        <b>0.5.4</b>
+        <b>0.5.5</b>
         <ul>
             <li>Fixed false-positive syntax errors on KEL type casts:
             "(Type) value", including the chained form "((Type) expr).field".</li>
             <li>Removed deprecated IntelliJ stub API usages
             (StubBasedPsiElementBase.getElementType / StubElement.getStubType).</li>
+            <li>Renamed to "RuleScribe for Kraken Rules".</li>
+            <li>Relicensed under the Functional Source License 1.1 (FSL-1.1-ALv2):
+            free to use and modify, no competing use, converts to Apache-2.0
+            after two years.</li>
             <li>README translated to English.</li>
         </ul>
         <b>0.5.2</b>
