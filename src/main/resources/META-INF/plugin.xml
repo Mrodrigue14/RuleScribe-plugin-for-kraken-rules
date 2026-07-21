@@ -21,6 +21,14 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.5.7</b>
+        <ul>
+            <li>Relicensed under the PolyForm Shield License 1.0.0: free to use,
+            modify and redistribute, no competing use, and (unlike the previous
+            FSL license) the non-compete restriction does not expire. Applies to
+            this and future releases; earlier releases keep their original
+            license.</li>
+        </ul>
         <b>0.5.6</b>
         <ul>
             <li>Fixed copy-paste and reformat destroying the indentation of
