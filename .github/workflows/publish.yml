@@ -16,7 +16,9 @@ on:
 # contents: write pour créer la GitHub Release. Le token Marketplace, lui,
 # passe par un secret dédié (PUBLISH_TOKEN), jamais par le GITHUB_TOKEN.
 permissions:
-  contents: write
+  contents: write        # créer la GitHub Release
+  id-token: write        # signer l'attestation de provenance (OIDC)
+  attestations: write    # écrire l'attestation de build
 
 # Sérialise les publications, mais n'annule JAMAIS une publication en cours
 # (job critique non interruptible : un publishPlugin à moitié fait ne doit pas
@@ -72,6 +74,17 @@ jobs:
 
       - name: Build du plugin
         run: ./gradlew buildPlugin
+
+      # Attestation de provenance SLSA : lie cryptographiquement le zip livré au
+      # commit, au workflow et au runner qui l'ont produit. N'importe qui peut
+      # ensuite vérifier une release (même téléchargée du Marketplace) avec :
+      #   gh attestation verify rulescribe-X.Y.Z.zip \
+      #     --repo Mrodrigue14/RuleScribe-plugin-for-kraken-rules
+      # Un zip uploadé hors pipeline échoue à cette vérification.
+      - name: Attester la provenance du build (SLSA)
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: build/distributions/*.zip
 
       # Rôle LECTEUR de la stratégie OWASP "single updater + readers" : on
       # restaure la base NVD pré-construite depuis la release `nvd-cache`

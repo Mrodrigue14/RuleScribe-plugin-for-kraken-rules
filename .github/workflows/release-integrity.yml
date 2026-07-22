@@ -1,0 +1,80 @@
+name: Release integrity
+
+# Détection de dérive : vérifie que la dernière version publiée sur le
+# JetBrains Marketplace correspond bien à une GitHub Release produite par la
+# pipeline (les releases ne sont créées QUE par publish.yml, après build +
+# attestation de provenance + tests/CodeQL/OWASP). Une version présente sur le
+# Marketplace SANS release correspondante = upload hors pipeline → une issue
+# est ouverte automatiquement.
+on:
+  schedule:
+    - cron: '0 7 * * *'   # tous les jours 07:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  PLUGIN_ID: "32804"
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  drift:
+    name: Vérifier la cohérence Marketplace / pipeline
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Comparer la version Marketplace aux releases attestées
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # Dernière version publiée sur le Marketplace.
+          MP_VERSION=$(curl -fsSL \
+            "https://plugins.jetbrains.com/api/plugins/${PLUGIN_ID}/updates?size=1" \
+            | jq -r '.[0].version')
+          echo "Version Marketplace la plus récente : $MP_VERSION"
+
+          if [ -z "$MP_VERSION" ] || [ "$MP_VERSION" = "null" ]; then
+            echo "Impossible de lire la version Marketplace — on n'alerte pas (transitoire)."
+            exit 0
+          fi
+
+          # Une release produite par la pipeline doit exister pour cette version.
+          if gh release view "v${MP_VERSION}" >/dev/null 2>&1; then
+            echo "OK : la GitHub Release v${MP_VERSION} existe (publiée par la pipeline)."
+            exit 0
+          fi
+
+          echo "::warning::Aucune GitHub Release pour v${MP_VERSION} — dérive possible."
+
+          # Label idempotent (gh issue create échoue si le label n'existe pas).
+          gh label create release-integrity \
+            --color B60205 --description "Dérive Marketplace / pipeline" 2>/dev/null || true
+
+          # Anti-doublon : ne rouvre pas une issue déjà ouverte pour cette version.
+          TITLE="Release integrity: Marketplace v${MP_VERSION} sans release pipeline"
+          EXISTING=$(gh issue list --state open --label release-integrity \
+            --search "in:title v${MP_VERSION}" --json number --jq 'length')
+          if [ "${EXISTING:-0}" != "0" ]; then
+            echo "Issue déjà ouverte pour v${MP_VERSION}."
+            exit 0
+          fi
+
+          BODY=$(printf '%s\n' \
+            "La version **${MP_VERSION}** est publiée sur le JetBrains Marketplace, mais" \
+            "aucune GitHub Release \`v${MP_VERSION}\` n'existe." \
+            "" \
+            "Les releases ne sont créées que par la pipeline \`publish.yml\` (après build," \
+            "attestation de provenance et tests/CodeQL/OWASP). Une version Marketplace sans" \
+            "release correspondante indique un **upload hors pipeline** — à vérifier." \
+            "" \
+            "Vérification manuelle possible : télécharger le zip du Marketplace puis" \
+            "\`gh attestation verify <zip> --repo ${GITHUB_REPOSITORY}\`.")
+
+          gh issue create --title "$TITLE" --body "$BODY" --label release-integrity

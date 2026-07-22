@@ -91,3 +91,36 @@ The build and release pipeline follows current supply-chain best practices:
   2026.2** (Plugin Verifier plus a real IDE run, no issues).
 - Source, build configuration, and every CI/CD workflow are fully public and
   auditable in this repository.
+
+## Release integrity — verify it yourself
+
+Every release built by the pipeline is accompanied by a **signed SLSA build
+provenance attestation** that cryptographically binds the distributed `.zip`
+to the exact commit, workflow, and runner that produced it. You do not have to
+trust that a release went through the security gates — you can **verify** it:
+
+```
+gh attestation verify rulescribe-<version>.zip \
+  --repo Mrodrigue14/RuleScribe-plugin-for-kraken-rules
+```
+
+This works on the artifact downloaded from the **JetBrains Marketplace** as
+well as from GitHub Releases. A build produced by the pipeline (which passes
+tests, CodeQL, and OWASP before publishing) verifies successfully; an artifact
+uploaded out-of-band — e.g. hand-uploaded, bypassing the checks — has no valid
+attestation and **fails** verification.
+
+As a candid disclaimer: because the plugin is maintained on a personal
+Marketplace account, an out-of-band upload is not technically *impossible*.
+It is instead made **detectable and unverifiable**:
+
+- Each pipeline release leaves a public, auditable chain — git tag → CI run
+  (tests + CodeQL + OWASP) → provenance attestation → OWASP report with its
+  SHA-256 → JetBrains server-side verification.
+- A scheduled **release-integrity** workflow
+  (`.github/workflows/release-integrity.yml`) compares the latest Marketplace
+  version against the pipeline's releases every day and opens an issue if a
+  version appears without a corresponding attested release.
+
+In short: don't take our word for it — **any published version is verifiable,
+and any deviation is surfaced automatically.**
