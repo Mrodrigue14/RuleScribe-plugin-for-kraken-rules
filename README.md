@@ -33,13 +33,20 @@
   directions — a reference living in a namespace that cannot see the declaration
   does not count for navigation, Find Usages, or the unused-rule inspection
   (mirrors the Kraken engine).
+- **`Import Rule … From …` resolution**: an imported rule behaves as if it were
+  declared in the importing namespace (navigation, completion, Find Usages,
+  unused-rule inspection), independently of `Include` — exactly like the
+  engine's rule-import semantics.
 - **Structure View** (Alt+7), **code folding** and **formatter** (Ctrl+Alt+L).
 - **Live templates**: `rule`, `ep`, `ctx`, `dim` + Tab.
 - **Quick documentation** (Ctrl+Q) on rules: description, target, payloads, dimensions.
 - **Intention**: *Add missing 'On' clause* (Alt+Enter on a rule without a target).
-- **6 inspections**: rule without name, unresolved rule/entry point reference,
+- **10 inspections**: rule without name, unresolved rule/entry point reference,
   unknown context, duplicate rules without a differentiating `@Dimension`,
-  rule never referenced by any entry point, undeclared dimension.
+  rule never referenced by any entry point, undeclared dimension, and 4
+  rule-import checks mirroring the engine (unknown source namespace, rule
+  missing from the source namespace, import colliding with a local rule,
+  ambiguous import).
 - **Stub-based index**: rule resolution goes through a persistent index —
   fast even on projects with hundreds of `.rules` files.
 - See [ROADMAP.md](ROADMAP.md) for what's next (KEL type-checking, rule runner).
@@ -60,7 +67,7 @@
 ./gradlew buildPlugin
 ```
 
-The packaged plugin is written to `build/distributions/rulescribe-0.5.7.zip`.
+The packaged plugin is written to `build/distributions/rulescribe-0.6.0.zip`.
 
 > 💡 Don't want to build? Every push to `main` produces the zip automatically
 > on GitHub Actions — see [Grabbing a build from GitHub Actions](#grabbing-a-build-from-github-actions).
@@ -83,7 +90,7 @@ chmod +x gradlew
 ./gradlew buildPlugin
 ```
 
-The zip lands in the same place: `build/distributions/rulescribe-0.5.7.zip`.
+The zip lands in the same place: `build/distributions/rulescribe-0.6.0.zip`.
 To try it in a sandbox IDE: `./gradlew runIde`.
 
 ### Other useful tasks
@@ -99,7 +106,7 @@ To try it in a sandbox IDE: `./gradlew runIde`.
 
 1. `.\gradlew.bat buildPlugin`
 2. In IntelliJ: *Settings → Plugins → ⚙ → Install Plugin from Disk…*
-3. Select `build/distributions/rulescribe-0.5.7.zip`
+3. Select `build/distributions/rulescribe-0.6.0.zip`
 4. Restart the IDE and open a `.rules` file (e.g. `examples/demo.rules`, or the
    multi-file sample project `examples/multi/` to try cross-file navigation —
    full manual checklist in [TESTING.md](TESTING.md))
@@ -135,8 +142,6 @@ The grammar is derived from the official ANTLR grammar (`KrakenDSL.g4`,
 
 ## Known limitations
 
-- `Import Rule … From …` is parsed but does not refine resolution yet
-  (visibility is computed at the namespace level through `Include`).
 - KEL expressions are parsed structurally but not typed (no type-checking).
 - `Function` generic bounds (`<T is SomeType>`) are supported syntactically
   but carry no semantics.
@@ -185,7 +190,7 @@ CI-built plugin zips can be downloaded without installing anything:
 2. Click the latest green run of the **Build** workflow
 3. Scroll to the **Artifacts** section → download `rulescribe`
 4. ⚠️ GitHub wraps artifacts in an extra zip: **extract**
-   `rulescribe.zip` to get `rulescribe-0.5.7.zip`
+   `rulescribe.zip` to get `rulescribe-0.6.0.zip`
    (the plugin's name always contains the version number)
 5. Install that *inner* zip via *Settings → Plugins → ⚙ → Install Plugin from Disk…*
 

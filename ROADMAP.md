@@ -9,18 +9,18 @@ with distinct icons, folding, formatter, live templates, 6 inspections.
 Published on the JetBrains Marketplace. See plugin.xml change notes for
 the detailed history.
 
-## v0.6.0 — Import Rule resolution
+## v0.6.0 — Import Rule resolution ✅ (shipped)
 
 `Import Rule "X" From NamespaceB` copies rule X from another namespace
-into the current one — independent of Include. Currently the plugin
-only resolves references through Include-based namespace visibility.
+into the current one — independent of Include.
 
-- Resolve `Import Rule` references to their source-namespace rule,
-  regardless of Include.
-- 4 new inspections mirroring engine validation: unknown source
+- ✅ `Import Rule` references resolve to their source-namespace rule,
+  regardless of Include (navigation, completion, Find Usages,
+  unused-rule inspection).
+- ✅ 4 new inspections mirroring engine validation: unknown source
   namespace, rule not found in source namespace, imported name
   collides with a local rule, ambiguous import (same name imported
-  from different namespaces).
+  more than once).
 
 ## v0.7.0 — Performance foundations
 

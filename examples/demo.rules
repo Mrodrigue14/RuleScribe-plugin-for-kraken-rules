@@ -27,7 +27,7 @@ Rule "Set AddressInfo.postalCode to state name" On AddressInfo.postalCode {
 
 Rule "Policy code is mandatory" On Policy.policyCd {
     Set Mandatory
-    Error "policy_cd_mandatory" : "Le code de la police est obligatoire"
+    Error "policy_cd_mandatory": "Le code de la police est obligatoire"
 }
 
 Rule "Effective date in the past" On Policy.effectiveDate {

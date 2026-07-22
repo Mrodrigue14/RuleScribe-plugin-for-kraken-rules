@@ -21,6 +21,18 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.6.0</b>
+        <ul>
+            <li>'Import Rule "X" From Ns' is now fully resolved: an imported rule
+            behaves as if it were declared in the importing namespace —
+            navigation, completion, Find Usages and the unused-rule inspection
+            all work through imports, independently of Include (mirrors the
+            Kraken engine's rule-import semantics).</li>
+            <li>4 new inspections mirroring the engine's rule-import validation:
+            unknown source namespace, imported rule missing from the source
+            namespace, import colliding with a locally declared rule, and
+            ambiguous (duplicated) import.</li>
+        </ul>
         <b>0.5.7</b>
         <ul>
             <li>Relicensed under the PolyForm Shield License 1.0.0: free to use,
@@ -252,5 +264,41 @@
                 enabledByDefault="true"
                 level="WEAK WARNING"
                 implementationClass="com.kraken.plugin.inspection.KrakenUndeclaredDimensionInspection"/>
+
+        <localInspection
+                language="Kraken"
+                shortName="KrakenImportUnknownNamespace"
+                displayName="Rule import from unknown namespace"
+                groupName="Kraken"
+                enabledByDefault="true"
+                level="WARNING"
+                implementationClass="com.kraken.plugin.inspection.KrakenImportUnknownNamespaceInspection"/>
+
+        <localInspection
+                language="Kraken"
+                shortName="KrakenImportUnknownRule"
+                displayName="Imported rule not found in source namespace"
+                groupName="Kraken"
+                enabledByDefault="true"
+                level="WARNING"
+                implementationClass="com.kraken.plugin.inspection.KrakenImportUnknownRuleInspection"/>
+
+        <localInspection
+                language="Kraken"
+                shortName="KrakenImportNameClash"
+                displayName="Imported rule collides with a local rule"
+                groupName="Kraken"
+                enabledByDefault="true"
+                level="ERROR"
+                implementationClass="com.kraken.plugin.inspection.KrakenImportNameClashInspection"/>
+
+        <localInspection
+                language="Kraken"
+                shortName="KrakenImportAmbiguous"
+                displayName="Rule imported more than once"
+                groupName="Kraken"
+                enabledByDefault="true"
+                level="ERROR"
+                implementationClass="com.kraken.plugin.inspection.KrakenImportAmbiguousInspection"/>
     </extensions>
 </idea-plugin>
