@@ -43,15 +43,17 @@ RuleScribe is intentionally low-risk by construction:
 
 ## Automated scanning
 
-Every push and pull request to `main` runs, in GitHub Actions:
-
-- **CodeQL** static analysis (`java-kotlin`) for code-level vulnerabilities,
-  also on a weekly schedule (`.github/workflows/codeql.yml`).
+- **CodeQL** static analysis (`java-kotlin`) for code-level vulnerabilities, on
+  every push and pull request to `main` and on a weekly schedule
+  (`.github/workflows/codeql.yml`).
+- **Dependabot** flags vulnerable Gradle dependencies and keeps GitHub Actions
+  up to date (`.github/dependabot.yml`), continuously and on GitHub's
+  infrastructure.
 - **OWASP Dependency-Check** against the NVD database, scoped to the plugin's
-  **shipped** runtime classpath; the build fails on any bundled dependency with
-  a CVSS score ≥ 7.0 (`.github/workflows/build.yml`). Build- and test-time
-  dependencies (JUnit and the IntelliJ Platform SDK) are **not** distributed in
-  the plugin and are out of scope; platform libraries are patched by JetBrains
-  through IDE updates.
-- **Dependabot** keeps Gradle dependencies and GitHub Actions up to date
-  (`.github/dependabot.yml`).
+  **shipped** runtime classpath; the scan fails on any bundled dependency with
+  a CVSS score ≥ 7.0. It runs **weekly and on demand**
+  (`.github/workflows/dependency-check.yml`), not on every push, since building
+  the NVD 2.0 database is slow and the shipped artifact carries no third-party
+  dependencies. Build- and test-time dependencies (JUnit and the IntelliJ
+  Platform SDK) are **not** distributed in the plugin and are out of scope;
+  platform libraries are patched by JetBrains through IDE updates.

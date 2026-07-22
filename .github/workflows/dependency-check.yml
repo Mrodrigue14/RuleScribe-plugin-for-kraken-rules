@@ -1,0 +1,73 @@
+name: Dependency check (OWASP)
+
+# Scan OWASP dependency-check déclenché seulement :
+#   - une fois par semaine (dimanche 05:00 UTC) ;
+#   - manuellement (bouton "Run workflow").
+# Il n'est PAS dans le chemin critique des push/PR : la construction de la base
+# NVD (2.0) est longue (téléchargement paginé de ~250 000 CVE) et n'a pas à
+# bloquer chaque commit — surtout que le plugin n'embarque aucune dépendance
+# tierce (runtimeClasspath vide). Les push/PR restent couverts par CodeQL et
+# par les alertes Dependabot natives GitHub.
+on:
+  schedule:
+    - cron: '0 5 * * 0'
+  workflow_dispatch:
+
+jobs:
+  dependency-check:
+    name: Vulnérabilités des dépendances (OWASP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Gradle (avec cache)
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Rendre gradlew exécutable
+        run: chmod +x gradlew
+
+      - name: Vérifier la présence de la clé NVD (sans l'exposer)
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          if [ -n "$NVD_API_KEY" ]; then
+            echo "NVD_API_KEY présente (longueur ${#NVD_API_KEY}) — synchro rapide attendue."
+          else
+            echo "NVD_API_KEY absente — synchro sans clé (lente, susceptible d'échouer)."
+          fi
+
+      # Cache de la base NVD entre les runs. dependency-check fait des mises à
+      # jour incrémentales : restaurer le cache le plus récent évite de
+      # re-télécharger toute la base à chaque run. La clé unique par run force
+      # une re-sauvegarde de la base mise à jour ; restore-keys récupère le
+      # cache le plus récent.
+      - name: Cache de la base NVD
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/dependency-check-data
+          key: nvd-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            nvd-${{ runner.os }}-
+
+      - name: Scan des dépendances (échoue si CVE >= 7.0)
+        env:
+          # Facultatif : accélère la synchro NVD. Si le secret n'existe pas ou
+          # a expiré, la variable est vide et le scan bascule sans clé
+          # (voir la condition dans build.gradle.kts).
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: ./gradlew dependencyCheckAnalyze
+
+      - name: Publier le rapport
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: build/reports/dependency-check-report.html

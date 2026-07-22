@@ -199,18 +199,21 @@ dependencies** (only a test-scoped JUnit), makes **no network calls**, and
 Kotlin standard library and all PSI/UI APIs are supplied by the host IntelliJ
 Platform at runtime.
 
-Automated scanning runs on every push and pull request to `main`:
+Automated scanning:
 
-- **CodeQL** static analysis (`java-kotlin`), plus a weekly scheduled scan
-  (`.github/workflows/codeql.yml`).
+- **CodeQL** static analysis (`java-kotlin`) on every push and pull request to
+  `main`, plus a weekly scheduled scan (`.github/workflows/codeql.yml`).
+- **Dependabot** flags vulnerable Gradle dependencies and keeps GitHub Actions
+  current (`.github/dependabot.yml`), continuously and on GitHub's
+  infrastructure.
 - **OWASP Dependency-Check** against the NVD database, scoped to the plugin's
-  shipped runtime classpath — the build fails on any bundled dependency with a
-  CVSS score ≥ 7.0 (`dependency-check` job in `.github/workflows/build.yml`;
-  run locally with `./gradlew dependencyCheckAnalyze`). The IntelliJ Platform
-  SDK and test-only dependencies are provided by the host IDE, not distributed,
-  and so are out of scope.
-- **Dependabot** keeps Gradle dependencies and GitHub Actions current
-  (`.github/dependabot.yml`).
+  shipped runtime classpath — the scan fails on any bundled dependency with a
+  CVSS score ≥ 7.0. It runs **weekly and on demand**
+  (`.github/workflows/dependency-check.yml`; run locally with
+  `./gradlew dependencyCheckAnalyze`), not on every push, because building the
+  NVD 2.0 database is slow and the shipped artifact has no third-party
+  dependencies to scan. The IntelliJ Platform SDK and test-only dependencies
+  are provided by the host IDE, not distributed, and so are out of scope.
 
 To report a vulnerability, see [SECURITY.md](SECURITY.md).
 
