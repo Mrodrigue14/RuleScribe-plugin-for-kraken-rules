@@ -1,0 +1,54 @@
+name: Dependabot auto-merge
+
+# Auto-merge des PRs Dependabot une fois la CI verte.
+#
+# SÉCURITÉ — ce workflow suit le patron officiel GitHub et neutralise les
+# vecteurs "pwn request" décrits par boostsecurity :
+#
+#   1. Déclencheur `pull_request` (JAMAIS `pull_request_target`) : le job n'a
+#      pas accès aux secrets du dépôt — rien à exfiltrer même si la PR est
+#      malveillante.
+#   2. AUCUN `checkout` ni exécution du code de la PR : pas d'exécution de code
+#      non fiable, donc pas de RCE.
+#   3. Vérification de l'auteur via `github.event.pull_request.user.login`
+#      (le champ non falsifiable) et NON `github.actor` (falsifiable sur
+#      synchronize via `@dependabot recreate`).
+#   4. Aucune interpolation de donnée contrôlable (nom de branche, titre…)
+#      dans un `run:` — on ne passe que `html_url` (généré par GitHub) via une
+#      variable d'environnement : pas d'injection de commande.
+#   5. Permissions minimales (contents + pull-requests en write, rien d'autre).
+#   6. Métadonnées obtenues via l'action vérifiée `dependabot/fetch-metadata`
+#      plutôt qu'une logique maison.
+#
+# Le merge effectif est délégué à l'auto-merge natif de GitHub (`--auto`), qui
+# n'aboutit QUE lorsque les checks requis par la protection de branche passent.
+# => Il FAUT configurer la protection de branche (voir SECURITY.md / le README)
+#    avec les checks "Build & test" et "CodeQL" requis, sinon rien ne garde la
+#    barrière CI.
+on: pull_request
+
+# Permissions minimales, accordées uniquement à ce workflow.
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    # Ne s'exécute que pour les PRs dont l'AUTEUR réel est Dependabot.
+    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+    steps:
+      - name: Récupérer les métadonnées Dependabot
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Auto-merge uniquement pour les montées patch/mineures. Les majeures
+      # (changements potentiellement cassants) restent en revue manuelle.
+      - name: Activer l'auto-merge (patch/mineur)
+        if: ${{ steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor' }}
+        run: gh pr merge --auto --merge "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
