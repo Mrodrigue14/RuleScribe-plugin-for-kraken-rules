@@ -82,4 +82,15 @@ tasks {
     buildSearchableOptions {
         enabled = false
     }
+    // Vérifie la compatibilité binaire du plugin contre plusieurs versions
+    // d'IntelliJ (API supprimées/dépréciées) via le Plugin Verifier officiel.
+    // Les versions sont passées avec -PpluginVerifierIdeVersions="IC-x,IC-y"
+    // (liste séparée par des virgules) ; par défaut la version cible actuelle.
+    runPluginVerifier {
+        val versions = (project.findProperty("pluginVerifierIdeVersions") as String?)
+            ?.split(",")?.map(String::trim)?.filter(String::isNotEmpty)
+            .orEmpty()
+            .ifEmpty { listOf("IC-2024.1.7") }
+        ideVersions.set(versions)
+    }
 }
