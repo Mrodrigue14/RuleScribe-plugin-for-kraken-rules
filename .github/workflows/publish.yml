@@ -70,11 +70,19 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         # TAG passé par env puis référencé comme variable shell : jamais
         # interpolé via ${{ }} dans le script (pas d'injection de commande).
+        # Les notes sont tirées du bloc <change-notes> de plugin.xml (cohérent
+        # avec le Marketplace) ; en cas d'échec d'extraction, on retombe sur les
+        # notes auto-générées par GitHub.
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          gh release create "$TAG" build/distributions/*.zip \
-            --title "$TAG" \
-            --generate-notes
+          VERSION="${TAG#v}"
+          if python3 .github/scripts/extract-notes.py "$VERSION" > RELEASE_NOTES.md && [ -s RELEASE_NOTES.md ]; then
+            echo "Notes tirées de plugin.xml :"; cat RELEASE_NOTES.md
+            gh release create "$TAG" build/distributions/*.zip --title "$TAG" --notes-file RELEASE_NOTES.md
+          else
+            echo "Extraction échouée → notes auto-générées."
+            gh release create "$TAG" build/distributions/*.zip --title "$TAG" --generate-notes
+          fi
