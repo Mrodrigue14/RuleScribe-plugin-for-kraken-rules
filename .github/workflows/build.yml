@@ -23,10 +23,17 @@ on:
       - '.gitignore'
   workflow_dispatch:
 
+# Annule le run devenu obsolète quand un nouveau push arrive sur la même ref
+# (event_name dans la clé pour qu'un run planifié n'annule pas un run de push).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build & test (Ubuntu)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -57,6 +64,7 @@ jobs:
         with:
           name: rulescribe
           path: build/distributions/*.zip
+          retention-days: 30
 
       - name: Rapport de tests (en cas d'échec)
         if: failure()
@@ -64,3 +72,4 @@ jobs:
         with:
           name: test-report
           path: build/reports/tests/test/
+          retention-days: 7

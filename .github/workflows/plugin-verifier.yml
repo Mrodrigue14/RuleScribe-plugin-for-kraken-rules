@@ -22,10 +22,16 @@ permissions:
   contents: read
   issues: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     name: Plugin Verifier
     runs-on: ubuntu-latest
+    # Large : le verifier télécharge chaque IDE (~1 Go).
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -91,6 +97,7 @@ jobs:
           path: |
             verifier-output.txt
             build/reports/pluginVerifier/
+          retention-days: 14
 
       - name: Ouvrir/mettre à jour une issue si incompatibilité
         if: failure() && steps.verify.outcome == 'failure'

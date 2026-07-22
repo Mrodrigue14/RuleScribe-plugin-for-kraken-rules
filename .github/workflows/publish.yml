@@ -18,10 +18,18 @@ on:
 permissions:
   contents: write
 
+# Sérialise les publications, mais n'annule JAMAIS une publication en cours
+# (job critique non interruptible : un publishPlugin à moitié fait ne doit pas
+# être tué). Les runs supplémentaires attendent leur tour.
+concurrency:
+  group: publish-marketplace
+  cancel-in-progress: false
+
 jobs:
   publish:
     name: Publier (Marketplace + GitHub Release)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v7

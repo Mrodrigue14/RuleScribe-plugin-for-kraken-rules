@@ -194,7 +194,7 @@ CI-built plugin zips can be downloaded without installing anything:
    (the plugin's name always contains the version number)
 5. Install that *inner* zip via *Settings → Plugins → ⚙ → Install Plugin from Disk…*
 
-Artifacts are kept for 90 days by default.
+Artifacts are kept for 30 days.
 
 ## Security
 

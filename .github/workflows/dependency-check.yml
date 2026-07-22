@@ -26,6 +26,10 @@ env:
   NVD_CACHE_TAG: nvd-cache
   NVD_CACHE_ASSET: nvd-data.zip
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   dependency-check:
     name: Mise à jour + scan OWASP
@@ -101,3 +105,4 @@ jobs:
         with:
           name: dependency-check-report
           path: build/reports/dependency-check-report.html
+          retention-days: 30
