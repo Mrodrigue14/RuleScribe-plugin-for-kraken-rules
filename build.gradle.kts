@@ -84,8 +84,10 @@ tasks {
     }
     // Vérifie la compatibilité binaire du plugin contre plusieurs versions
     // d'IntelliJ (API supprimées/dépréciées) via le Plugin Verifier officiel.
-    // Les versions sont passées avec -PpluginVerifierIdeVersions="IC-x,IC-y"
-    // (liste séparée par des virgules) ; par défaut la version cible actuelle.
+    // La liste des versions est fournie via -PpluginVerifierIdeVersions="IC-x,IC-y".
+    // Le workflow CI l'alimente dynamiquement depuis l'API JetBrains (dernière
+    // release + EAP) pour rester à jour automatiquement ; par défaut, la
+    // version cible actuelle.
     runPluginVerifier {
         val versions = (project.findProperty("pluginVerifierIdeVersions") as String?)
             ?.split(",")?.map(String::trim)?.filter(String::isNotEmpty)

@@ -42,13 +42,38 @@ jobs:
       - name: Rendre gradlew exécutable
         run: chmod +x gradlew
 
+      - name: Déterminer les versions IntelliJ à vérifier
+        id: versions
+        # Si une liste est fournie manuellement (workflow_dispatch), on l'utilise ;
+        # sinon on interroge l'API JetBrains pour la dernière release + le dernier
+        # EAP d'IntelliJ IDEA Community (IIC), en gardant la version cible comme
+        # base. Résultat : la liste se met à jour toute seule.
+        # (OVERRIDE passé par env, jamais interpolé dans le script → pas d'injection.)
+        env:
+          OVERRIDE: ${{ github.event.inputs.ide_versions }}
+        run: |
+          set -euo pipefail
+          if [ -n "${OVERRIDE:-}" ]; then
+            IDE_VERSIONS="$OVERRIDE"
+          else
+            BASE="IC-2024.1.7"
+            REL=$(curl -fsS "https://data.services.jetbrains.com/products/releases?code=IIC&latest=true&type=release" | jq -r '.IIC[0].version // empty')
+            EAP=$(curl -fsS "https://data.services.jetbrains.com/products/releases?code=IIC&latest=true&type=eap" | jq -r '.IIC[0].version // empty')
+            LIST="$BASE"
+            [ -n "$REL" ] && LIST="$LIST,IC-$REL"
+            [ -n "$EAP" ] && LIST="$LIST,IC-$EAP"
+            # Dédoublonnage en conservant l'ordre.
+            IDE_VERSIONS=$(printf '%s' "$LIST" | tr ',' '\n' | awk 'NF && !seen[$0]++' | paste -sd,)
+          fi
+          echo "Versions vérifiées : $IDE_VERSIONS"
+          echo "ide_versions=$IDE_VERSIONS" >> "$GITHUB_OUTPUT"
+
       - name: Plugin Verifier
         id: verify
-        # La liste de versions est passée par une variable d'environnement puis
-        # référencée comme variable shell ("$IDE_VERSIONS") : jamais interpolée
-        # via ${{ }} dans le script (pas d'injection de commande).
+        # IDE_VERSIONS passé par env puis référencé comme variable shell :
+        # jamais interpolé via ${{ }} dans le script (pas d'injection).
         env:
-          IDE_VERSIONS: ${{ github.event.inputs.ide_versions || 'IC-2024.1.7,IC-2024.3,IC-2025.1' }}
+          IDE_VERSIONS: ${{ steps.versions.outputs.ide_versions }}
         run: |
           set -o pipefail
           ./gradlew runPluginVerifier -PpluginVerifierIdeVersions="$IDE_VERSIONS" 2>&1 | tee verifier-output.txt
