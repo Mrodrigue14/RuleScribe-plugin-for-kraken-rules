@@ -1,0 +1,13 @@
+name: "RuleScribe CodeQL config"
+
+# Suite de requêtes complète : sécurité (security-extended) + qualité de code.
+# Bien plus large que le jeu de requêtes par défaut de CodeQL — c'est le
+# principal levier pour renforcer la couverture de l'analyse.
+queries:
+  - uses: security-and-quality
+
+# Ne pas remonter d'alertes sur le parseur généré par Grammar-Kit : c'est du
+# code généré automatiquement (src/main/gen), pas notre code source, et on ne
+# le maintient pas à la main. On concentre l'analyse sur le code écrit.
+paths-ignore:
+  - src/main/gen

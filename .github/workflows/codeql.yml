@@ -48,6 +48,8 @@ jobs:
         with:
           languages: java-kotlin
           build-mode: autobuild
+          # Suite security-and-quality + exclusion du code généré.
+          config-file: ./.github/codeql/codeql-config.yml
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
