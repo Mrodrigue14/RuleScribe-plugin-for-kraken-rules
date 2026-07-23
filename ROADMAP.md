@@ -22,14 +22,22 @@ into the current one — independent of Include.
   collides with a local rule, ambiguous import (same name imported
   more than once).
 
-## v0.7.0 — Performance foundations
+## v0.7.0 — Performance foundations ✅ (shipped)
 
 Lay the groundwork before type-checking makes resolution much more
 frequent.
 
-- Stub index for Context, EntryPoint, Dimension (today only Rule has one).
-- CachedValuesManager around namespace-visibility computation.
-- Perf test on a synthetic 500-file project.
+- ✅ **Cached namespace-visibility model** — `visibleFiles()` (called by
+  nearly every resolution, completion and inspection) no longer re-reads
+  every file's AST on each call; the namespace/include graph is computed
+  once and invalidated on PSI modification.
+- ✅ **Perf test on a synthetic 500-file project** — guards against a
+  regression of the cache.
+- ⏸️ Stub index for Context, EntryPoint, Dimension — **deferred**: after the
+  visibility cache, measurements show no bottleneck, so this would be
+  premature optimization (and it is heavy: BNF regen + stub-based PSI). Rule
+  keeps its stub index. Revisit if profiling on very large projects shows
+  completion is AST-bound.
 
 ## v0.8.0 — KEL type-checking
 

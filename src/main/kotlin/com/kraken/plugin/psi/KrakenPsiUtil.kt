@@ -2,6 +2,7 @@ package com.kraken.plugin.psi
 
 import com.intellij.lang.ASTNode
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
@@ -10,6 +11,10 @@ import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.stubs.StubIndex
 import com.intellij.psi.tree.TokenSet
+import com.intellij.psi.util.CachedValue
+import com.intellij.psi.util.CachedValueProvider
+import com.intellij.psi.util.CachedValuesManager
+import com.intellij.psi.util.PsiModificationTracker
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.lang.KrakenFile
 import com.kraken.plugin.lang.KrakenFileType
@@ -61,38 +66,66 @@ object KrakenPsiUtil {
             .mapNotNull { it.findChildByType(KrakenTypes.QUALIFIED_NAME)?.text?.trim() }
 
     /**
+     * Modèle des namespaces du projet : fichiers par namespace + graphe
+     * d'inclusions. Calculé une seule fois et mis en cache (invalidé à chaque
+     * modification PSI). Sans ce cache, [visibleFiles] relisait l'AST de tous
+     * les fichiers à chaque appel — or il est invoqué par presque toutes les
+     * résolutions, complétions et inspections.
+     */
+    private class NamespaceModel(
+        val filesByNamespace: Map<String?, List<KrakenFile>>,
+        val nsIncludes: Map<String, Set<String>>,
+        val allFiles: List<KrakenFile>,
+    )
+
+    private val NS_MODEL_KEY: Key<CachedValue<NamespaceModel>> =
+        Key.create("kraken.namespaceModel")
+
+    private fun namespaceModel(project: Project): NamespaceModel =
+        CachedValuesManager.getManager(project).getCachedValue(project, NS_MODEL_KEY, {
+            val all = krakenFiles(project)
+            val filesByNs = HashMap<String?, MutableList<KrakenFile>>()
+            val nsIncludes = HashMap<String, MutableSet<String>>()
+            for (f in all) {
+                val n = namespaceOf(f)
+                filesByNs.getOrPut(n) { mutableListOf() }.add(f)
+                if (n != null) nsIncludes.getOrPut(n) { mutableSetOf() }.addAll(includesOf(f))
+            }
+            CachedValueProvider.Result.create(
+                NamespaceModel(filesByNs, nsIncludes, all),
+                PsiModificationTracker.MODIFICATION_COUNT
+            )
+        }, false)
+
+    /**
      * Fichiers visibles depuis [from] : même namespace, namespaces inclus
      * (transitivement) et fichiers sans namespace. Un fichier sans namespace
      * voit tout le projet.
      */
     fun visibleFiles(from: PsiFile?): List<KrakenFile> {
         val fromKraken = from as? KrakenFile ?: return emptyList()
-        val all = krakenFiles(fromKraken.project)
-        val result: List<KrakenFile>
+        val model = namespaceModel(fromKraken.project)
         val ns = namespaceOf(fromKraken)
+        val result: List<KrakenFile>
         if (ns == null) {
-            result = all
+            result = model.allFiles
         } else {
-            val filesByNs = HashMap<String?, MutableList<KrakenFile>>()
-            val nsIncludes = HashMap<String, MutableSet<String>>()
-            for (f in all) {
-                val n = namespaceOf(f)
-                filesByNs.getOrPut(n) { mutableListOf() }.add(f)
-                if (n != null) {
-                    nsIncludes.getOrPut(n) { mutableSetOf() }.addAll(includesOf(f))
-                }
-            }
-            nsIncludes.getOrPut(ns) { mutableSetOf() }.addAll(includesOf(fromKraken))
+            // Inclusions du namespace courant, en repliant celles du fichier
+            // en cours d'édition (qui peut ne pas encore être indexé).
+            val ownIncludes = includesOf(fromKraken)
             val visited = linkedSetOf(ns)
             val queue = ArrayDeque(listOf(ns))
             while (queue.isNotEmpty()) {
-                for (inc in nsIncludes[queue.removeFirst()].orEmpty()) {
+                val current = queue.removeFirst()
+                val includes = if (current == ns) model.nsIncludes[current].orEmpty() + ownIncludes
+                               else model.nsIncludes[current].orEmpty()
+                for (inc in includes) {
                     if (visited.add(inc)) queue.add(inc)
                 }
             }
             val collected = mutableListOf<KrakenFile>()
-            for (n in visited) collected.addAll(filesByNs[n].orEmpty())
-            collected.addAll(filesByNs[null].orEmpty())
+            for (n in visited) collected.addAll(model.filesByNamespace[n].orEmpty())
+            collected.addAll(model.filesByNamespace[null].orEmpty())
             result = collected
         }
         // Le fichier courant peut ne pas être indexé (éditeur léger, tests)

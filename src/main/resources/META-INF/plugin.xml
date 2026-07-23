@@ -21,6 +21,13 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.7.0</b>
+        <ul>
+            <li>Performance: the namespace-visibility model (used by nearly every
+            resolution, completion and inspection) is now cached and only
+            recomputed on edits, instead of re-reading every file on each lookup
+            — noticeably faster on large multi-file projects.</li>
+        </ul>
         <b>0.6.0</b>
         <ul>
             <li>'Import Rule "X" From Ns' is now fully resolved: an imported rule
