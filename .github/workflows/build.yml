@@ -43,11 +43,14 @@ jobs:
         with:
           cache-read-only: "false"
 
-      - name: Tests
-        run: ./gradlew test
+      # koverVerify lance les tests puis contrôle le plancher de couverture.
+      # -PwarningsAsErrors=true : strict en CI, souple en local, pour qu'un
+      # avertissement du compilateur ne s'accumule pas dans la branche stable.
+      - name: Tests + couverture
+        run: ./gradlew koverVerify koverHtmlReport -PwarningsAsErrors=true
 
       - name: Build du plugin
-        run: ./gradlew buildPlugin
+        run: ./gradlew buildPlugin -PwarningsAsErrors=true
 
       - name: Vérification du plugin (structure zip)
         run: ./gradlew verifyPluginConfiguration
@@ -58,6 +61,13 @@ jobs:
           name: rulescribe
           path: build/distributions/*.zip
           retention-days: 30
+
+      - name: Publier le rapport de couverture
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: build/reports/kover/html/
+          retention-days: 14
 
       - name: Rapport de tests (en cas d'échec)
         if: failure()
