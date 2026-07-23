@@ -102,6 +102,12 @@ The build and release pipeline follows current supply-chain best practices:
   pull request's code with secrets available, and never interpolates untrusted
   input into shell commands — neutralising the "pwn request" class of attacks
   (independently scanned for by poutine).
+- **Protected default branch, with no exemption for the maintainer.** Every
+  change to `main` must go through a pull request whose required status checks
+  (build & tests, CodeQL) pass. This is enforced by a repository ruleset whose
+  **bypass list is empty** — direct pushes to `main` are rejected for everyone,
+  including the repository owner. Force pushes and branch deletion are blocked,
+  so history cannot be rewritten after the fact.
 - **Hardened Dependabot auto-merge.** Only patch/minor updates auto-merge, and
   only after the required CI checks pass; the author is verified via the
   non-forgeable `pull_request.user.login` field.
@@ -115,10 +121,11 @@ The build and release pipeline follows current supply-chain best practices:
 - Releases are built and published **only** by CI, from an explicit version
   **tag** — never from arbitrary commits.
 - The published artifact is **cryptographically signed** (JetBrains plugin
-  signing) when signing credentials are configured, so the IDE can verify the
-  plugin is authentic and unaltered. This complements the build provenance
-  attestation: the attestation proves *the pipeline built it*, the signature
-  proves *it genuinely comes from this publisher*.
+  signing), and the pipeline **re-verifies the signature against the publisher
+  certificate before publishing** — a malformed or mismatched key fails the
+  release instead of shipping a worthless signature. This complements the build
+  provenance attestation: the attestation proves *the pipeline built it*, the
+  signature proves *it genuinely comes from this publisher*.
 - Every upload is **re-verified server-side by JetBrains** on the Marketplace.
   Recent releases are verified **Compatible with IntelliJ IDEA 2024.1 through
   2026.2** (Plugin Verifier plus a real IDE run, no issues).
