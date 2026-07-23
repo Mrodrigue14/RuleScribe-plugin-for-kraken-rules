@@ -116,28 +116,27 @@ The build and release pipeline follows current supply-chain best practices:
   cannot be exfiltrated by a malicious pull request. Publishing is gated: tests
   and plugin verification must pass before anything is released.
 
-## Provenance & distribution
-
-- Releases are built and published **only** by CI, from an explicit version
-  **tag** — never from arbitrary commits.
-- The published artifact is **cryptographically signed** (JetBrains plugin
-  signing), and the pipeline **re-verifies the signature against the publisher
-  certificate before publishing** — a malformed or mismatched key fails the
-  release instead of shipping a worthless signature. This complements the build
-  provenance attestation: the attestation proves *the pipeline built it*, the
-  signature proves *it genuinely comes from this publisher*.
-- Every upload is **re-verified server-side by JetBrains** on the Marketplace.
-  Recent releases are verified **Compatible with IntelliJ IDEA 2024.1 through
-  2026.2** (Plugin Verifier plus a real IDE run, no issues).
-- Source, build configuration, and every CI/CD workflow are fully public and
-  auditable in this repository.
-
 ## Release integrity — verify it yourself
 
-Every release built by the pipeline is accompanied by a **signed SLSA build
-provenance attestation** that cryptographically binds the distributed `.zip`
-to the exact commit, workflow, and runner that produced it. You do not have to
-trust that a release went through the security gates — you can **verify** it:
+Releases are produced by CI from an explicit version **tag**. The pipeline runs
+the tests and the plugin verifier, builds the artifact, **signs** it,
+re-verifies that signature against the publisher certificate, scans dependencies
+with OWASP, and attests the result — in that order, before anything is
+published. Source, build configuration, and every CI/CD workflow are public and
+auditable in this repository.
+
+Two independent guarantees ship with each release:
+
+- A **signed SLSA build provenance attestation** binds the distributed `.zip` to
+  the exact commit, workflow, and runner that produced it. It proves *the
+  pipeline built this exact file*.
+- A **cryptographic plugin signature** (JetBrains plugin signing) proves *it
+  comes from this publisher and has not been altered*. A malformed or mismatched
+  key fails the release rather than shipping a worthless signature.
+
+These describe the same artifact: the file that is signed is the file that is
+attested, and it is the file published to the Marketplace. You do not have to
+take any of it on trust:
 
 ```
 gh attestation verify rulescribe-<version>.zip \
@@ -145,18 +144,22 @@ gh attestation verify rulescribe-<version>.zip \
 ```
 
 This works on the artifact downloaded from the **JetBrains Marketplace** as
-well as from GitHub Releases. A build produced by the pipeline (which passes
-tests, CodeQL, and OWASP before publishing) verifies successfully; an artifact
-uploaded out-of-band — e.g. hand-uploaded, bypassing the checks — has no valid
-attestation and **fails** verification.
+well as from GitHub Releases. An artifact uploaded out-of-band — hand-uploaded,
+bypassing the checks — has no valid attestation and **fails** verification.
 
-As a candid disclaimer: because the plugin is maintained on a personal
-Marketplace account, an out-of-band upload is not technically *impossible*.
-It is instead made **detectable and unverifiable**:
+Every upload is additionally re-verified server-side by JetBrains on the
+Marketplace; recent releases are verified **Compatible with IntelliJ IDEA
+2024.1 through 2026.2** (Plugin Verifier plus a real IDE run, no issues).
 
-- Each pipeline release leaves a public, auditable chain — git tag → CI run
-  (tests + CodeQL + OWASP) → provenance attestation → OWASP report with its
-  SHA-256 → JetBrains server-side verification.
+### What this does not claim
+
+Because the plugin is maintained on a personal Marketplace account, an
+out-of-band upload is not technically *impossible*. It is instead made
+**detectable and unverifiable**:
+
+- Each pipeline release leaves a public, auditable chain — git tag → CI run →
+  signature → provenance attestation → OWASP report with its SHA-256 →
+  JetBrains server-side verification.
 - A scheduled **release-integrity** workflow
   (`.github/workflows/release-integrity.yml`) compares the latest Marketplace
   version against the pipeline's releases every day and opens an issue if a
