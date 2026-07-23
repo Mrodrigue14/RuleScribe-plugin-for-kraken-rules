@@ -7,6 +7,7 @@ plugins {
     id("org.jetbrains.intellij") version "1.17.4"
     id("org.jetbrains.grammarkit") version "2022.3.2.2"
     id("org.owasp.dependencycheck") version "12.2.2"
+    id("org.jetbrains.kotlinx.kover") version "0.9.1"
 }
 
 group = "com.kraken.plugin"
@@ -28,6 +29,30 @@ intellij {
 
 kotlin {
     jvmToolchain(17)
+}
+
+// Couverture de tests. Le parseur de `src/main/gen` est généré par Grammar-Kit
+// à partir du BNF : le mesurer gonflerait artificiellement le taux sans rien
+// dire de la qualité du code écrit à la main. Même raisonnement que le filtrage
+// du SARIF CodeQL, qui exclut déjà ce répertoire.
+kover {
+    reports {
+        filters {
+            excludes {
+                packages("com.kraken.plugin.parser")
+            }
+        }
+        // Plancher anti-régression, pas objectif à atteindre. La couverture
+        // réelle du code écrit à la main est ~81 % ; 75 % laisse de la marge
+        // pour une PR légitime tout en signalant une érosion franche. Viser un
+        // seuil collé à la valeur courante rendrait le build cassant sans rien
+        // améliorer.
+        verify {
+            rule {
+                minBound(75)
+            }
+        }
+    }
 }
 
 // Analyse des CVE connues dans les dépendances réellement livrées (base NVD).
@@ -77,6 +102,12 @@ val generateKrakenParser = tasks.register<GenerateParserTask>("generateKrakenPar
 tasks {
     withType<KotlinCompile> {
         dependsOn(generateKrakenParser)
+        // Souple en local, strict en CI (-PwarningsAsErrors=true) : un
+        // avertissement du compilateur ne doit pas casser une itération de
+        // développement, mais il ne doit pas non plus s'accumuler en silence
+        // dans la branche stable.
+        kotlinOptions.allWarningsAsErrors =
+            (project.findProperty("warningsAsErrors") as String?)?.toBooleanStrictOrNull() ?: false
     }
     compileJava {
         dependsOn(generateKrakenParser)

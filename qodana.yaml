@@ -1,0 +1,18 @@
+version: "1.0"
+
+# Qodana Community for JVM : l'analyseur statique de JetBrains. Complémentaire
+# de CodeQL plutôt que redondant — CodeQL analyse du Java/Kotlin générique,
+# Qodana connaît les API de l'IntelliJ Platform et signale les usages
+# incorrects propres au développement de plugins.
+linter: jetbrains/qodana-jvm-community:latest
+
+profile:
+  name: qodana.recommended
+
+# Le parseur de src/main/gen est généré par Grammar-Kit depuis le BNF : ses
+# avertissements ne sont pas actionnables, on ne corrige pas du code généré.
+# Même exclusion que pour la couverture Kover et le SARIF CodeQL.
+exclude:
+  - name: All
+    paths:
+      - src/main/gen
