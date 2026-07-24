@@ -1,8 +1,9 @@
 # RuleScribe — Vendor Security Overview
 
 *A one-page summary for security and procurement reviewers. Every claim below is
-verifiable from this public repository; [SECURITY.md](SECURITY.md) gives the
-detail and the exact commands.*
+verifiable from this public repository, except the one row explicitly marked as
+a maintainer attestation; [SECURITY.md](SECURITY.md) gives the detail and the
+exact commands.*
 
 | | |
 | --- | --- |
@@ -38,6 +39,7 @@ detail and the exact commands.*
 | Domain | Control | Evidence |
 | --- | --- | --- |
 | **Secure SDLC** | Protected `main`; every change via reviewed PR with required checks; **no maintainer bypass**; force-push and deletion blocked | Repository ruleset (empty bypass list) |
+| **Publisher account security** | Two-factor authentication on the GitHub account — the single sign-in root for the JetBrains Marketplace publisher account and the store of all CI secrets, so one hardened account gates the whole chain | Maintainer attestation |
 | **SAST** | CodeQL `security-and-quality` suite on push/PR/weekly | GitHub code scanning |
 | **Software composition (SCA)** | OWASP Dependency-Check (build fails at CVSS ≥ 7.0); Dependabot alerts + updates; Dependency Review gates every PR | Actions logs, Security tab |
 | **CI/CD pipeline security** | poutine (BoostSecurity) scans for pipeline misconfig; least-privilege tokens; actions pinned by commit SHA; no untrusted code execution in privileged contexts | `.github/workflows`, poutine results |
