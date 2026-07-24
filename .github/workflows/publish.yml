@@ -158,11 +158,26 @@ jobs:
           TAG: ${{ github.ref_name }}
           COMMIT: ${{ github.sha }}
           ARTIFACT: ${{ steps.artifact.outputs.path }}
+          CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
         run: |
           set -euo pipefail
           VERSION="${TAG#v}"
           REPORT="dependency-check-report-${VERSION}.html"
           SHA=$(sha256sum "$REPORT" | awk '{print $1}')
+
+          # Certificat de signature publié avec la release : sans lui, personne
+          # ne peut vérifier la signature du zip, et la section « verify it
+          # yourself » de SECURITY.md promettrait plus qu'elle ne permet.
+          # Un certificat est du matériel PUBLIC — seule la clé privée est
+          # secrète, et elle ne quitte jamais les secrets GitHub.
+          CERT=""
+          CERT_FP=""
+          if [ -n "${CERTIFICATE_CHAIN:-}" ]; then
+            CERT="rulescribe-signing-certificate.crt"
+            printf '%s' "$CERTIFICATE_CHAIN" > "$CERT"
+            CERT_FP=$(openssl x509 -in "$CERT" -noout -fingerprint -sha256 \
+              | cut -d= -f2)
+          fi
 
           # Notes de version depuis plugin.xml (sinon en-tête minimal).
           if ! python3 .github/scripts/extract-notes.py "$VERSION" > RELEASE_NOTES.md || [ ! -s RELEASE_NOTES.md ]; then
@@ -194,9 +209,39 @@ jobs:
             echo '```'
           } >> RELEASE_NOTES.md
 
+          # Section signature : le certificat public permet de vérifier le zip,
+          # et son empreinte permet de constater qu'il s'agit bien de la même
+          # clé de publication que les releases précédentes.
+          if [ -n "$CERT" ]; then
+            {
+              echo ""
+              echo "---"
+              echo ""
+              echo "## Plugin signature"
+              echo ""
+              echo "The published artifact is signed. The publisher certificate is attached as \`$CERT\` so you can verify the signature yourself."
+              echo ""
+              echo "| Field | Value |"
+              echo "| ----- | ----- |"
+              echo "| Certificate SHA-256 | \`$CERT_FP\` |"
+              echo ""
+              echo "The fingerprint is identical across releases signed with the same key: a change means the publishing identity changed, and would be announced."
+              echo ""
+              echo "Verify with JetBrains' [marketplace-zip-signer](https://github.com/JetBrains/marketplace-zip-signer):"
+              echo ""
+              echo '```'
+              echo "java -jar marketplace-zip-signer-cli.jar verify \\"
+              echo "  -in $(basename "$ARTIFACT") -cert $CERT"
+              echo '```'
+            } >> RELEASE_NOTES.md
+          fi
+
           echo "--- Release notes ---"; cat RELEASE_NOTES.md
+          # shellcheck disable=SC2086 — $CERT est vide si non signé, et on veut
+          # alors qu'il disparaisse de la liste d'assets plutôt qu'un "".
           gh release create "$TAG" \
             "$ARTIFACT" \
             "$REPORT" \
+            $CERT \
             --title "$TAG" \
             --notes-file RELEASE_NOTES.md

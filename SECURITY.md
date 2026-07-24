@@ -147,6 +147,29 @@ This works on the artifact downloaded from the **JetBrains Marketplace** as
 well as from GitHub Releases. An artifact uploaded out-of-band — hand-uploaded,
 bypassing the checks — has no valid attestation and **fails** verification.
 
+The signature is verifiable too. Each GitHub Release attaches the publisher
+certificate (`rulescribe-signing-certificate.crt`) — a certificate is public
+material; the private key never leaves GitHub Actions secrets. Check the
+artifact against it with JetBrains'
+[marketplace-zip-signer](https://github.com/JetBrains/marketplace-zip-signer):
+
+```
+java -jar marketplace-zip-signer-cli.jar verify \
+  -in rulescribe-<version>-signed.zip \
+  -cert rulescribe-signing-certificate.crt
+```
+
+Each release also states the certificate's SHA-256 fingerprint in its notes.
+It is identical across releases signed with the same key, so you can confirm
+that a new release comes from the same publishing identity as the one you
+already trust. A changed fingerprint means the identity changed — and would be
+announced rather than slipped in.
+
+To be precise about what this proves: the certificate is **self-signed**, so it
+attests integrity and continuity — this artifact was not altered, and it comes
+from the same key as previous releases — not an identity vouched for by a
+certificate authority.
+
 Every upload is additionally re-verified server-side by JetBrains on the
 Marketplace; recent releases are verified **Compatible with IntelliJ IDEA
 2024.1 through 2026.2** (Plugin Verifier plus a real IDE run, no issues).
