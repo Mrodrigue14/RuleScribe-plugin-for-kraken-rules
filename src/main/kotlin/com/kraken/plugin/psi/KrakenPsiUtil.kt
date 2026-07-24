@@ -232,9 +232,6 @@ object KrakenPsiUtil {
     fun findRules(project: Project): List<KrakenRuleDecl> =
         krakenFiles(project).flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenRuleDecl::class.java) }
 
-    fun findRule(project: Project, name: String): KrakenRuleDecl? =
-        findRules(project).firstOrNull { it.name == name }
-
     fun findRulesVisible(from: PsiElement): List<KrakenRuleDecl> {
         val direct = visibleFiles(from.containingFile)
             .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenRuleDecl::class.java) }
@@ -260,10 +257,6 @@ object KrakenPsiUtil {
         // 3. Repli : fichiers non indexés (éditeur léger, fragments, tests)
         return findRulesVisible(from).firstOrNull { it.name == name }
     }
-
-    /** Tous les noms de règles connus de l'index (projet entier). */
-    fun allIndexedRuleNames(project: Project): Collection<String> =
-        StubIndex.getInstance().getAllKeys(KrakenRuleNameIndex.KEY, project)
 
     // ------------------------------------------------------------------
     // Entry points
@@ -320,12 +313,6 @@ object KrakenPsiUtil {
     // Dimensions
     // ------------------------------------------------------------------
 
-    fun findDimensionNames(project: Project): List<String> =
-        krakenFiles(project)
-            .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenDimensionDecl::class.java) }
-            .mapNotNull { it.dimensionName }
-            .distinct()
-
     fun findDimensionNamesVisible(from: PsiFile?): List<String> =
         visibleFiles(from)
             .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenDimensionDecl::class.java) }
@@ -335,9 +322,6 @@ object KrakenPsiUtil {
     // ------------------------------------------------------------------
     // Contextes et champs
     // ------------------------------------------------------------------
-
-    fun findContextNames(project: Project): List<String> =
-        krakenFiles(project).flatMap { contextDecls(it).mapNotNull { decl -> contextName(decl) } }.distinct()
 
     fun findContextNamesVisible(from: PsiFile?): List<String> =
         visibleFiles(from).flatMap { contextDecls(it).mapNotNull { decl -> contextName(decl) } }.distinct()

@@ -9,6 +9,12 @@ linter: jetbrains/qodana-jvm-community:latest
 profile:
   name: qodana.recommended
 
+# Résout les dépendances (dont le SDK IntelliJ) AVANT l'analyse. Sans cela,
+# Qodana ouvre le projet sans pouvoir typer les API de la plateforme et déclare
+# inatteignables des corps de méthode qui ne le sont pas : le premier run avait
+# produit 76 faux positifs « KotlinUnreachableCode », soit 92 % du bruit total.
+bootstrap: ./gradlew classes
+
 # Le parseur de src/main/gen est généré par Grammar-Kit depuis le BNF : ses
 # avertissements ne sont pas actionnables, on ne corrige pas du code généré.
 # Même exclusion que pour la couverture Kover et le SARIF CodeQL.
