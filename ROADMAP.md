@@ -72,6 +72,12 @@ Port the reference algorithm from kraken-expression-language
 
 - Extend IntelliJ Platform compatibility testing (K2 mode, newer
   2024.x/2025.x builds) beyond the single pinned 2024.1.7 target.
+- Migrate to the IntelliJ Platform Gradle Plugin 2.x (the 1.x line is already
+  incompatible with Gradle 9). Once that lands, **re-evaluate Qodana**: it was
+  removed because its container ships a JDK that Gradle 8.14.5 cannot run
+  under, which silently broke project resolution and produced 92% false
+  positives. A Gradle 9 toolchain removes that incompatibility. Qodana did earn
+  its keep once — it found four dead functions before being removed.
 - Refactorings: Extract rule, Move rule/EntryPoint to another
   namespace or file.
 
