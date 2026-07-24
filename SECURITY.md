@@ -39,9 +39,15 @@ deliberately minimal:
   RuleScribe. This is not only prose: each release ships a **CycloneDX SBOM**
   scoped to the same runtime classpath, so the claim is checkable by your own
   tooling rather than taken on trust.
-- **No network access.** The plugin makes no outbound network calls of its
-  own — no telemetry, no downloads, no phone-home. It only reads the `.rules`
-  files already open in the project.
+- **No network access — verified, not asserted.** The plugin makes no outbound
+  network calls of its own: no telemetry, no downloads, no phone-home. It only
+  reads the `.rules` files already open in the project. This is enforced by a
+  test (`KrakenNoNetworkEgressTest`) that scans every shipped class and **fails
+  the build** if any references a network API (sockets, HTTP clients, URL
+  connections, common third-party HTTP libraries). Adding telemetry or any
+  outbound call would break CI before it could reach a release — so a
+  data-sensitive adopter can rely on "no egress" as a checked property of each
+  build rather than a promise.
 - **No code execution.** It statically parses and inspects DSL text. It never
   executes rules, KEL expressions, or any user-supplied code.
 - **No access to credentials or secrets.** It reads only the `.rules` source
