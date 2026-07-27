@@ -2,6 +2,7 @@ package com.kraken.plugin.psi
 
 import com.intellij.extapi.psi.StubBasedPsiElementBase
 import com.intellij.lang.ASTNode
+import com.intellij.navigation.ItemPresentation
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.StubBasedPsiElement
@@ -50,6 +51,17 @@ class KrakenRuleDecl : StubBasedPsiElementBase<KrakenRuleStub>,
     }
 
     override fun getTextOffset(): Int = nameIdentifier?.textOffset ?: super.getTextOffset()
+
+    /**
+     * Cible de la navigation référence → déclaration. Le nom seul ne suffit
+     * pas quand une règle importée existe dans plusieurs namespaces : la
+     * localisation lève l'ambiguïté.
+     */
+    override fun getPresentation(): ItemPresentation = KrakenPresentations.of(
+        this,
+        name?.let { "\"$it\"" } ?: "Rule",
+        KrakenPresentations.RULE_ICON,
+    )
 
     fun hasTarget(): Boolean = node.findChildByType(KrakenTypes.RULE_TARGET) != null
 
