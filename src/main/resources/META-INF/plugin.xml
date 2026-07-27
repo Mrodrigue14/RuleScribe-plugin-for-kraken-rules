@@ -21,6 +21,13 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.7.1</b>
+        <ul>
+            <li>Clearer navigation popup: when a rule or EntryPoint has several
+            usages, Ctrl+Click now lists each one by the EntryPoint that
+            references it, with its file name (and namespace when declared),
+            instead of repeating identical entries.</li>
+        </ul>
         <b>0.7.0</b>
         <ul>
             <li>Performance: the namespace-visibility model (used by nearly every

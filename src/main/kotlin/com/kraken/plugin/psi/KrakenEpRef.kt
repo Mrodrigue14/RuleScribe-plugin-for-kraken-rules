@@ -2,6 +2,7 @@ package com.kraken.plugin.psi
 
 import com.intellij.extapi.psi.ASTWrapperPsiElement
 import com.intellij.lang.ASTNode
+import com.intellij.navigation.ItemPresentation
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.AbstractElementManipulator
 import com.intellij.psi.PsiElement
@@ -23,6 +24,13 @@ class KrakenEpRef(node: ASTNode) : ASTWrapperPsiElement(node) {
         val range = stringRangeInside(this) ?: return null
         return KrakenEntryPointReference(this, range)
     }
+
+    /** Même besoin que [KrakenRuleRef] : distinguer des références identiques. */
+    override fun getPresentation(): ItemPresentation = KrakenPresentations.of(
+        this,
+        KrakenPresentations.containerText(this, entryPointName?.let { "\"$it\"" }),
+        KrakenPresentations.ENTRY_POINT_ICON,
+    )
 
     companion object {
         fun stringRangeInside(element: KrakenEpRef): TextRange? {
