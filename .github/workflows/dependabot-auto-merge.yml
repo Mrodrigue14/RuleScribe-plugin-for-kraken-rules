@@ -45,10 +45,44 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Auto-merge uniquement pour les montées patch/mineures. Les majeures
-      # (changements potentiellement cassants) restent en revue manuelle.
-      - name: Activer l'auto-merge (patch/mineur)
-        if: ${{ steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor' }}
+      # Une PR qui ne touche QUE des workflows réellement exécutés sur les pull
+      # requests est prouvée par ses propres checks : si l'action montée casse,
+      # la PR devient rouge et rien ne sera fusionné.
+      #
+      # Ce n'est pas le cas de `publish.yml`, déclenché uniquement par un tag :
+      # une action cassée n'y apparaîtrait qu'au moment d'une release, c'est-à-
+      # dire au pire moment. Ces PR-là restent en revue manuelle, quel que soit
+      # le type de montée.
+      - name: Déterminer si la PR est couverte par les checks
+        id: scope
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Workflows non exercés par les checks de PR (planifiés ou sur tag).
+          UNCOVERED='^\.github/workflows/(publish|release-integrity|dependency-check|signing-check|plugin-verifier)\.yml$'
+          FILES=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
+          echo "Fichiers modifiés :"; echo "$FILES" | sed 's/^/  /'
+          if echo "$FILES" | grep -qE "$UNCOVERED"; then
+            echo "covered=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Cette PR touche un workflow non couvert par les checks de PR — revue manuelle requise."
+          else
+            echo "covered=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Patch et mineur : auto-merge comme avant, quel que soit l'écosystème.
+      # Majeur : uniquement pour les GitHub Actions, et seulement si la PR ne
+      # touche aucun workflow hors périmètre des checks. Les montées majeures
+      # Gradle restent manuelles — une rupture y est bien plus subtile qu'un
+      # `uses:` qui échoue immédiatement.
+      - name: Activer l'auto-merge
+        if: >
+          steps.meta.outputs.update-type == 'version-update:semver-patch' ||
+          steps.meta.outputs.update-type == 'version-update:semver-minor' ||
+          (steps.meta.outputs.package-ecosystem == 'github_actions' &&
+           steps.scope.outputs.covered == 'true')
         run: gh pr merge --auto --merge "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
