@@ -102,7 +102,7 @@ jobs:
       #     --repo Mrodrigue14/RuleScribe-plugin-for-kraken-rules
       # Un zip uploadé hors pipeline échoue à cette vérification.
       - name: Attester la provenance du build (SLSA)
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: ${{ steps.artifact.outputs.path }}
 
@@ -117,7 +117,7 @@ jobs:
       # Attesté, donc lié cryptographiquement au zip : le SBOM se vérifie avec
       # le même `gh attestation verify` que la provenance.
       - name: Attester le SBOM
-        uses: actions/attest-sbom@v2
+        uses: actions/attest-sbom@v4
         with:
           subject-path: ${{ steps.artifact.outputs.path }}
           sbom-path: build/reports/cyclonedx-direct/rulescribe-sbom.json
