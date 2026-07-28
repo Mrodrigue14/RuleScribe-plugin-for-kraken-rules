@@ -1,4 +1,58 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-  <rect x="1" y="1" width="14" height="14" rx="3" fill="#6B57FF"/>
-  <path d="M5 3.5v9M5 8l4.5-4.5M5.5 8.5l4.5 4" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 40 40">
+  <!--
+    RuleScribe — un parchemin tenu par un kraken hors-champ, et une plume.
+
+    Fond transparent : l'icône doit tenir sur thème clair comme sombre. D'où le
+    liseré du parchemin (#C9AE7C) et le cerne froid de la plume (#8A9AAD) —
+    sans eux, le crème et le blanc cassé se dissolvent sur un fond blanc.
+
+    Le bras long est peint APRÈS le parchemin (il passe devant), le bras court
+    AVANT (il passe derrière) : c'est ce chevauchement qui crée l'enlacement.
+    Aucune origine n'est visible — la créature reste hors du cadre.
+
+    Ni `id` ni `clipPath` : le fichier doit rester autonome, l'IDE pouvant
+    inliner plusieurs SVG dans un même document.
+
+    Icône de TYPE DE FICHIER (arbre projet, onglets) — à ne pas confondre
+    avec le logo du plugin. Dessin identique à META-INF/pluginIcon.svg :
+    seules les dimensions déclarées changent, le viewBox est le même.
+    Toute retouche doit être reportée dans les deux fichiers.
+  -->
+
+  <!-- bras court, derrière le parchemin -->
+  <g fill="none" stroke="#5836B8" stroke-linecap="round">
+    <path d="M32 22.5C34.8 23 37.2 24.6 38.4 26.8" stroke-width="2.7"/>
+    <path d="M38.4 26.8C39.1 28.2 38.5 29.4 37.3 29.3" stroke-width="1.8"/>
+    <path d="M37.3 29.3C36.5 29.2 36.3 28.5 36.7 28.1" stroke-width="1.1"/>
+  </g>
+
+  <!-- parchemin, centré sur (20,20) : marges 5,5 / 5,5 / 6 / 6 -->
+  <rect x="5.5" y="6" width="29" height="3.8" rx="1.9" fill="#DCC08A" stroke="#C9AE7C" stroke-width=".35"/>
+  <rect x="7" y="9.8" width="26" height="20.4" fill="#F7EAD0" stroke="#C9AE7C" stroke-width=".35"/>
+  <rect x="5.5" y="30.2" width="29" height="3.8" rx="1.9" fill="#DCC08A" stroke="#C9AE7C" stroke-width=".35"/>
+  <path d="M10 14h16M10 18.5h12M10 23h7" stroke="#C6AE7E" stroke-width="1.6" stroke-linecap="round"/>
+
+  <!-- bras long, devant le parchemin : segments d'épaisseur décroissante -->
+  <g fill="none" stroke="#6B3FD4" stroke-linecap="round">
+    <path d="M0.5 23C3.2 24.2 6.4 25.2 10 25.9" stroke-width="4"/>
+    <path d="M10 25.9C15 26.9 20.4 27.3 25.2 26.6" stroke-width="3.5"/>
+    <path d="M25.2 26.6C29 26 31.6 24.4 32.9 22" stroke-width="2.7"/>
+    <path d="M32.9 22C34 20 33.1 18.4 31.4 18.7" stroke-width="1.9"/>
+    <path d="M31.4 18.7C30.3 18.9 30.1 19.9 30.7 20.3" stroke-width="1.2"/>
+    <path d="M30.7 20.3C31 20.5 31.4 20.4 31.5 20.1" stroke-width="0.75"/>
+  </g>
+  <circle cx="5.2" cy="24.4" r=".85" fill="#F0EAFA"/>
+  <circle cx="12.6" cy="26.2" r=".85" fill="#F7EAD0"/>
+  <circle cx="20" cy="27.1" r=".85" fill="#F7EAD0"/>
+  <circle cx="27" cy="26.1" r=".72" fill="#F7EAD0"/>
+  <circle cx="31.6" cy="23.6" r=".6" fill="#F7EAD0"/>
+  <circle cx="36.4" cy="25.4" r=".62" fill="#F0EAFA"/>
+
+  <!-- plume : barbe, barbules, hampe, puis bec construit sur la tangente de la
+       hampe (112°) afin de rester exactement dans son axe -->
+  <path d="M36 3C31.4 6 28.4 10.6 27.2 16C30.2 15 34.1 10.6 36 3Z" fill="#FFFBF2" stroke="#8A9AAD" stroke-width=".5"/>
+  <path d="M33.9 6.7L31.5 8.7M32.7 9.9L30.4 11.8M31.6 12.9L29.5 14.5" stroke="#B4BFCC" stroke-width=".62" stroke-linecap="round"/>
+  <path d="M36 3C32.8 7.5 29.9 12.3 28 17" stroke="#8A9AAD" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <path d="M28.42 17.17L27.58 16.83L26.88 19.78Z" fill="#2A2833"/>
+  <path d="M26.88 19.78L27.44 18.39" stroke="#F7EAD0" stroke-width=".34" stroke-linecap="round"/>
 </svg>
