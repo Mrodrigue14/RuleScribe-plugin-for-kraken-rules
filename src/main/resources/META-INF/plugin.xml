@@ -21,6 +21,13 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.7.2</b>
+        <ul>
+            <li>New icon: a parchment held by an off-screen kraken, with a quill.
+            The same drawing is now used for the plugin logo and for the
+            <code>.rules</code> file type, and it reads on both light and dark
+            IDE themes.</li>
+        </ul>
         <b>0.7.1</b>
         <ul>
             <li>Clearer navigation popup: when a rule or EntryPoint has several
