@@ -80,6 +80,9 @@ Port the reference algorithm from kraken-expression-language
   its keep once — it found four dead functions before being removed.
 - Refactorings: Extract rule, Move rule/EntryPoint to another
   namespace or file.
+- `publish.yml`: replace the deprecated `actions/attest-sbom` with
+  `actions/attest` (flagged by GitHub Actions since the v0.7.2 release run;
+  no functional impact yet, just a deprecation warning).
 
 ## Future / exploratory
 
