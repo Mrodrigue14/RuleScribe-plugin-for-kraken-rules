@@ -175,21 +175,27 @@ object KrakenScopeResolver {
     /** Déclaration du champ [field] de [context], héritage `Is` compris. */
     fun findField(from: PsiElement, context: String, field: String, depth: Int = 0): PsiElement? {
         if (depth > 4) return null
-        val decl = KrakenPsiUtil.findContextDecl(from.containingFile, context) ?: return null
-        var child = decl.node.firstChildNode
-        while (child != null) {
-            when (child.elementType) {
-                KrakenTypes.FIELD_DECL ->
-                    if (fieldDeclName(child) == field) return child.psi
-                KrakenTypes.CHILD_DECL ->
-                    if (childDeclName(child) == field) return child.psi
+        // Toutes les déclarations homonymes sont candidates : un même nom de
+        // contexte peut être déclaré dans plusieurs fichiers visibles, et le
+        // champ cherché n'exister que dans l'une d'elles.
+        for (decl in KrakenPsiUtil.findContextDecls(from.containingFile, context)) {
+            var child = decl.node.firstChildNode
+            while (child != null) {
+                when (child.elementType) {
+                    KrakenTypes.FIELD_DECL ->
+                        if (fieldDeclName(child) == field) return child.psi
+                    KrakenTypes.CHILD_DECL ->
+                        if (childDeclName(child) == field) return child.psi
+                }
+                child = child.treeNext
             }
-            child = child.treeNext
-        }
-        val inherited = decl.node.findChildByType(KrakenTypes.INHERITED_CONTEXTS) ?: return null
-        for (parent in inherited.getChildren(null)) {
-            if (parent.elementType == KrakenTypes.COMMA || parent.psi is com.intellij.psi.PsiWhiteSpace) continue
-            findField(from, parent.text.trim(), field, depth + 1)?.let { return it }
+            val inherited = decl.node.findChildByType(KrakenTypes.INHERITED_CONTEXTS) ?: continue
+            for (parent in inherited.getChildren(null)) {
+                if (parent.elementType == KrakenTypes.COMMA ||
+                    parent.psi is com.intellij.psi.PsiWhiteSpace
+                ) continue
+                findField(from, parent.text.trim(), field, depth + 1)?.let { return it }
+            }
         }
         return null
     }

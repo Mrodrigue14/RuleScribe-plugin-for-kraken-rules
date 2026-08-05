@@ -370,30 +370,44 @@ object KrakenPsiUtil {
     fun findContextNamesVisible(from: PsiFile?): List<String> =
         visibleFiles(from).flatMap { contextDecls(it).mapNotNull { decl -> contextName(decl) } }.distinct()
 
+    /**
+     * *Toutes* les déclarations visibles portant ce nom de contexte.
+     *
+     * Plusieurs fichiers d'un même namespace peuvent en déclarer un homonyme —
+     * un dépôt qui héberge plusieurs produits, ou de simples fixtures de test à
+     * côté du code. N'en retenir qu'une au hasard de l'ordre des fichiers fait
+     * échouer la résolution d'un champ qui n'existe que dans les autres.
+     */
+    fun findContextDecls(from: PsiFile?, name: String): List<PsiElement> =
+        visibleFiles(from)
+            .flatMap { contextDecls(it) }
+            .filter { contextName(it) == name }
+
     fun findContextDecl(from: PsiFile?, name: String): PsiElement? =
-        visibleFiles(from).asSequence()
-            .flatMap { contextDecls(it).asSequence() }
-            .firstOrNull { contextName(it) == name }
+        findContextDecls(from, name).firstOrNull()
 
     /**
      * Noms des champs et enfants d'un contexte, héritage (`Is Parent`) compris.
      */
     fun contextFieldNames(from: PsiFile?, contextName: String, depth: Int = 0): List<String> {
         if (depth > 4) return emptyList()
-        val decl = findContextDecl(from, contextName) ?: return emptyList()
         val names = LinkedHashSet<String>()
-        var child = decl.node.firstChildNode
-        while (child != null) {
-            when (child.elementType) {
-                KrakenTypes.FIELD_DECL -> fieldName(child)?.let { names.add(it) }
-                KrakenTypes.CHILD_DECL -> childContextName(child)?.let { names.add(it) }
+        // Union sur toutes les déclarations homonymes : la complétion ne doit
+        // pas dépendre de celle que l'ordre des fichiers fait sortir en premier.
+        for (decl in findContextDecls(from, contextName)) {
+            var child = decl.node.firstChildNode
+            while (child != null) {
+                when (child.elementType) {
+                    KrakenTypes.FIELD_DECL -> fieldName(child)?.let { names.add(it) }
+                    KrakenTypes.CHILD_DECL -> childContextName(child)?.let { names.add(it) }
+                }
+                child = child.treeNext
             }
-            child = child.treeNext
-        }
-        val inherited = decl.node.findChildByType(KrakenTypes.INHERITED_CONTEXTS)
-        if (inherited != null) {
-            for (parent in idLeafTexts(inherited)) {
-                names.addAll(contextFieldNames(from, parent, depth + 1))
+            val inherited = decl.node.findChildByType(KrakenTypes.INHERITED_CONTEXTS)
+            if (inherited != null) {
+                for (parent in idLeafTexts(inherited)) {
+                    names.addAll(contextFieldNames(from, parent, depth + 1))
+                }
             }
         }
         return names.toList()

@@ -131,6 +131,49 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
         assertEquals(emptyList<String>(), reported)
     }
 
+    /**
+     * Plusieurs fichiers visibles peuvent déclarer un contexte homonyme — un
+     * dépôt qui héberge plusieurs produits, ou de simples fixtures à côté du
+     * code. Le champ cherché peut n'exister que dans l'une d'elles ; n'en
+     * consulter qu'une, au hasard de l'ordre des fichiers, produisait un faux
+     * positif sur du code parfaitement valide. Cas signalé en usage réel.
+     */
+    fun testFieldIsFoundAcrossHomonymousContextDeclarations() {
+        myFixture.addFileToProject(
+            "other-policy.rules",
+            """
+            Context Policy {
+                String somethingElse
+            }
+            """.trimIndent()
+        )
+        myFixture.addFileToProject(
+            "real-policy.rules",
+            """
+            Context Policy {
+                Date effectiveDate
+            }
+            """.trimIndent()
+        )
+        myFixture.configureByText(
+            "rule.rules",
+            """
+            Rule "Effective date past" On Policy.effectiveDate {
+                Assert effectiveDate < Today()
+            }
+            """.trimIndent()
+        )
+        myFixture.enableInspections(KrakenUnresolvedIdentifierInspection())
+        val reported = myFixture.doHighlighting()
+            .mapNotNull { it.description }
+            .filter { it.startsWith("Reference ") }
+        assertEquals(
+            "Le champ n'existe que dans l'une des déclarations homonymes",
+            emptyList<String>(),
+            reported
+        )
+    }
+
     fun testFunctionParametersAreAccepted() {
         myFixture.configureByText(
             "function.rules",

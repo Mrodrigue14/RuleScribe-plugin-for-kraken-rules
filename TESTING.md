@@ -6,7 +6,7 @@ Lancer un IDE sandbox avec le plugin : `.\gradlew.bat runIde` (Windows) ou
 ## Tests automatisés
 
 ```bash
-.\gradlew.bat test    # 135 tests : parser, complétion, inspections, navigation
+.\gradlew.bat test    # 136 tests : parser, complétion, inspections, navigation
                       # inter-fichiers et bidirectionnelle, renommage,
                       # namespaces, quick doc, fonctions, inlays, portées d'expression
 ```
