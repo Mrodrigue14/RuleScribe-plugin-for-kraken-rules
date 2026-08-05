@@ -102,7 +102,14 @@ class KrakenEntryPointRefTest : BasePlatformTestCase() {
 // Navigation déclaration -> usages (Ctrl+clic sur le nom déclaré)
 class KrakenDeclarationToUsagesTest : com.intellij.testFramework.fixtures.BasePlatformTestCase() {
 
-    fun testCtrlClickOnRuleDeclarationTargetsEntryPointItems() {
+    /**
+     * Depuis v0.8.1, Ctrl+B sur une déclaration ne passe plus par notre
+     * handler : celui-ci s'abstient, et « Go To Declaration or Usages » de la
+     * plateforme prend le relais pour afficher sa popup d'usages. Le test
+     * verrouille donc les deux moitiés du contrat — le handler se tait, et la
+     * recherche de références trouve bien l'usage.
+     */
+    fun testDeclarationLeavesUsagesToThePlatform() {
         myFixture.addFileToProject(
             "eps.rules",
             """
@@ -119,13 +126,18 @@ class KrakenDeclarationToUsagesTest : com.intellij.testFramework.fixtures.BasePl
             }
             """.trimIndent()
         )
+
         val leaf = myFixture.file.findElementAt(myFixture.caretOffset)
         val targets = com.kraken.plugin.navigation.KrakenGotoDeclarationHandler()
             .getGotoDeclarationTargets(leaf, myFixture.caretOffset, myFixture.editor)
-        assertNotNull("Expected navigation targets from declaration", targets)
-        assertEquals(1, targets!!.size)
-        assertEquals("eps.rules", targets[0].containingFile.name)
-        assertTrue(targets[0] is com.kraken.plugin.psi.KrakenRuleRef)
+        assertNull("The handler must not shadow the platform's usages popup", targets)
+
+        val declaration = com.intellij.psi.util.PsiTreeUtil.findChildrenOfType(
+            myFixture.file, com.kraken.plugin.psi.KrakenRuleDecl::class.java
+        ).first()
+        val usages = myFixture.findUsages(declaration)
+        assertEquals(1, usages.size)
+        assertEquals("eps.rules", usages.first().file?.name)
     }
 
     fun testFindUsagesWorksForMultiWordRuleName() {

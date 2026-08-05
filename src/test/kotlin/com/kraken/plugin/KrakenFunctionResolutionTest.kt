@@ -223,7 +223,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
         // Un namespace explicite est nécessaire : un fichier qui n'en déclare
         // aucun est visible depuis partout, et l'appel « Elsewhere » compterait
         // alors légitimement.
-        myFixture.configureByText(
+        val file = myFixture.configureByText(
             "local.rules",
             """
             Namespace Local
@@ -246,6 +246,11 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
         val usages = myFixture.findUsages(declaration)
         assertEquals("L'appel du namespace Elsewhere ne compte pas", 2, usages.size)
         assertTrue(usages.all { it.file?.name == "local.rules" })
+        assertEquals(
+            "2 usages",
+            com.kraken.plugin.navigation.KrakenReferencesCodeVisionProvider()
+                .getHint(declaration, file)
+        )
     }
 
     fun testDeclaredFunctionIsVisibleThroughInclude() {

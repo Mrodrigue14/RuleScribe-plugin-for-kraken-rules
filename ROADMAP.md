@@ -1,14 +1,15 @@
 # Roadmap — RuleScribe for Kraken Rules
 
-## Current — v0.8.0
+## Current — v0.8.1
 
 Shipped: full KEL expression grammar, stub-based Rule index, strict
 namespace-aware resolution (Namespace/Include/Import Rule) with a cached
 visibility model, bidirectional Ctrl+Click navigation that offers every valid
 target, EntryPoint references with rename support, quick documentation,
 structure view with distinct icons, folding, formatter, live templates,
-11 inspections, and function support inside rule bodies (built-in catalogue,
-completion, parameter info, quick documentation, navigation, highlighting). Published on the JetBrains Marketplace, signed and shipped
+11 inspections, function support inside rule bodies (built-in catalogue,
+completion, parameter info, quick documentation, navigation, highlighting),
+and clickable usage inlays on every declaration. Published on the JetBrains Marketplace, signed and shipped
 with SLSA build provenance and a CycloneDX SBOM. See plugin.xml change notes
 for the detailed history.
 
@@ -107,7 +108,7 @@ A function's identity is `(name, parameter count)` — not its parameter types.
   - both added to the color settings page (17 attributes today) and its
     demo text.
 
-## v0.8.1 — Usage inlays, and the platform's usages popup
+## v0.8.1 — Usage inlays, and the platform's usages popup ✅ (shipped)
 
 Small and self-contained — it depends on nothing else, and it *deletes* more
 code than it adds.

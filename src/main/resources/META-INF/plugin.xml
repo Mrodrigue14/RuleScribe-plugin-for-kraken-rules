@@ -17,6 +17,8 @@
             <li>Intention: add missing 'On' clause</li>
             <li>Navigation between EntryPoint items, Rule declarations and
             'Function' declarations</li>
+            <li>Clickable 'N usages' inlays above declarations, opening the
+            standard usages popup</li>
             <li>Rename refactoring for rules and functions</li>
         </ul>
         <p><i>This is an independent community plugin. It is not affiliated with,
@@ -25,6 +27,19 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.8.1</b>
+        <ul>
+            <li>Declarations now carry a clickable 'N usages' inlay, like any
+            other language on the platform. Rules, EntryPoints and functions all
+            get one, and the count follows Kraken namespace visibility: a
+            reference from a namespace that cannot see the declaration is not
+            counted.</li>
+            <li>Ctrl+Click on a declaration name now opens the platform's own
+            usages popup — grouped by file, with a preview of each line —
+            instead of the flat list of labels it used to build. Ctrl+Click on a
+            reference is unchanged, and still offers every '@Dimension' variant
+            of a rule.</li>
+        </ul>
         <b>0.8.0</b>
         <ul>
             <li>Functions are now understood inside rule bodies. The engine's 55
@@ -224,6 +239,12 @@
 
         <gotoDeclarationHandler
                 implementation="com.kraken.plugin.navigation.KrakenGotoDeclarationHandler"/>
+
+        <!-- Inlay « N usages » au-dessus des déclarations. Le clic ouvre la popup
+             standard d'usages ; c'est aussi elle que Ctrl+B affiche désormais
+             quand le curseur est sur une déclaration. -->
+        <codeInsight.daemonBoundCodeVisionProvider
+                implementation="com.kraken.plugin.navigation.KrakenReferencesCodeVisionProvider"/>
 
         <referencesSearch
                 implementation="com.kraken.plugin.navigation.KrakenReferencesSearcher"/>

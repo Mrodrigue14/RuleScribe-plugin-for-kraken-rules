@@ -5,6 +5,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.navigation.KrakenGotoDeclarationHandler
+import com.kraken.plugin.navigation.KrakenReferencesCodeVisionProvider
 import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.psi.KrakenEpRef
 import com.kraken.plugin.psi.KrakenRuleDecl
@@ -214,8 +215,21 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
     // Sens 2 : implémentation -> EntryPoint(s)
     // ------------------------------------------------------------------
 
-    /** Une règle partagée par plusieurs EntryPoints : Ctrl+B les propose tous. */
-    fun testImplementationOffersEveryEntryPointReferencingIt() {
+    /**
+     * Depuis v0.8.1 ce sens ne passe plus par [KrakenGotoDeclarationHandler] :
+     * la plateforme affiche sa propre popup d'usages, alimentée par
+     * `ReferencesSearch`, et l'inlay « N usages » compte la même chose. Les
+     * tests suivent le comportement à son nouvel emplacement — la sémantique
+     * de visibilité, elle, est inchangée.
+     */
+    private fun usageCountOf(declaration: PsiElement): Int =
+        myFixture.findUsages(declaration as com.intellij.psi.PsiNamedElement).size
+
+    private fun codeVisionHintOf(declaration: PsiElement): String? =
+        KrakenReferencesCodeVisionProvider().getHint(declaration, declaration.containingFile)
+
+    /** Une règle partagée par plusieurs EntryPoints : tous sont des usages. */
+    fun testImplementationIsUsedByEveryEntryPointReferencingIt() {
         myFixture.addFileToProject(
             "billing.rules",
             """
@@ -245,21 +259,18 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             """.trimIndent()
         )
 
-        val targets = targetsFor(allOf<KrakenRuleDecl>(file).single())
+        val declaration = allOf<KrakenRuleDecl>(file).single()
+        assertEquals(3, usageCountOf(declaration))
+        assertEquals("3 usages", codeVisionHintOf(declaration))
         assertEquals(
-            listOf(
-                "EntryPoint \"Billing\" @ billing.rules",
-                "EntryPoint \"Quoting\" @ quoting.rules",
-                "EntryPoint \"Validation\" @ rules.rules",
-            ),
-            labelsOf(targets)
+            listOf("billing.rules", "quoting.rules", "rules.rules"),
+            myFixture.findUsages(declaration).mapNotNull { it.file?.name }.sorted()
         )
     }
 
     /**
-     * L'inverse du cas précédent : un EntryPoint d'un namespace qui ne voit pas
-     * la déclaration n'est pas une cible, même s'il cite le même nom. Sans ce
-     * filtre, Ctrl+B renverrait vers un EntryPoint qui, lui, résout ailleurs.
+     * L'inverse : un EntryPoint d'un namespace qui ne voit pas la déclaration
+     * n'est pas un usage, même s'il cite le même nom — il résout ailleurs.
      */
     fun testImplementationIgnoresEntryPointsThatCannotSeeIt() {
         myFixture.addFileToProject(
@@ -291,15 +302,16 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             """.trimIndent()
         )
 
-        val targets = targetsFor(allOf<KrakenRuleDecl>(base).single())
+        val declaration = allOf<KrakenRuleDecl>(base).single()
+        assertEquals("1 usage", codeVisionHintOf(declaration))
         assertEquals(
-            listOf("EntryPoint \"Base validation\" @ base.rules · Base"),
-            labelsOf(targets)
+            listOf("base.rules"),
+            myFixture.findUsages(declaration).mapNotNull { it.file?.name }
         )
     }
 
-    /** Un EntryPoint réutilisé par plusieurs autres propose lui aussi tous ses appelants. */
-    fun testEntryPointDeclarationOffersEveryCaller() {
+    /** Un EntryPoint réutilisé par plusieurs autres compte tous ses appelants. */
+    fun testEntryPointDeclarationCountsEveryCaller() {
         myFixture.addFileToProject(
             "first.rules",
             """
@@ -322,12 +334,24 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
         )
 
         val declaration = allOf<KrakenEntryPointDecl>(file).first { it.name == "Reused" }
+        assertEquals("2 usages", codeVisionHintOf(declaration))
         assertEquals(
-            listOf(
-                "EntryPoint \"First\" @ first.rules",
-                "EntryPoint \"Second\" @ base.rules",
-            ),
-            labelsOf(targetsFor(declaration))
+            listOf("base.rules", "first.rules"),
+            myFixture.findUsages(declaration).mapNotNull { it.file?.name }.sorted()
         )
+    }
+
+    /** Une déclaration sans usage le dit, plutôt que de n'afficher aucun inlay. */
+    fun testDeclarationWithoutUsagesSaysSo() {
+        val file = myFixture.configureByText(
+            "lonely.rules",
+            """
+            Rule "Never referenced" On Policy.state {
+                Assert true
+            }
+            """.trimIndent()
+        )
+
+        assertEquals("no usages", codeVisionHintOf(allOf<KrakenRuleDecl>(file).single()))
     }
 }

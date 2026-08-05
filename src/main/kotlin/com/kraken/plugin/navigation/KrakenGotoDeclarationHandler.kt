@@ -44,29 +44,18 @@ class KrakenGotoDeclarationHandler : GotoDeclarationHandler {
                 .takeIf { it.isNotEmpty() }
         }
 
-        // 2. Déclaration -> usages (Ctrl+clic sur le nom déclaré)
-        if (sourceElement.node?.elementType == KrakenTypes.STRING) {
-            when (sourceElement.parent?.node?.elementType) {
-                KrakenTypes.RULE_NAME -> {
-                    val declaration =
-                        PsiTreeUtil.getParentOfType(sourceElement, KrakenRuleDecl::class.java) ?: return null
-                    if (declaration.name == null) return null
-                    val references = KrakenPsiUtil.findRuleRefsVisibleTo(declaration)
-                    if (references.isNotEmpty()) {
-                        return references.filterIsInstance<PsiElement>().toTypedArray()
-                    }
-                }
-                KrakenTypes.EP_NAME -> {
-                    val declaration =
-                        PsiTreeUtil.getParentOfType(sourceElement, KrakenEntryPointDecl::class.java) ?: return null
-                    if (declaration.name == null) return null
-                    val references = KrakenPsiUtil.findEpRefsVisibleTo(declaration)
-                    if (references.isNotEmpty()) {
-                        return references.filterIsInstance<PsiElement>().toTypedArray()
-                    }
-                }
-            }
-        }
+        // Le sens déclaration -> usages n'est délibérément PAS traité ici.
+        //
+        // Il l'a été jusqu'en v0.8.0 : le handler renvoyait les usages comme
+        // s'ils étaient des cibles de déclaration, ce qui donnait une popup
+        // plate de libellés. En ne renvoyant rien, on laisse « Go To
+        // Declaration or Usages » de la plateforme prendre le relais et
+        // afficher sa popup d'usages — groupée par fichier, avec l'aperçu du
+        // code. Elle s'alimente de ReferencesSearch, donc de
+        // KrakenReferencesSearcher, qui applique déjà les mêmes règles de
+        // visibilité de namespace : la sémantique ne change pas, seule la
+        // présentation s'améliore. Même popup au clic sur l'inlay « N usages »
+        // (KrakenReferencesCodeVisionProvider).
         return null
     }
 }
