@@ -37,10 +37,73 @@ object KrakenScopeResolver {
     fun resolve(reference: PsiElement, name: String): PsiElement? {
         declaredVariable(reference, name)?.let { return it }
         functionParameter(reference, name)?.let { return it }
+        filterContext(reference)?.let { item ->
+            findField(reference, item, name)?.let { return it }
+        }
         targetContextName(reference)?.let { context ->
             findField(reference, context, name)?.let { return it }
         }
         return KrakenPsiUtil.findContextDecl(reference.containingFile, name)
+    }
+
+    /**
+     * Contexte de l'élément filtré, quand la référence est dans un prédicat
+     * `collection[…]`.
+     *
+     * C'est le `ScopeType.FILTER` du moteur : dans `Vehicle[model = "P01"]`, le
+     * prédicat s'évalue sur les champs d'un `Vehicle`. On retient le crochet
+     * **le plus proche**, ce qui donne gratuitement le bon comportement pour
+     * les filtres imbriqués.
+     */
+    fun filterContext(reference: PsiElement): String? {
+        var current: PsiElement? = reference
+        while (current != null && current !is KrakenRuleDecl && current !is KrakenFunctionDecl) {
+            val parent = current.parent
+            if (parent?.node?.elementType == KrakenTypes.BRACKET_ACCESS) {
+                val chain = parent.parent?.takeIf { it.node.elementType == KrakenTypes.POSTFIX_EXPR }
+                return chain?.let { contextBefore(it, parent) }
+            }
+            current = parent
+        }
+        return null
+    }
+
+    /**
+     * Vrai si la référence se trouve dans un prédicat `collection[…]`.
+     *
+     * Combiné à [filterContext] qui renvoie null, cela distingue « la portée du
+     * filtre est vide » de « on ignore le type de l'élément filtré » — le second
+     * cas correspond aux portées dynamiques du moteur (`Scope.isDynamic`), où
+     * toute référence est acceptée.
+     */
+    fun isInFilterPredicate(reference: PsiElement): Boolean {
+        var current: PsiElement? = reference
+        while (current != null && current !is KrakenRuleDecl && current !is KrakenFunctionDecl) {
+            if (current.parent?.node?.elementType == KrakenTypes.BRACKET_ACCESS) return true
+            current = current.parent
+        }
+        return false
+    }
+
+    /**
+     * Contexte désigné par le début d'une chaîne d'accès, jusqu'à [stopAt] exclu.
+     *
+     * Un crochet ne change pas le contexte : filtrer ou indexer une collection
+     * sélectionne des éléments du même type. Un point, lui, fait avancer d'un
+     * maillon — et la chaîne s'interrompt dès qu'un maillon ne désigne aucun
+     * contexte connu.
+     */
+    fun contextBefore(chain: PsiElement, stopAt: PsiElement): String? {
+        val head = PsiTreeUtil.findChildOfType(chain, KrakenRefExpr::class.java) ?: return null
+        var context = contextDenotedBy(head, head.referenceName) ?: return null
+        for (child in chain.children) {
+            if (child === stopAt) return context
+            if (child.node.elementType != KrakenTypes.DOT_ACCESS) continue
+            val segment = PsiTreeUtil.findChildOfType(child, KrakenPathSegment::class.java) ?: return null
+            if (segment === stopAt) return context
+            context = contextOfField(chain, context, segment.segmentName) ?: return null
+        }
+        return context
     }
 
     /**

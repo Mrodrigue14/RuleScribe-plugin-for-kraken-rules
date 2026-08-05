@@ -21,6 +21,10 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
         Context AddressInfo {
             String postalCode
         }
+
+        Context Coverage {
+            Money limit
+        }
     """.trimIndent()
 
     private fun problems(body: String): List<String> {
@@ -78,6 +82,29 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
 
     fun testFunctionCallHeadIsLeftToTheOtherInspection() {
         assertEquals(emptyList<String>(), problems("Assert Round(policyCd, 2) != null"))
+    }
+
+    /**
+     * Les prédicats de filtre voyaient tous leurs identifiants signalés : c'est
+     * ce que la sonde contre le corpus réel de kraken-rules a révélé, et c'était
+     * la totalité de ses faux positifs.
+     */
+    fun testFilterPredicateFieldsAreAccepted() {
+        assertEquals(
+            emptyList<String>(),
+            problems("Assert Count(AddressInfo[postalCode != null]) = 1")
+        )
+    }
+
+    /**
+     * Filtre sur une tête inconnue — typiquement le contexte externe, dynamique :
+     * la portée est indéterminée, donc on s'abstient au lieu de tout signaler.
+     */
+    fun testFilterOnADynamicHeadIsNotJudged() {
+        assertEquals(
+            emptyList<String>(),
+            problems("Assert IsEmpty(context.additional.vehicles[model = policyCd])")
+        )
     }
 
     /** `context` vit dans la portée globale du moteur, jamais déclaré en DSL. */

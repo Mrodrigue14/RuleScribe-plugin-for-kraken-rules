@@ -38,7 +38,8 @@
             fields of the 'On' target, which shadow context names.</li>
             <li>Access chains resolve too: in 'AddressInfo.Country.isoCode' each
             segment navigates, as long as the previous one denotes a known
-            context.</li>
+            context. Inside a filter, 'Vehicle[model = "P01"]' resolves against
+            the fields of the filtered item, nested filters included.</li>
             <li>New inspection: unresolved identifier. It is deliberately
             conservative — with no type inference yet, it stays silent on path
             segments, on rules whose 'On' target does not resolve, and on the

@@ -28,6 +28,9 @@ import com.kraken.plugin.psi.KrakenScopeResolver
  * - `context`, la racine du contexte externe, que le moteur place d'office
  *   dans la portée globale (`ScopeBuilder`) et qui n'est déclarée nulle part
  *   dans le DSL ;
+ * - les prédicats de filtre dont le type de l'élément est inconnu, par exemple
+ *   `context.additional.vehicles[model = …]` : la portée y est indéterminée,
+ *   et le moteur lui-même y accepte tout (`Scope.isDynamic`) ;
  * - les têtes d'appel de fonction, qui relèvent de
  *   [KrakenUnknownFunctionInspection].
  *
@@ -51,6 +54,13 @@ class KrakenUnresolvedIdentifierInspection : LocalInspectionTool() {
                 val inFunction =
                     PsiTreeUtil.getParentOfType(element, KrakenFunctionDecl::class.java, false) != null
                 if (!inFunction && !hasResolvableTarget(element)) return
+
+                // Prédicat de filtre dont on ignore le type de l'élément :
+                // portée indéterminée, pas vide. Le moteur y accepte tout
+                // (Scope.isDynamic), typiquement sous le contexte externe.
+                if (KrakenScopeResolver.isInFilterPredicate(element) &&
+                    KrakenScopeResolver.filterContext(element) == null
+                ) return
 
                 if (element.reference?.resolve() != null) return
                 holder.registerProblem(

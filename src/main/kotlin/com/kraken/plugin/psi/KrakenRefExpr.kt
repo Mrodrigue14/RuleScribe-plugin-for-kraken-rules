@@ -54,19 +54,7 @@ class KrakenPathSegment(node: ASTNode) : ASTWrapperPsiElement(node) {
     fun owningContext(): String? {
         val access = parent?.takeIf { it.node.elementType == KrakenTypes.DOT_ACCESS } ?: return null
         val chain = access.parent?.takeIf { it.node.elementType == KrakenTypes.POSTFIX_EXPR } ?: return null
-
-        val head = PsiTreeUtil.findChildOfType(chain, KrakenRefExpr::class.java) ?: return null
-        var context = KrakenScopeResolver.contextDenotedBy(head, head.referenceName) ?: return null
-
-        // Avancer jusqu'à ce segment ; chaque maillon intermédiaire doit lui
-        // aussi désigner un contexte, sinon la chaîne n'est pas résoluble.
-        for (child in chain.children) {
-            if (child.node.elementType != KrakenTypes.DOT_ACCESS) continue
-            val segment = PsiTreeUtil.findChildOfType(child, KrakenPathSegment::class.java) ?: return null
-            if (segment === this) return context
-            context = KrakenScopeResolver.contextOfField(this, context, segment.segmentName) ?: return null
-        }
-        return null
+        return KrakenScopeResolver.contextBefore(chain, this)
     }
 }
 

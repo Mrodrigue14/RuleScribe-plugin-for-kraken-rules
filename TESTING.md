@@ -6,7 +6,7 @@ Lancer un IDE sandbox avec le plugin : `.\gradlew.bat runIde` (Windows) ou
 ## Tests automatisés
 
 ```bash
-.\gradlew.bat test    # 129 tests : parser, complétion, inspections, navigation
+.\gradlew.bat test    # 135 tests : parser, complétion, inspections, navigation
                       # inter-fichiers et bidirectionnelle, renommage,
                       # namespaces, quick doc, fonctions, inlays, portées d'expression
 ```
@@ -81,6 +81,9 @@ contextes, règles et EntryPoints dans des fichiers séparés, trois namespaces
 - [ ] Écrire `Assert nimportequoi > 0` → « Reference 'nimportequoi' not found »
 - [ ] Écrire `Assert Policy.nimportequoi > 0` → **rien** : un segment de chaîne
       n'est pas jugeable sans les types
+- [ ] Écrire `Assert Count(Policy.Coverage[limitAmount > 0]) = 1` → Ctrl+B sur
+      `limitAmount` mène au champ de `Coverage`, et rien n'est souligné : dans
+      un filtre, le prédicat voit les champs de l'élément filtré
 
 ### Complétion
 - [ ] Dans un `EntryPoint { }` : Ctrl+Espace propose les règles visibles (pas `"Hidden elsewhere"`)
