@@ -1,0 +1,1726 @@
+{
+  "source": "eisgroup/kraken-rules",
+  "libraries": [
+    {
+      "name": "Collection",
+      "description": "Functions for operating with collections.",
+      "since": "1.0.28"
+    },
+    {
+      "name": "Date",
+      "description": "Functions for operating with Date and DateTime values.",
+      "since": "1.0.28"
+    },
+    {
+      "name": "Generic Value",
+      "description": "Functions that operate with general values.",
+      "since": "1.0.30"
+    },
+    {
+      "name": "Math",
+      "description": "Functions that operate with numerical values.",
+      "since": "1.0.28"
+    },
+    {
+      "name": "Money",
+      "description": "Functions that operate with Money values.",
+      "since": "1.0.28"
+    },
+    {
+      "name": "Quantifier",
+      "description": "Functions that provide logical quantification operations.",
+      "since": "1.0.30"
+    },
+    {
+      "name": "Set",
+      "description": "Functions that provide Set operations.",
+      "since": "1.0.30"
+    },
+    {
+      "name": "String",
+      "description": "Functions that operate with String values.",
+      "since": "1.0.28"
+    },
+    {
+      "name": "Type",
+      "description": "Functions that operate with types of values and objects.",
+      "since": "1.0.34"
+    }
+  ],
+  "functions": [
+    {
+      "name": "Abs",
+      "library": "Math",
+      "parameters": [
+        {
+          "name": "number",
+          "type": "Number",
+          "required": true
+        }
+      ],
+      "returnType": "Number",
+      "description": "Calculates absolute number.",
+      "since": "1.5.0",
+      "examples": [
+        {
+          "expression": "Abs(-5)",
+          "result": "5"
+        },
+        {
+          "expression": "Abs(5)",
+          "result": "5"
+        }
+      ]
+    },
+    {
+      "name": "All",
+      "library": "Quantifier",
+      "parameters": [
+        {
+          "name": "collection",
+          "type": "Boolean[]",
+          "required": false
+        }
+      ],
+      "returnType": "Boolean",
+      "description": "Returns `true` if collection is empty or if all boolean values in collection are `true`. `null` value in collection is treated as not `true` value. `null` collection parameter is treated as an empty collection.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "All({true, false})",
+          "result": "false"
+        },
+        {
+          "expression": "All({true, true})",
+          "result": "true"
+        },
+        {
+          "expression": "All({false, false})",
+          "result": "false"
+        },
+        {
+          "expression": "All({null})",
+          "result": "false"
+        },
+        {
+          "expression": "All({})",
+          "result": "false"
+        },
+        {
+          "expression": "All(Policy.riskItems[*].isPrimary)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "Any",
+      "library": "Quantifier",
+      "parameters": [
+        {
+          "name": "collection",
+          "type": "Boolean[]",
+          "required": false
+        }
+      ],
+      "returnType": "Boolean",
+      "description": "Returns `true` if collection is not empty and if any boolean value in collection is `true`. `null` value in collection is treated as not `true` value. `null` collection parameter is treated as an empty collection.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "Any({true, false})",
+          "result": "true"
+        },
+        {
+          "expression": "Any({false, false})",
+          "result": "false"
+        },
+        {
+          "expression": "Any({null})",
+          "result": "false"
+        },
+        {
+          "expression": "Any({})",
+          "result": "false"
+        },
+        {
+          "expression": "Any(Policy.riskItems[*].isPrimary)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "AsDate",
+      "library": "Date",
+      "parameters": [
+        {
+          "name": "time",
+          "type": "DateTime",
+          "required": true
+        }
+      ],
+      "returnType": "Date",
+      "description": "Convert datetime to date by discarding time.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "AsDate(2011-11-11T10:10:10Z)",
+          "result": null
+        },
+        {
+          "expression": "AsDate(txEffectiveDate)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "AsTime",
+      "library": "Date",
+      "parameters": [
+        {
+          "name": "date",
+          "type": "Date",
+          "required": true
+        }
+      ],
+      "returnType": "DateTime",
+      "description": "Convert date to datetime by adding zero time.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "AsTime(2011-11-11)",
+          "result": null
+        },
+        {
+          "expression": "AsTime(termEffectiveDate)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "Avg",
+      "library": "Math",
+      "parameters": [
+        {
+          "name": "collection",
+          "type": "Number[]",
+          "required": false
+        }
+      ],
+      "returnType": "Number",
+      "description": "Find average value from all values provided in the collection and return a single value. Can find average only from numbers. When collection is null or empty, returns `null`.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "Avg({1,2,3}})",
+          "result": "2"
+        },
+        {
+          "expression": "Avg({})",
+          "result": "null"
+        },
+        {
+          "expression": "Avg(null)",
+          "result": "null"
+        },
+        {
+          "expression": "Avg({1, 2, null})",
+          "result": null
+        },
+        {
+          "expression": "Avg(Coverage.limitAmount)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "Ceil",
+      "library": "Math",
+      "parameters": [
+        {
+          "name": "number",
+          "type": "Number",
+          "required": true
+        }
+      ],
+      "returnType": "Number",
+      "description": "Calculates a result of a mathematical ceiling function which returns the least integer that is greater than or equal to provided number.",
+      "since": "1.5.0",
+      "examples": [
+        {
+          "expression": "Ceil(1.1)",
+          "result": "2"
+        },
+        {
+          "expression": "Ceil(-1.9)",
+          "result": "-1"
+        }
+      ]
+    },
+    {
+      "name": "Concat",
+      "library": "String",
+      "parameters": [
+        {
+          "name": "items",
+          "type": "Any[]",
+          "required": false
+        }
+      ],
+      "returnType": "String",
+      "description": "Concatenate objects to one string.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "",
+          "result": "'abc1'"
+        },
+        {
+          "expression": "Concat(null)",
+          "result": "null"
+        },
+        {
+          "expression": "Concat({'a', null, 'c'})",
+          "result": "'ac'"
+        }
+      ]
+    },
+    {
+      "name": "Count",
+      "library": "Collection",
+      "parameters": [
+        {
+          "name": "collection",
+          "type": "Any",
+          "required": false
+        }
+      ],
+      "returnType": "Number",
+      "description": "Resolve size of collection. If collection is `null`, returns 0. If argument is not a collection, returns 1.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "Count(coverages)",
+          "result": null
+        },
+        {
+          "expression": "Count(null)",
+          "result": "0"
+        },
+        {
+          "expression": "Count('abc')",
+          "result": "1"
+        }
+      ]
+    },
+    {
+      "name": "Date",
+      "library": "Date",
+      "parameters": [
+        {
+          "name": "dateString",
+          "type": "String",
+          "required": true
+        }
+      ],
+      "returnType": "Date",
+      "description": "Create a date from ISO String.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "Date('2011-11-11')",
+          "result": null
+        },
+        {
+          "expression": "Date('abc')",
+          "result": null
+        },
+        {
+          "expression": "Date(null)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "Date",
+      "library": "Date",
+      "parameters": [
+        {
+          "name": "year",
+          "type": "Number",
+          "required": true
+        },
+        {
+          "name": "month",
+          "type": "Number",
+          "required": true
+        },
+        {
+          "name": "day",
+          "type": "Number",
+          "required": true
+        }
+      ],
+      "returnType": "Date",
+      "description": "Create a date from the year, month, and day.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "Date(2011, 12, 31)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "DateTime",
+      "library": "Date",
+      "parameters": [
+        {
+          "name": "dateTimeString",
+          "type": "String",
+          "required": true
+        }
+      ],
+      "returnType": "DateTime",
+      "description": "Create a datetime from ISO String.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "DateTime('2011-11-11T10:10:10Z')",
+          "result": null
+        },
+        {
+          "expression": "DateTime('abc')",
+          "result": null
+        },
+        {
+          "expression": "DateTime(null)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "Difference",
+      "library": "Set",
+      "parameters": [
+        {
+          "name": "collection1",
+          "type": "<T>[]",
+          "required": false
+        },
+        {
+          "name": "collection2",
+          "type": "<T>[]",
+          "required": false
+        }
+      ],
+      "returnType": "<T>[]",
+      "description": "Create a set difference between two collections. Parameter types in both collections must be the same and must be primitive types. Joining collections of different types or of complex object types is not supported. `null` value in collection is treated as a valid value and is preserved. `null` collection parameter is treated as an empty collection.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "Difference({1,2}, {2,3})",
+          "result": "{1}"
+        },
+        {
+          "expression": "Difference({1,2}, null)",
+          "result": "{1,2}"
+        },
+        {
+          "expression": "Difference(null, {1,2})",
+          "result": "{1,2}"
+        },
+        {
+          "expression": "Difference(RiskItem.coverages[*].coverageCd, Policy.coverages[*].coverageCd)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "Distinct",
+      "library": "Set",
+      "parameters": [
+        {
+          "name": "collection",
+          "type": "<T>[]",
+          "required": false
+        }
+      ],
+      "returnType": "<T>[]",
+      "description": "Discard duplicates. Order of items in original collection is not preserved. Parameter type in collection must be primitive type. `null` value in collection is treated as a valid value and is preserved. `null` collection parameter is treated as an empty collection.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "Distinct({1,2,2,3,3,3})",
+          "result": "{1,2,3}"
+        },
+        {
+          "expression": "Distinct(null)",
+          "result": "{}"
+        },
+        {
+          "expression": "Distinct({null})",
+          "result": "{null}"
+        }
+      ]
+    },
+    {
+      "name": "EndsWith",
+      "library": "String",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "end",
+          "type": "String",
+          "required": true
+        }
+      ],
+      "returnType": "Boolean",
+      "description": "Check string to end with any text. If text to check is shorter than subtext, return `false`.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "",
+          "result": "true"
+        },
+        {
+          "expression": "",
+          "result": "false"
+        }
+      ]
+    },
+    {
+      "name": "Flat",
+      "library": "Collection",
+      "parameters": [
+        {
+          "name": "collection",
+          "type": "<T>[][]",
+          "required": false
+        }
+      ],
+      "returnType": "<T>[]",
+      "description": "Flatten collection of collections to a one-dimensional collection.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "Flat({{'a', 'b'}, {'c', 'd'}})",
+          "result": "{'a', 'b', 'c', 'd'}"
+        },
+        {
+          "expression": "Flat(null)",
+          "result": "null"
+        }
+      ]
+    },
+    {
+      "name": "Floor",
+      "library": "Math",
+      "parameters": [
+        {
+          "name": "number",
+          "type": "Number",
+          "required": true
+        }
+      ],
+      "returnType": "Number",
+      "description": "Calculates a result of a mathematical floor function which returns greatest integer that is less than or equal to provided number.",
+      "since": "1.5.0",
+      "examples": [
+        {
+          "expression": "Floor(-1.9",
+          "result": "1"
+        }
+      ]
+    },
+    {
+      "name": "Format",
+      "library": "Date",
+      "parameters": [
+        {
+          "name": "date",
+          "type": "Date",
+          "required": true
+        },
+        {
+          "name": "format",
+          "type": "String",
+          "required": false
+        }
+      ],
+      "returnType": "String",
+      "description": "Formats date according to the format passed as a parameter. Format can contain Y, M and D characters to denote year, month or day respectively.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "",
+          "result": "2112/11/10"
+        },
+        {
+          "expression": "Format(2012-11-10, null)",
+          "result": "2012-11-10"
+        },
+        {
+          "expression": "",
+          "result": null
+        },
+        {
+          "expression": "",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "FromMoney",
+      "library": "Money",
+      "parameters": [
+        {
+          "name": "monetaryAmount",
+          "type": "Money",
+          "required": false
+        }
+      ],
+      "returnType": "Number",
+      "description": "Coerces money type to number. Can be used with dynamic context, when data type is no known in compile time",
+      "since": null,
+      "examples": [
+        {
+          "expression": "FromMoney(context.preRevision.limitAmount)",
+          "result": null
+        },
+        {
+          "expression": "FromMoney(null)",
+          "result": "null"
+        }
+      ]
+    },
+    {
+      "name": "GetDay",
+      "library": "Date",
+      "parameters": [
+        {
+          "name": "dateOrDatetime",
+          "type": "Date | DateTime",
+          "required": true
+        }
+      ],
+      "returnType": "Number",
+      "description": "Get the day of the month from date or date time.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "GetDay(2011-11-11)",
+          "result": "11"
+        },
+        {
+          "expression": "GetDay(2011-11-11T01:01:01Z)",
+          "result": "11"
+        },
+        {
+          "expression": "GetDay(null)",
+          "result": null
+        },
+        {
+          "expression": "GetDay(1)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "GetMonth",
+      "library": "Date",
+      "parameters": [
+        {
+          "name": "dateOrDatetime",
+          "type": "Date | DateTime",
+          "required": true
+        }
+      ],
+      "returnType": "Number",
+      "description": "Get the month number from date or date time.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "GetMonth(2011-11-11)",
+          "result": "11"
+        },
+        {
+          "expression": "GetMonth(null)",
+          "result": null
+        },
+        {
+          "expression": "GetMonth(1)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "GetType",
+      "library": "Type",
+      "parameters": [
+        {
+          "name": "entity",
+          "type": "Any",
+          "required": false
+        }
+      ],
+      "returnType": "String",
+      "description": "Returns type of object as a string. If the object is `null` then return `null`. If the object does not have a type then `null` is returned. The function only returns the type of entity object. The function does not return types of native types like String, Number, or Boolean.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "GetType(Coverage)",
+          "result": "RRCoverage"
+        },
+        {
+          "expression": "for c in Policy.blob.lobs[*].riskItems[*].coverages return GetType(c)",
+          "result": ""
+        },
+        {
+          "expression": "GetType(5)",
+          "result": "null"
+        }
+      ]
+    },
+    {
+      "name": "GetYear",
+      "library": "Date",
+      "parameters": [
+        {
+          "name": "dateOrDatetime",
+          "type": "Date | DateTime",
+          "required": true
+        }
+      ],
+      "returnType": "Number",
+      "description": "Get the year number from date or datetime.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "GetYear(2011-11-11)",
+          "result": "11"
+        },
+        {
+          "expression": "GetYear(null)",
+          "result": null
+        },
+        {
+          "expression": "GetYear(1)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "Includes",
+      "library": "String",
+      "parameters": [
+        {
+          "name": "collectionOrString",
+          "type": "Any",
+          "required": false
+        },
+        {
+          "name": "searchElement",
+          "type": "Any",
+          "required": false
+        }
+      ],
+      "returnType": "Boolean",
+      "description": "Check for element to be included in collection or string to contain string. If null appears in as a collection or element to search `false` be returned.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "Includes('abcd', 'cd')",
+          "result": "true"
+        },
+        {
+          "expression": "Includes({1, 2, 3}, 2)",
+          "result": "true"
+        },
+        {
+          "expression": "Includes({'a', 'b', 'c'}, 'b')",
+          "result": "true"
+        },
+        {
+          "expression": "Includes(null, 2)",
+          "result": "false"
+        },
+        {
+          "expression": "Includes('abc', null)",
+          "result": "false"
+        },
+        {
+          "expression": "Includes(123, null)",
+          "result": null
+        },
+        {
+          "expression": "Includes(Policy, null)",
+          "result": null
+        },
+        {
+          "expression": "Includes(false, null)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "Intersection",
+      "library": "Set",
+      "parameters": [
+        {
+          "name": "collection1",
+          "type": "<T>[]",
+          "required": false
+        },
+        {
+          "name": "collection2",
+          "type": "<T>[]",
+          "required": false
+        }
+      ],
+      "returnType": "<T>[]",
+      "description": "Create a set intersection between two collections. Parameter types in both collections must be the same and must be primitive types. Joining collections of different types or of complex object types is not supported. `null` value in collection is treated as a valid value and is preserved. `null` collection parameter is treated as an empty collection.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "Intersection({1,2}, {2,3})",
+          "result": "{2}"
+        },
+        {
+          "expression": "Intersection(null, {1,2})",
+          "result": "{} \n            @Example(value = "
+        },
+        {
+          "expression": "Intersection(RiskItem.coverages[*].coverageCd, Policy.coverages[*].coverageCd)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "IsBlank",
+      "library": "String",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "String",
+          "required": false
+        }
+      ],
+      "returnType": "Boolean",
+      "description": "Return `true` if string parameter is `null`, empty string or consists only of whitespace characters.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "IsBlank(null)",
+          "result": "true"
+        },
+        {
+          "expression": "IsBlank('')",
+          "result": "true"
+        },
+        {
+          "expression": "IsBlank(' ')",
+          "result": "true"
+        },
+        {
+          "expression": "IsBlank('test')",
+          "result": "false"
+        }
+      ]
+    },
+    {
+      "name": "IsDateBetween",
+      "library": "Date",
+      "parameters": [
+        {
+          "name": "date",
+          "type": "Date",
+          "required": true
+        },
+        {
+          "name": "start",
+          "type": "Date",
+          "required": true
+        },
+        {
+          "name": "end",
+          "type": "Date",
+          "required": true
+        }
+      ],
+      "returnType": "Boolean",
+      "description": "Check if the date is between two dates",
+      "since": null,
+      "examples": [
+        {
+          "expression": "IsDateBetween(AsDate(TermDetails.termEffectiveDate), 2011-11-11, Today())",
+          "result": null
+        },
+        {
+          "expression": "IsDateBetween(2011-10-01, 2011-12-01, 2011-11-11)",
+          "result": "true"
+        },
+        {
+          "expression": "IsDateBetween(null, 2011-12-01, 2011-11-11)",
+          "result": null
+        },
+        {
+          "expression": "IsDateBetween(2011-10-01, null, 2011-11-11)",
+          "result": null
+        },
+        {
+          "expression": "IsDateBetween(2011-10-01, 2011-12-01, null)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "IsEmpty",
+      "library": "Generic Value",
+      "parameters": [
+        {
+          "name": "stringOrCollection",
+          "type": "Any",
+          "required": false
+        }
+      ],
+      "returnType": "Boolean",
+      "description": "Return `true` if collection parameter value is `null` or is empty collection. `null` value in collection is treated as a valid value and the collection is considered not empty. Handles string and collections. Otherwise will return false.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "IsEmpty(null)",
+          "result": "true"
+        },
+        {
+          "expression": "IsEmpty({})",
+          "result": "true"
+        },
+        {
+          "expression": "IsEmpty({1})",
+          "result": "false"
+        },
+        {
+          "expression": "IsEmpty('')",
+          "result": "true"
+        },
+        {
+          "expression": "IsEmpty('a')",
+          "result": "false"
+        }
+      ]
+    },
+    {
+      "name": "Join",
+      "library": "Collection",
+      "parameters": [
+        {
+          "name": "collection1",
+          "type": "<T>[]",
+          "required": false
+        },
+        {
+          "name": "collection2",
+          "type": "<T>[]",
+          "required": false
+        }
+      ],
+      "returnType": "<T>[]",
+      "description": "Join two collections into single collection by preserving order from the original collections and by preserving duplicates. Parameter types in both collections must be the same. Joining collections of different types is not supported. `null` value in collection is treated as a valid value and is preserved. `null` collection parameter is treated as an empty collection.",
+      "since": "1.0.30",
+      "examples": [
+        {
+          "expression": "Join(RiskItem.coverages.coverageCd, Policy.coverages.coverageCd)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "LowerCase",
+      "library": "String",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "String",
+          "required": false
+        }
+      ],
+      "returnType": "String",
+      "description": "Convert text to lower case. If text is `null`, return `null`.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "LowerCase('AbC')",
+          "result": "'abc'"
+        },
+        {
+          "expression": "LowerCase(null)",
+          "result": "null"
+        }
+      ]
+    },
+    {
+      "name": "Now",
+      "library": "Date",
+      "parameters": [],
+      "returnType": "DateTime",
+      "description": "Resolve to the current time.",
+      "since": null,
+      "examples": []
+    },
+    {
+      "name": "NumberOfDaysBetween",
+      "library": "Date",
+      "parameters": [
+        {
+          "name": "date1",
+          "type": "Date",
+          "required": true
+        },
+        {
+          "name": "date2",
+          "type": "Date",
+          "required": true
+        }
+      ],
+      "returnType": "Number",
+      "description": "Calculate days between two dates.The output of this function is always positive, it doesn't matter which parameter is a start date.",
+      "since": "1.0.34",
+      "examples": [
+        {
+          "expression": "NumberOfDaysBetween(2011-11-11, 2011-11-12)",
+          "result": "1"
+        },
+        {
+          "expression": "NumberOfDaysBetween(2011-11-11, 2011-11-10)",
+          "result": "1"
+        }
+      ]
+    },
+    {
+      "name": "NumberOfMonthsBetween",
+      "library": "Date",
+      "parameters": [
+        {
+          "name": "date1",
+          "type": "Date",
+          "required": true
+        },
+        {
+          "name": "date2",
+          "type": "Date",
+          "required": true
+        }
+      ],
+      "returnType": "Number",
+      "description": "Calculate months between two dates.The output of this function is always positive, it doesn't matter which parameter is a start date.",
+      "since": "1.0.34",
+      "examples": [
+        {
+          "expression": "NumberOfMonthsBetween(2011-11-11, 2011-12-11)",
+          "result": "1"
+        },
+        {
+          "expression": "NumberOfMonthsBetween(2011-11-11, 2011-12-10)",
+          "result": "0"
+        },
+        {
+          "expression": "NumberOfMonthsBetween(2020-01-30, 2020-02-29)",
+          "result": "0"
+        }
+      ]
+    },
+    {
+      "name": "NumberOfYearsBetween",
+      "library": "Date",
+      "parameters": [
+        {
+          "name": "date1",
+          "type": "Date",
+          "required": true
+        },
+        {
+          "name": "date2",
+          "type": "Date",
+          "required": true
+        }
+      ],
+      "returnType": "Number",
+      "description": "Calculate years between two dates.The output of this function is always positive, it doesn't matter which parameter is a start date.",
+      "since": "1.0.34",
+      "examples": [
+        {
+          "expression": "NumberOfYearsBetween(2010-11-11, 2011-11-11)",
+          "result": "1"
+        },
+        {
+          "expression": "NumberOfYearsBetween(2010-11-11, 2011-11-10)",
+          "result": "0"
+        },
+        {
+          "expression": "NumberOfYearsBetween(2020-02-29, 2021-02-28)",
+          "result": "0"
+        }
+      ]
+    },
+    {
+      "name": "NumberSequence",
+      "library": "Math",
+      "parameters": [
+        {
+          "name": "from",
+          "type": "Number",
+          "required": true
+        },
+        {
+          "name": "to",
+          "type": "Number",
+          "required": true
+        }
+      ],
+      "returnType": "Number[]",
+      "description": "Generates a sequence of numbers by adding 1 or -1 to the starting number until it reaches the ending number inclusively. Returns a collection of numbers in order. Parameters cannot be `null`.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "NumberSequence(0, 5)",
+          "result": "{0,1,2,3,4,5}"
+        }
+      ]
+    },
+    {
+      "name": "NumberSequence",
+      "library": "Math",
+      "parameters": [
+        {
+          "name": "from",
+          "type": "Number",
+          "required": true
+        },
+        {
+          "name": "to",
+          "type": "Number",
+          "required": true
+        },
+        {
+          "name": "step",
+          "type": "Number",
+          "required": true
+        }
+      ],
+      "returnType": "Number[]",
+      "description": "Generates a sequence of numbers by adding 1 or -1 to the starting number until it reaches the ending number inclusively. Returns a collection of numbers in order. Parameters cannot be `null`.",
+      "since": "1.0.35",
+      "examples": [
+        {
+          "expression": "NumberSequence(0, 5)",
+          "result": "{0,1,2,3,4,5}"
+        },
+        {
+          "expression": "NumberSequence(5, 0)",
+          "result": "{5,4,3,2,1,0}"
+        },
+        {
+          "expression": "NumberSequence(0, 5)",
+          "result": "{0}"
+        }
+      ]
+    },
+    {
+      "name": "NumberToString",
+      "library": "String",
+      "parameters": [
+        {
+          "name": "number",
+          "type": "Number",
+          "required": false
+        }
+      ],
+      "returnType": "String",
+      "description": "Create a string from number. If `null` is passed then return empty string.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "NumberToString(2)",
+          "result": "'2'"
+        },
+        {
+          "expression": "NumberToString(null)",
+          "result": "null"
+        }
+      ]
+    },
+    {
+      "name": "PadLeft",
+      "library": "String",
+      "parameters": [
+        {
+          "name": "base",
+          "type": "String",
+          "required": false
+        },
+        {
+          "name": "filler",
+          "type": "String",
+          "required": false
+        },
+        {
+          "name": "length",
+          "type": "Number",
+          "required": false
+        }
+      ],
+      "returnType": "String",
+      "description": "Pad string on the left side if it's shorter than length. If it is longer than length, return base string as is.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "PadLeft('1', '0', '4')",
+          "result": "0001"
+        },
+        {
+          "expression": "PadLeft('1', ' ', '4')",
+          "result": "   1"
+        },
+        {
+          "expression": "PadLeft('1', null, '4')",
+          "result": "   1"
+        },
+        {
+          "expression": "PadLeft('1', 'abc', '4')",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "PadRight",
+      "library": "String",
+      "parameters": [
+        {
+          "name": "base",
+          "type": "String",
+          "required": false
+        },
+        {
+          "name": "filler",
+          "type": "String",
+          "required": false
+        },
+        {
+          "name": "length",
+          "type": "Number",
+          "required": false
+        }
+      ],
+      "returnType": "String",
+      "description": "Pad string on the right side if it's shorter than length. If it is longer than length, return base string as is.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "PadRight('1', '0', '4')",
+          "result": "1000"
+        },
+        {
+          "expression": "PadRight('1', ' ', '4')",
+          "result": "1    "
+        },
+        {
+          "expression": "PadRight('1', null, '4')",
+          "result": "1    "
+        },
+        {
+          "expression": "PadRight('1', 'abc', '4')",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "Round",
+      "library": "Math",
+      "parameters": [
+        {
+          "name": "number",
+          "type": "Number",
+          "required": true
+        }
+      ],
+      "returnType": "Number",
+      "description": "Rounds to Integer using IEEE 754 Round Half Up strategy. If the number falls midway, then it is rounded to the nearest value above (for positive numbers) or below (for negative numbers).",
+      "since": "1.5.0",
+      "examples": [
+        {
+          "expression": "Round(1.5)",
+          "result": "2"
+        },
+        {
+          "expression": "Round(-1.5)",
+          "result": "-2"
+        },
+        {
+          "expression": "Round(2.5)",
+          "result": "3"
+        },
+        {
+          "expression": "Round(-2.5)",
+          "result": "-3"
+        }
+      ]
+    },
+    {
+      "name": "Round",
+      "library": "Math",
+      "parameters": [
+        {
+          "name": "number",
+          "type": "Number",
+          "required": true
+        },
+        {
+          "name": "scale",
+          "type": "Number",
+          "required": true
+        }
+      ],
+      "returnType": "Number",
+      "description": "Rounds to scale using IEEE 754 Round Half Up strategy. If the number falls midway, then it is rounded to the nearest value above (for positive numbers) or below (for negative numbers).",
+      "since": "1.5.0",
+      "examples": [
+        {
+          "expression": "Round(11.555, 2)",
+          "result": "11.56"
+        },
+        {
+          "expression": "Round(-11.555, 2)",
+          "result": "-11.56"
+        },
+        {
+          "expression": "Round(11.565, 2)",
+          "result": "11.57"
+        },
+        {
+          "expression": "Round(-11.565, 2)",
+          "result": "-11.57"
+        }
+      ]
+    },
+    {
+      "name": "RoundEven",
+      "library": "Math",
+      "parameters": [
+        {
+          "name": "number",
+          "type": "Number",
+          "required": true
+        }
+      ],
+      "returnType": "Number",
+      "description": "Rounds to Integer using IEEE 754 Round Half Even strategy. If the number falls midway, then it is rounded to the nearest value with an even least significant digit.",
+      "since": "1.5.0",
+      "examples": [
+        {
+          "expression": "RoundEven(1.5)",
+          "result": "2"
+        },
+        {
+          "expression": "RoundEven(-1.5)",
+          "result": "-2"
+        },
+        {
+          "expression": "RoundEven(2.5)",
+          "result": "2"
+        },
+        {
+          "expression": "RoundEven(-2.5)",
+          "result": "-2"
+        }
+      ]
+    },
+    {
+      "name": "RoundEven",
+      "library": "Math",
+      "parameters": [
+        {
+          "name": "number",
+          "type": "Number",
+          "required": true
+        },
+        {
+          "name": "scale",
+          "type": "Number",
+          "required": true
+        }
+      ],
+      "returnType": "Number",
+      "description": "Rounds to Integer using IEEE 754 Round Half Even strategy. If the number falls midway, then it is rounded to the nearest value with an even least significant digit.",
+      "since": "1.5.0",
+      "examples": [
+        {
+          "expression": "RoundEven(11.555, 2)",
+          "result": "11.56"
+        },
+        {
+          "expression": "RoundEven(-11.555, 2)",
+          "result": "-11.56"
+        },
+        {
+          "expression": "RoundEven(11.565, 2)",
+          "result": "11.56"
+        },
+        {
+          "expression": "RoundEven(-11.565, 2)",
+          "result": "-11.56"
+        }
+      ]
+    },
+    {
+      "name": "Sign",
+      "library": "Math",
+      "parameters": [
+        {
+          "name": "number",
+          "type": "Number",
+          "required": true
+        }
+      ],
+      "returnType": "Number",
+      "description": "Calculates sign of a number. Returns 1 when number is positive, 0 when number is zero and -1 when number is negative.",
+      "since": "1.5.0",
+      "examples": [
+        {
+          "expression": "Sign(100)",
+          "result": "1"
+        },
+        {
+          "expression": "Sign(0)",
+          "result": "0"
+        },
+        {
+          "expression": "Sign(-100)",
+          "result": "-1"
+        }
+      ]
+    },
+    {
+      "name": "Sqrt",
+      "library": "Math",
+      "parameters": [
+        {
+          "name": "number",
+          "type": "Number",
+          "required": true
+        }
+      ],
+      "returnType": "Number",
+      "description": "Calculates squared root of a number..",
+      "since": "1.5.0",
+      "examples": [
+        {
+          "expression": "Sqrt(1)",
+          "result": "2"
+        }
+      ]
+    },
+    {
+      "name": "StartsWith",
+      "library": "String",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "start",
+          "type": "String",
+          "required": true
+        }
+      ],
+      "returnType": "Boolean",
+      "description": "Check the string to start with any text. If text to check is shorter than subtext, return `false`.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "",
+          "result": "true"
+        },
+        {
+          "expression": "",
+          "result": "false"
+        }
+      ]
+    },
+    {
+      "name": "StringLength",
+      "library": "String",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "String",
+          "required": false
+        }
+      ],
+      "returnType": "Number",
+      "description": "Calculate string length. If string is `null`, returns `0`",
+      "since": null,
+      "examples": [
+        {
+          "expression": "StringLength('four')",
+          "result": "4"
+        },
+        {
+          "expression": "StringLength(null)",
+          "result": "0"
+        }
+      ]
+    },
+    {
+      "name": "Substring",
+      "library": "String",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "beginIndex",
+          "type": "Number",
+          "required": true
+        }
+      ],
+      "returnType": "String",
+      "description": "Return string that is a substring of provided value. The substring begins at that specified beginIndex and extends to the end of provided value.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "Substring('abc', 2)",
+          "result": "'c'"
+        },
+        {
+          "expression": "Substring('abc', -1)",
+          "result": null
+        },
+        {
+          "expression": "Substring('abc', 5)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "Substring",
+      "library": "String",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "String",
+          "required": true
+        },
+        {
+          "name": "beginIndex",
+          "type": "Number",
+          "required": true
+        },
+        {
+          "name": "endIndex",
+          "type": "Number",
+          "required": true
+        }
+      ],
+      "returnType": "String",
+      "description": "Return string that is a substring of provided value. The substring begins at specified beginIndex and extends to the character at endIndex - 1.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "Substring('smiles', 1, 5)",
+          "result": "mile"
+        },
+        {
+          "expression": "Substring('smiles', -1, 5)",
+          "result": null
+        },
+        {
+          "expression": "Substring('smiles', 5, 10)",
+          "result": null
+        },
+        {
+          "expression": "Substring('smiles', 10, 5)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "Sum",
+      "library": "Math",
+      "parameters": [
+        {
+          "name": "collection",
+          "type": "Number[]",
+          "required": false
+        }
+      ],
+      "returnType": "Number",
+      "description": "Sum all values in collection and return single value. Can sum only numbers. When collection is `null` or empty, returns `null`.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "Sum({1, 2, 3})",
+          "result": "6"
+        },
+        {
+          "expression": "Sum({})",
+          "result": "null"
+        },
+        {
+          "expression": "Sum(null)",
+          "result": "null"
+        },
+        {
+          "expression": "Sum({1, 2, null})",
+          "result": null
+        },
+        {
+          "expression": "Sum(Coverage.limitAmount)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "SymmetricDifference",
+      "library": "Set",
+      "parameters": [
+        {
+          "name": "collection1",
+          "type": "<T>[]",
+          "required": false
+        },
+        {
+          "name": "collection2",
+          "type": "<T>[]",
+          "required": false
+        }
+      ],
+      "returnType": "<T>[]",
+      "description": "Create a set symmetric difference between two collections. Parameter types in both collections must be the same and must be primitive types. Joining collections of different types or of complex object types is not supported. `null` value in collection is treated as a valid value and is preserved. `null` collection parameter is treated as an empty collection.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "SymmetricDifference({1,2}, {2,3})",
+          "result": "{1,3}"
+        },
+        {
+          "expression": "SymmetricDifference({1,2}, {2,3,null})",
+          "result": "{1,3,null}"
+        },
+        {
+          "expression": "SymmetricDifference({1,2}, null)",
+          "result": "{1,2}"
+        },
+        {
+          "expression": "SymmetricDifference(null, {1,2})",
+          "result": "{1,2}"
+        },
+        {
+          "expression": "SymmetricDifference(RiskItem.coverages[*].coverageCd, Policy.coverages[*].coverageCd)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "Today",
+      "library": "Date",
+      "parameters": [],
+      "returnType": "Date",
+      "description": "Resolve to the current date",
+      "since": null,
+      "examples": []
+    },
+    {
+      "name": "Trim",
+      "library": "String",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "String",
+          "required": false
+        }
+      ],
+      "returnType": "String",
+      "description": "Remove leading and trailing whitespaces. If text is `null`, return null`.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "Trim(' a ')",
+          "result": "'a'"
+        },
+        {
+          "expression": "Trim(null)",
+          "result": "null"
+        }
+      ]
+    },
+    {
+      "name": "Union",
+      "library": "Set",
+      "parameters": [
+        {
+          "name": "collection1",
+          "type": "<T>[]",
+          "required": false
+        },
+        {
+          "name": "collection2",
+          "type": "<T>[]",
+          "required": false
+        }
+      ],
+      "returnType": "<T>[]",
+      "description": "Create a set union between two collections. Parameter types in both collections must be the same and must be primitive types. Joining collections of different types or of complex object types is not supported. `null` value in collection is treated as a valid value and is preserved. `null` collection parameter is treated as an empty collection.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "Union({1,2}, {2,3})",
+          "result": "{1,2,3}"
+        },
+        {
+          "expression": "Union({1,2}, null)",
+          "result": "{1,2}"
+        },
+        {
+          "expression": "Union(null, {1,2})",
+          "result": "{1,2}"
+        },
+        {
+          "expression": "Union(RiskItem.coverages[*].coverageCd, Policy.coverages[*].coverageCd)",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "UpperCase",
+      "library": "String",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "String",
+          "required": false
+        }
+      ],
+      "returnType": "String",
+      "description": "Convert text to upper case. If text is `null`, return `null`.",
+      "since": null,
+      "examples": [
+        {
+          "expression": "UpperCase('abc')",
+          "result": "'ABC'"
+        },
+        {
+          "expression": "UpperCase(null)",
+          "result": "null"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+// Fonctions du namespace Policy.
+//
+// Kraken résout un appel sur trois sources, dans cet ordre de précédence
+// croissante (cf. ScopeBuilder du moteur) : les fonctions natives Java, une
+// Function avec corps KEL, une Function sans corps. Une fonction est
+// identifiée par son NOM et son NOMBRE DE PARAMÈTRES — jamais par les types.
+//
+// À tester ici :
+//  - Ctrl+Espace dans un corps de règle → natives + fonctions du projet
+//  - Ctrl+Q sur "Round" ailleurs → doc, exemples et version, depuis le moteur
+//  - Ctrl+Q sur "TotalLimit" → le commentaire ci-dessous
+//  - Ctrl+P dans les parenthèses d'un appel → les signatures disponibles
+//  - Ctrl+B sur "TotalLimit" depuis policy-rules.rules → atterrit ici
+//  - les natives et les fonctions du projet ont deux couleurs distinctes
+Namespace Policy
+
+/**
+ * Somme des limites de toutes les garanties de la police.
+ * @since 1.0.0
+ * @parameter coverages - les garanties à additionner
+ * @example TotalLimit(Policy.coverages)
+ * @result 3000
+ */
+Function TotalLimit(Coverage[] coverages) : Number {
+    Sum(coverages.limitAmount)
+}
+
+// Sans corps : déclare qu'une implémentation Java enregistrée existe. Le
+// moteur fait échouer la construction du projet si ce n'est pas le cas.
+Function ResolvePlanCd(PackageDetails) : String

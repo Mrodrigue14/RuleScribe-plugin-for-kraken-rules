@@ -5,6 +5,9 @@ import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionProvider
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.completion.CompletionType
+import com.intellij.codeInsight.completion.InsertHandler
+import com.intellij.codeInsight.completion.util.ParenthesesInsertHandler
+import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.icons.AllIcons
 import com.intellij.patterns.PlatformPatterns
@@ -14,6 +17,7 @@ import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.ProcessingContext
+import com.kraken.plugin.functions.KrakenFunctionCatalog
 import com.kraken.plugin.lang.KrakenFile
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenEntryPointDecl
@@ -94,6 +98,10 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
             }
             isInside(position, KrakenTypes.RULE_BODY) -> {
                 addKeywords(result, RULE_BODY_KEYWORDS)
+                addFunctionCompletions(position, result)
+            }
+            isInside(position, KrakenTypes.FUNCTION_BODY) -> {
+                addFunctionCompletions(position, result)
             }
             else -> {
                 addKeywords(result, TOP_LEVEL_KEYWORDS)
@@ -145,6 +153,38 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
             )
         }
     }
+
+    /**
+     * Fonctions appelables depuis une expression : les 55 natives du catalogue
+     * embarqué, puis les `Function` déclarées et visibles depuis ce fichier.
+     *
+     * Les deux peuvent porter le même nom avec des arités différentes — le
+     * moteur les distingue ainsi — donc chaque arité est une entrée distincte.
+     */
+    private fun addFunctionCompletions(position: PsiElement, result: CompletionResultSet) {
+        for (function in KrakenFunctionCatalog.functions) {
+            result.addElement(
+                LookupElementBuilder.create(function.name)
+                    .withIcon(AllIcons.Nodes.Function)
+                    .withTailText("(${function.parameters.joinToString(", ") { it.presentation() }})", true)
+                    .withTypeText(function.returnType, true)
+                    .withInsertHandler(parenthesesFor(function.parameters.isNotEmpty()))
+            )
+        }
+        for (declaration in KrakenPsiUtil.findFunctionsVisible(position)) {
+            val name = declaration.name ?: continue
+            result.addElement(
+                LookupElementBuilder.create(name)
+                    .withIcon(AllIcons.Nodes.Function)
+                    .withTailText("(${declaration.parameters.joinToString(", ")})", true)
+                    .withTypeText(declaration.returnType ?: declaration.containingFile.name, true)
+                    .withInsertHandler(parenthesesFor(declaration.arity > 0))
+            )
+        }
+    }
+
+    private fun parenthesesFor(hasParameters: Boolean): InsertHandler<LookupElement> =
+        ParenthesesInsertHandler.getInstance(hasParameters)
 
     private fun addKeywords(result: CompletionResultSet, keywords: List<String>) {
         for (keyword in keywords) {

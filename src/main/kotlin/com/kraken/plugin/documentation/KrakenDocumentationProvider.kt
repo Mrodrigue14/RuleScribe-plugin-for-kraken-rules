@@ -5,16 +5,43 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.TokenSet
 import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.functions.KrakenFunctionCatalog
+import com.kraken.plugin.psi.KrakenFunctionCall
+import com.kraken.plugin.psi.KrakenFunctionDecl
 import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
 
 /**
  * Quick documentation (Ctrl+Q) pour les règles Kraken : nom, cible,
- * description, condition, payload et dimensions.
+ * description, condition, payload et dimensions — et pour les fonctions,
+ * qu'elles soient déclarées dans le projet ou natives au moteur.
  */
 class KrakenDocumentationProvider : AbstractDocumentationProvider() {
 
+    /**
+     * Une fonction native n'a aucune déclaration à résoudre : c'est l'appel
+     * lui-même qui porte la documentation. Sans ce point d'entrée, Ctrl+Q sur
+     * `Round(x)` n'afficherait rien.
+     */
+    override fun getCustomDocumentationElement(
+        editor: com.intellij.openapi.editor.Editor,
+        file: com.intellij.psi.PsiFile,
+        contextElement: PsiElement?,
+        targetOffset: Int
+    ): PsiElement? = contextElement?.let {
+        com.intellij.psi.util.PsiTreeUtil.getParentOfType(it, KrakenFunctionCall::class.java, false)
+    }
+
     override fun generateDoc(element: PsiElement?, originalElement: PsiElement?): String? {
+        (element as? KrakenFunctionDecl)?.let { return KrakenFunctionDoc.render(it) }
+        (element as? KrakenFunctionCall)?.let { call ->
+            KrakenPsiUtil.findFunctionVisible(call, call.functionName, call.argumentCount)
+                ?.let { return KrakenFunctionDoc.render(it) }
+            KrakenFunctionCatalog.find(call.functionName, call.argumentCount)
+                ?.let { return KrakenFunctionDoc.render(it) }
+            return null
+        }
+
         val rule = element as? KrakenRuleDecl ?: return null
         val name = rule.name ?: return null
 
