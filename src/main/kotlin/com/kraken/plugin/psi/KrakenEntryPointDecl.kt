@@ -20,7 +20,7 @@ class KrakenEntryPointDecl(node: ASTNode) : ASTWrapperPsiElement(node), PsiNameI
     /** Cible de la navigation référence -> declaration (voir KrakenRuleDecl). */
     override fun getPresentation(): ItemPresentation = KrakenPresentations.of(
         this,
-        name?.let { "\"$it\"" } ?: "EntryPoint",
+        KrakenPresentations.declarationText(this, name, "EntryPoint"),
         KrakenPresentations.ENTRY_POINT_ICON,
     )
 

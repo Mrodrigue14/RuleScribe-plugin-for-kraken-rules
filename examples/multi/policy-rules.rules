@@ -7,9 +7,18 @@ Rule "Policy code mandatory" On Policy.policyCd {
     Error "policy_cd" : "Le code de la police est obligatoire"
 }
 
+// Deux variantes dimensionnelles du MÊME nom : c'est légitime en Kraken (chaque
+// @Dimension sélectionne la sienne à l'exécution). Ctrl+clic sur "Postal code
+// default" depuis un EntryPoint doit donc proposer LES DEUX, chaque ligne du
+// popup portant son annotation — le fichier seul ne les distinguerait pas.
 @Dimension("state", "CA")
 Rule "Postal code default" On AddressInfo.postalCode {
     Reset To "90210"
+}
+
+@Dimension("state", "NY")
+Rule "Postal code default" On AddressInfo.postalCode {
+    Reset To "10001"
 }
 
 Rule "Effective date past" On Policy.effectiveDate {

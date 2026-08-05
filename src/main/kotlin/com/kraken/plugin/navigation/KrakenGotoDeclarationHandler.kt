@@ -26,16 +26,22 @@ class KrakenGotoDeclarationHandler : GotoDeclarationHandler {
     ): Array<PsiElement>? {
         if (sourceElement == null) return null
 
-        // 1. Référence -> déclaration
+        // 1. Référence -> déclaration(s). Toutes les déclarations visibles, pas
+        //    seulement celle que `resolve()` retient : un même nom peut couvrir
+        //    plusieurs variantes @Dimension, et n'en proposer qu'une mènerait à
+        //    une implémentation choisie au hasard de l'ordre de l'index.
         val ruleRef = PsiTreeUtil.getParentOfType(sourceElement, KrakenRuleRef::class.java, false)
         if (ruleRef != null) {
-            val target = ruleRef.reference.resolve() ?: return null
-            return arrayOf(target)
+            return KrakenPsiUtil.findRulesVisible(ruleRef, ruleRef.ruleName)
+                .toTypedArray<PsiElement>()
+                .takeIf { it.isNotEmpty() }
         }
         val epRef = PsiTreeUtil.getParentOfType(sourceElement, KrakenEpRef::class.java, false)
         if (epRef != null) {
-            val target = epRef.reference?.resolve() ?: return null
-            return arrayOf(target)
+            val name = epRef.entryPointName ?: return null
+            return KrakenPsiUtil.findEntryPointsVisible(epRef, name)
+                .toTypedArray<PsiElement>()
+                .takeIf { it.isNotEmpty() }
         }
 
         // 2. Déclaration -> usages (Ctrl+clic sur le nom déclaré)

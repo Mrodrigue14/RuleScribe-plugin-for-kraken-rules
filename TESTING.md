@@ -6,8 +6,9 @@ Lancer un IDE sandbox avec le plugin : `.\gradlew.bat runIde` (Windows) ou
 ## Tests automatisés
 
 ```bash
-.\gradlew.bat test    # 18 tests : parser, complétion, inspections, navigation
-                      # inter-fichiers, renommage, namespaces, quick doc
+.\gradlew.bat test    # 66 tests : parser, complétion, inspections, navigation
+                      # inter-fichiers et bidirectionnelle, renommage,
+                      # namespaces, quick doc
 ```
 
 ## Checklist manuelle (dossier examples/multi/)
@@ -26,6 +27,18 @@ contextes, règles et EntryPoints dans des fichiers séparés, trois namespaces
 - [ ] Dans **other.rules** : `"Hidden elsewhere"` n'a PAS d'icône de gouttière et
       est signalée « not referenced » — sa seule référence vient d'un namespace
       qui ne la voit pas (sémantique stricte)
+
+### Navigation bidirectionnelle (plusieurs cibles)
+- [ ] Ctrl+clic sur `"Postal code default"` dans `EntryPoint "Defaults"` → popup à
+      **deux** entrées, une par variante `@Dimension` (`"state", "CA"` et
+      `"state", "NY"`), l'annotation étant affichée sur chaque ligne
+- [ ] Ctrl+clic sur le nom `"Policy code mandatory"` **dans sa déclaration**
+      (policy-rules.rules) → popup listant `EntryPoint "Validation"` et
+      `EntryPoint "Quick check"`, chacun avec son fichier
+- [ ] Idem sur `"Base sanity check"` dans **base.rules** : les deux EntryPoints
+      de `Policy` apparaissent (le namespace inclut `Base`)
+- [ ] Ctrl+clic sur `EntryPoint "Validation"` imbriqué dans `"Defaults"` → saute
+      à la déclaration de `"Validation"` dans le même fichier
 
 ### Complétion
 - [ ] Dans un `EntryPoint { }` : Ctrl+Espace propose les règles visibles (pas `"Hidden elsewhere"`)

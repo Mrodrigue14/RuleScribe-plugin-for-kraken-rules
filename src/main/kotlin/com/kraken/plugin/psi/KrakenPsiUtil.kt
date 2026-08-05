@@ -241,22 +241,33 @@ object KrakenPsiUtil {
         return if (imported.isEmpty()) direct else (direct + imported).distinct()
     }
 
-    fun findRuleVisible(from: PsiElement, name: String): KrakenRuleDecl? {
+    /**
+     * Toutes les déclarations visibles portant ce nom. Plusieurs cibles sont
+     * légitimes : les variantes `@Dimension` d'une règle partagent son nom
+     * (cf. KrakenDuplicateRuleInspection, qui ne signale que les doublons
+     * *sans* annotation différenciante). La navigation doit donc les proposer
+     * toutes plutôt que d'en retenir une au hasard de l'ordre de l'index.
+     */
+    fun findRulesVisible(from: PsiElement, name: String): List<KrakenRuleDecl> {
         // 1. Chemin rapide : stub index (O(1), sans charger les AST)
         val project = from.project
         val virtualFiles = visibleFiles(from.containingFile).mapNotNull { it.virtualFile }
-        if (virtualFiles.isNotEmpty()) {
-            val scope = GlobalSearchScope.filesScope(project, virtualFiles)
-            val indexed = StubIndex.getElements(
-                KrakenRuleNameIndex.KEY, name, project, scope, KrakenRuleDecl::class.java
-            )
-            indexed.firstOrNull()?.let { return it }
+        val indexed = if (virtualFiles.isEmpty()) {
+            emptyList()
+        } else {
+            StubIndex.getElements(
+                KrakenRuleNameIndex.KEY, name, project,
+                GlobalSearchScope.filesScope(project, virtualFiles), KrakenRuleDecl::class.java
+            ).toList()
         }
-        // 2. Règle importée explicitement (indépendant d'Include)
-        findImportedRule(from, name)?.let { return it }
-        // 3. Repli : fichiers non indexés (éditeur léger, fragments, tests)
-        return findRulesVisible(from).firstOrNull { it.name == name }
+        // 2. Repli : fichiers non indexés (éditeur léger, fragments, tests)
+        val declared = indexed.ifEmpty { findRulesVisible(from).filter { it.name == name } }
+        // 3. Règle importée explicitement (indépendant d'Include)
+        return (declared + listOfNotNull(findImportedRule(from, name))).distinct()
     }
+
+    fun findRuleVisible(from: PsiElement, name: String): KrakenRuleDecl? =
+        findRulesVisible(from, name).firstOrNull()
 
     // ------------------------------------------------------------------
     // Entry points
@@ -266,8 +277,12 @@ object KrakenPsiUtil {
         visibleFiles(from.containingFile)
             .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenEntryPointDecl::class.java) }
 
+    /** Même raison que pour les règles : un EntryPoint aussi peut être dimensionné. */
+    fun findEntryPointsVisible(from: PsiElement, name: String): List<KrakenEntryPointDecl> =
+        findEntryPointsVisible(from).filter { it.name == name }
+
     fun findEntryPointVisible(from: PsiElement, name: String): KrakenEntryPointDecl? =
-        findEntryPointsVisible(from).firstOrNull { it.name == name }
+        findEntryPointsVisible(from, name).firstOrNull()
 
     /** Vrai si le fichier de [refElement] peut voir [declarationFile] (namespaces). */
     private fun refSees(refElement: PsiElement, declarationFile: PsiFile?): Boolean {

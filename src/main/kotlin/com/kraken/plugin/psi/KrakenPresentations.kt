@@ -5,6 +5,7 @@ import com.intellij.navigation.ItemPresentation
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.lang.KrakenFile
+import com.kraken.plugin.parser.KrakenTypes
 import javax.swing.Icon
 
 /**
@@ -42,12 +43,28 @@ internal object KrakenPresentations {
         return fallback ?: reference.text.trim()
     }
 
+    /**
+     * Texte principal d'une *déclaration* : son nom, suivi de ses annotations
+     * quand elle en porte. Deux variantes `@Dimension` d'une même règle
+     * partagent le nom *et* le fichier — sans l'annotation, le popup de
+     * navigation afficherait deux lignes rigoureusement identiques.
+     */
+    fun declarationText(declaration: PsiElement, name: String?, fallback: String): String {
+        val base = name?.let { "\"$it\"" } ?: fallback
+        val annotations = declaration.node.getChildren(null)
+            .filter { it.elementType == KrakenTypes.ANNOTATION }
+            .joinToString(" ") { it.text.replace(WHITESPACE, " ") }
+        return if (annotations.isEmpty()) base else "$base $annotations"
+    }
+
     fun of(element: PsiElement, text: String, icon: Icon?): ItemPresentation =
         object : ItemPresentation {
             override fun getPresentableText(): String = text
             override fun getLocationString(): String? = location(element)
             override fun getIcon(unused: Boolean): Icon? = icon
         }
+
+    private val WHITESPACE = Regex("""\s+""")
 
     val RULE_ICON: Icon = AllIcons.Nodes.Method
     val ENTRY_POINT_ICON: Icon = AllIcons.Nodes.Plugin
