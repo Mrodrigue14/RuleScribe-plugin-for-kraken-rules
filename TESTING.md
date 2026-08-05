@@ -6,9 +6,9 @@ Lancer un IDE sandbox avec le plugin : `.\gradlew.bat runIde` (Windows) ou
 ## Tests automatisés
 
 ```bash
-.\gradlew.bat test    # 96 tests : parser, complétion, inspections, navigation
+.\gradlew.bat test    # 129 tests : parser, complétion, inspections, navigation
                       # inter-fichiers et bidirectionnelle, renommage,
-                      # namespaces, quick doc, fonctions, inlays d'usages
+                      # namespaces, quick doc, fonctions, inlays, portées d'expression
 ```
 
 ## Checklist manuelle (dossier examples/multi/)
@@ -72,6 +72,15 @@ contextes, règles et EntryPoints dans des fichiers séparés, trois namespaces
       exist (declared with 1 or 2) » — le nom existe, c'est l'arité qui ne va pas
 - [ ] `Round` et `TotalLimit` ont deux couleurs distinctes (native vs projet) ;
       `Rnd`, non résolu, garde la couleur d'un identifiant ordinaire
+
+### Identifiants dans les expressions (policy-rules.rules)
+- [ ] Ctrl+B sur `effectiveDate` dans un `Assert` → le champ dans policy-contexts.rules
+- [ ] Ctrl+B sur `Policy` dans `When Policy.policyCd != null` → le contexte racine
+- [ ] Ctrl+B sur `policyCd` du même `When` → le champ, via la chaîne d'accès
+- [ ] Dans policy-functions.rules, Ctrl+B sur `coverages` → le paramètre de `TotalLimit`
+- [ ] Écrire `Assert nimportequoi > 0` → « Reference 'nimportequoi' not found »
+- [ ] Écrire `Assert Policy.nimportequoi > 0` → **rien** : un segment de chaîne
+      n'est pas jugeable sans les types
 
 ### Complétion
 - [ ] Dans un `EntryPoint { }` : Ctrl+Espace propose les règles visibles (pas `"Hidden elsewhere"`)

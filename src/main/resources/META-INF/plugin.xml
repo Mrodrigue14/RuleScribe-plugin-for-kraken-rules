@@ -13,10 +13,11 @@
             <li>Built-in KEL functions: completion, parameter info and quick
             documentation for the engine's 55 native functions</li>
             <li>Inspections (rule without name, unresolved rule reference,
-            unknown function)</li>
+            unknown function, unresolved identifier)</li>
             <li>Intention: add missing 'On' clause</li>
             <li>Navigation between EntryPoint items, Rule declarations and
-            'Function' declarations</li>
+            'Function' declarations, and from any identifier in an expression to
+            its declaration</li>
             <li>Clickable 'N usages' inlays above declarations, opening the
             standard usages popup</li>
             <li>Rename refactoring for rules and functions</li>
@@ -27,6 +28,22 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.9.0</b>
+        <ul>
+            <li>Identifiers inside rule bodies now resolve. Ctrl+Click on a
+            field in an 'Assert', 'When' or 'Default To' expression opens its
+            declaration, and so do context names, 'set' variables, 'for' and
+            quantifier variables, and function parameters — following the same
+            scope order as the engine, where expression variables shadow the
+            fields of the 'On' target, which shadow context names.</li>
+            <li>Access chains resolve too: in 'AddressInfo.Country.isoCode' each
+            segment navigates, as long as the previous one denotes a known
+            context.</li>
+            <li>New inspection: unresolved identifier. It is deliberately
+            conservative — with no type inference yet, it stays silent on path
+            segments, on rules whose 'On' target does not resolve, and on the
+            external-context root, so that it never underlines valid code.</li>
+        </ul>
         <b>0.8.2</b>
         <ul>
             <li>Declarations now also show who last changed them and when, next
@@ -314,6 +331,15 @@
                 enabledByDefault="true"
                 level="WARNING"
                 implementationClass="com.kraken.plugin.inspection.KrakenUnknownFunctionInspection"/>
+
+        <localInspection
+                language="Kraken"
+                shortName="KrakenUnresolvedIdentifier"
+                displayName="Unresolved identifier in expression"
+                groupName="Kraken"
+                enabledByDefault="true"
+                level="WARNING"
+                implementationClass="com.kraken.plugin.inspection.KrakenUnresolvedIdentifierInspection"/>
 
         <intentionAction>
             <language>Kraken</language>

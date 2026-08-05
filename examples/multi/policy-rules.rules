@@ -34,7 +34,7 @@ Rule "Effective date past" On Policy.effectiveDate {
 // — les deux dernières sont soulignées par l'inspection, avec des messages
 // différents (nom inconnu vs mauvaise arité).
 Rule "Total limit is rounded" On Policy.policyCd {
-    Assert Round(TotalLimit(Policy.coverages), 2) > 0
+    Assert Round(TotalLimit(Policy.Coverage), 2) > 0
     Error "total_limit" : "La limite totale doit être positive"
 }
 

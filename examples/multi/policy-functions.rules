@@ -18,7 +18,7 @@ Namespace Policy
  * Somme des limites de toutes les garanties de la police.
  * @since 1.0.0
  * @parameter coverages - les garanties à additionner
- * @example TotalLimit(Policy.coverages)
+ * @example TotalLimit(Policy.Coverage)
  * @result 3000
  */
 Function TotalLimit(Coverage[] coverages) : Number {
