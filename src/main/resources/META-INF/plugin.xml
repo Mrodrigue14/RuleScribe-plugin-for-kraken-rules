@@ -9,11 +9,15 @@
         <a href="https://github.com/eisgroup/kraken-rules">eisgroup/kraken-rules</a>).
         <ul>
             <li>Syntax highlighting</li>
-            <li>Code completion (keywords, payloads, @Dimension, rule names)</li>
-            <li>Inspections (rule without name, unresolved rule reference)</li>
+            <li>Code completion (keywords, payloads, @Dimension, rule names, functions)</li>
+            <li>Built-in KEL functions: completion, parameter info and quick
+            documentation for the engine's 55 native functions</li>
+            <li>Inspections (rule without name, unresolved rule reference,
+            unknown function)</li>
             <li>Intention: add missing 'On' clause</li>
-            <li>Navigation between EntryPoint items and Rule declarations</li>
-            <li>Rename refactoring for rules</li>
+            <li>Navigation between EntryPoint items, Rule declarations and
+            'Function' declarations</li>
+            <li>Rename refactoring for rules and functions</li>
         </ul>
         <p><i>This is an independent community plugin. It is not affiliated with,
         endorsed by, or sponsored by EIS Group. "Kraken" refers to the open-source
@@ -21,6 +25,28 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.8.0</b>
+        <ul>
+            <li>Functions are now understood inside rule bodies. The engine's 55
+            built-in functions ship as a catalogue generated from
+            kraken-expression-language, so completion, parameter info (Ctrl+P)
+            and quick documentation (Ctrl+Q) show their real signatures,
+            descriptions and examples.</li>
+            <li>'Function' declarations resolve like any other declaration:
+            Ctrl+Click from a call, Find Usages and rename, all following
+            namespace visibility. Doc comments ('@since', '@example',
+            '@parameter') are rendered in quick documentation, and a signature
+            declared without a body is labelled as implemented in Java.</li>
+            <li>New inspection: unknown function. It matches the engine's own
+            criterion — a function is identified by name AND parameter count —
+            so a call with the wrong number of arguments reports which arities
+            exist instead of claiming the name is unknown. Projects shipping
+            their own '@Native' Java function library can list those names in
+            the inspection options.</li>
+            <li>Function calls are highlighted, with distinct colors for
+            built-in and project-declared functions; both are customizable in
+            the color settings page.</li>
+        </ul>
         <b>0.7.3</b>
         <ul>
             <li>Ctrl+Click on a rule or EntryPoint reference now offers every
@@ -210,6 +236,21 @@
                 forClass="com.kraken.plugin.psi.KrakenEpRef"
                 implementationClass="com.kraken.plugin.psi.KrakenEpRefManipulator"/>
 
+        <lang.elementManipulator
+                forClass="com.kraken.plugin.psi.KrakenFunctionCall"
+                implementationClass="com.kraken.plugin.psi.KrakenFunctionCallManipulator"/>
+
+        <!-- Les appels de fonction ne sont pas reconnaissables au niveau lexical
+             (un nom appelé est un IDENTIFIER comme un autre) : c'est un
+             Annotator, qui voit le PSI, qui les colore. -->
+        <annotator
+                language="Kraken"
+                implementationClass="com.kraken.plugin.highlighter.KrakenFunctionAnnotator"/>
+
+        <codeInsight.parameterInfo
+                language="Kraken"
+                implementationClass="com.kraken.plugin.documentation.KrakenParameterInfoHandler"/>
+
         <localInspection
                 language="Kraken"
                 shortName="KrakenRuleWithoutName"
@@ -227,6 +268,15 @@
                 enabledByDefault="true"
                 level="WARNING"
                 implementationClass="com.kraken.plugin.inspection.KrakenUnresolvedRuleRefInspection"/>
+
+        <localInspection
+                language="Kraken"
+                shortName="KrakenUnknownFunction"
+                displayName="Unknown function"
+                groupName="Kraken"
+                enabledByDefault="true"
+                level="WARNING"
+                implementationClass="com.kraken.plugin.inspection.KrakenUnknownFunctionInspection"/>
 
         <intentionAction>
             <language>Kraken</language>

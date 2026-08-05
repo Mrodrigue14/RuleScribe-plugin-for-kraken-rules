@@ -28,18 +28,30 @@ class KrakenColorSettingsPage : ColorSettingsPage {
 
         Dimension "state" : String
 
+        /**
+         * Limites de toutes les garanties.
+         * @since 1.0.0
+         */
+        Function Limits(Coverage[] coverages) : Number[] {
+            coverages.limitAmount
+        }
+
         @Dimension("state", "CA")
         Rule "Set AddressInfo.postalCode to state name" On AddressInfo.postalCode {
             Description "Force le code postal en Californie"
             Priority 10
-            When Policy.policyCd != null and Count(Policy.riskItems) > 0
+            When Policy.policyCd != null and <nativeFn>Count</nativeFn>(Policy.riskItems) > 0
             Reset To "CA"
         }
 
         Rule "Assert effective date" On Policy.effectiveDate {
-            Assert effectiveDate < Today()
+            Assert effectiveDate < <nativeFn>Today</nativeFn>()
             Error "code" : "La date doit être dans le passé"
             Overridable
+        }
+
+        Rule "Assert limits" On Policy.policyCd {
+            Assert <nativeFn>Sum</nativeFn>(<declaredFn>Limits</declaredFn>(Policy.coverages)) > 0
         }
 
         EntryPoint "Validation" {
@@ -48,7 +60,15 @@ class KrakenColorSettingsPage : ColorSettingsPage {
         }
     """.trimIndent()
 
-    override fun getAdditionalHighlightingTagToDescriptorMap(): Map<String, TextAttributesKey>? = null
+    /**
+     * Les couleurs de fonction sont posées par [KrakenFunctionAnnotator], pas
+     * par le highlighter lexical : l'aperçu de cette page ne les verrait donc
+     * pas. Ces balises les rendent visibles dans le texte de démonstration.
+     */
+    override fun getAdditionalHighlightingTagToDescriptorMap(): Map<String, TextAttributesKey> = mapOf(
+        "nativeFn" to KrakenSyntaxHighlighter.NATIVE_FUNCTION,
+        "declaredFn" to KrakenSyntaxHighlighter.DECLARED_FUNCTION,
+    )
 
     override fun getAttributeDescriptors(): Array<AttributesDescriptor> = DESCRIPTORS
 
@@ -66,6 +86,8 @@ class KrakenColorSettingsPage : ColorSettingsPage {
             AttributesDescriptor("Documentation comment", KrakenSyntaxHighlighter.DOC_COMMENT),
             AttributesDescriptor("Annotation", KrakenSyntaxHighlighter.ANNOTATION),
             AttributesDescriptor("Identifier", KrakenSyntaxHighlighter.IDENTIFIER),
+            AttributesDescriptor("Function call//Built-in", KrakenSyntaxHighlighter.NATIVE_FUNCTION),
+            AttributesDescriptor("Function call//Declared in the project", KrakenSyntaxHighlighter.DECLARED_FUNCTION),
             AttributesDescriptor("Operator", KrakenSyntaxHighlighter.OPERATOR),
             AttributesDescriptor("Braces", KrakenSyntaxHighlighter.BRACES),
             AttributesDescriptor("Parentheses", KrakenSyntaxHighlighter.PARENTHESES),

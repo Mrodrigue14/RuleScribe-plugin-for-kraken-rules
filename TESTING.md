@@ -6,9 +6,9 @@ Lancer un IDE sandbox avec le plugin : `.\gradlew.bat runIde` (Windows) ou
 ## Tests automatisés
 
 ```bash
-.\gradlew.bat test    # 66 tests : parser, complétion, inspections, navigation
+.\gradlew.bat test    # 92 tests : parser, complétion, inspections, navigation
                       # inter-fichiers et bidirectionnelle, renommage,
-                      # namespaces, quick doc
+                      # namespaces, quick doc, fonctions
 ```
 
 ## Checklist manuelle (dossier examples/multi/)
@@ -39,6 +39,20 @@ contextes, règles et EntryPoints dans des fichiers séparés, trois namespaces
       de `Policy` apparaissent (le namespace inclut `Base`)
 - [ ] Ctrl+clic sur `EntryPoint "Validation"` imbriqué dans `"Defaults"` → saute
       à la déclaration de `"Validation"` dans le même fichier
+
+### Fonctions (policy-functions.rules et policy-rules.rules)
+- [ ] Ctrl+Espace dans un corps de règle → les 55 natives (icône fonction, signature
+      en légende) **et** `TotalLimit` / `ResolvePlanCd` du projet
+- [ ] Ctrl+Q sur `Round` → description, exemples et « Since », venus du moteur
+- [ ] Ctrl+Q sur `TotalLimit` → le commentaire `/** … */`, avec `@since` et `@parameter`
+- [ ] Ctrl+Q sur `ResolvePlanCd` → mention « signature only, implemented in Java »
+- [ ] Ctrl+P entre les parenthèses de `Round(` → les deux signatures (1 et 2 paramètres)
+- [ ] Ctrl+B sur `TotalLimit` depuis policy-rules.rules → policy-functions.rules
+- [ ] `Rnd(1.5)` souligné : « Unknown function 'Rnd' »
+- [ ] `Round(1.5, 2, 3)` souligné : « Function 'Round' with 3 parameter(s) does not
+      exist (declared with 1 or 2) » — le nom existe, c'est l'arité qui ne va pas
+- [ ] `Round` et `TotalLimit` ont deux couleurs distinctes (native vs projet) ;
+      `Rnd`, non résolu, garde la couleur d'un identifiant ordinaire
 
 ### Complétion
 - [ ] Dans un `EntryPoint { }` : Ctrl+Espace propose les règles visibles (pas `"Hidden elsewhere"`)

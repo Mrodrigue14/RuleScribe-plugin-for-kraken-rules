@@ -28,3 +28,16 @@ Rule "Effective date past" On Policy.effectiveDate {
     Error "eff_date" : "La date doit être dans le passé"
     Overridable
 }
+
+// Appels de fonction : Round est native, TotalLimit est déclarée dans
+// policy-functions.rules, "Rnd" n'existe pas et "Round" à 3 arguments non plus
+// — les deux dernières sont soulignées par l'inspection, avec des messages
+// différents (nom inconnu vs mauvaise arité).
+Rule "Total limit is rounded" On Policy.policyCd {
+    Assert Round(TotalLimit(Policy.coverages), 2) > 0
+    Error "total_limit" : "La limite totale doit être positive"
+}
+
+Rule "Broken function calls demo" On Policy.policyCd {
+    Assert Rnd(1.5) > 0 and Round(1.5, 2, 3) > 0
+}

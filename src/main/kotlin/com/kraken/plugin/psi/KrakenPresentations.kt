@@ -68,4 +68,5 @@ internal object KrakenPresentations {
 
     val RULE_ICON: Icon = AllIcons.Nodes.Method
     val ENTRY_POINT_ICON: Icon = AllIcons.Nodes.Plugin
+    val FUNCTION_ICON: Icon = AllIcons.Nodes.Function
 }

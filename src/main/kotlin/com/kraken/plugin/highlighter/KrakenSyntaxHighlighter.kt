@@ -37,6 +37,20 @@ class KrakenSyntaxHighlighter : SyntaxHighlighterBase() {
             createTextAttributesKey("KRAKEN_IDENTIFIER", DefaultLanguageHighlighterColors.IDENTIFIER)
         val OPERATOR: TextAttributesKey =
             createTextAttributesKey("KRAKEN_OPERATOR", DefaultLanguageHighlighterColors.OPERATION_SIGN)
+
+        // Les appels de fonction ne sont pas distinguables au niveau lexical —
+        // un nom appelé et une variable sont tous deux IDENTIFIER. C'est
+        // KrakenFunctionAnnotator, qui voit le PSI, qui pose ces deux clés.
+        val NATIVE_FUNCTION: TextAttributesKey =
+            createTextAttributesKey(
+                "KRAKEN_NATIVE_FUNCTION",
+                DefaultLanguageHighlighterColors.STATIC_METHOD
+            )
+        val DECLARED_FUNCTION: TextAttributesKey =
+            createTextAttributesKey(
+                "KRAKEN_DECLARED_FUNCTION",
+                DefaultLanguageHighlighterColors.FUNCTION_CALL
+            )
         val BRACES: TextAttributesKey =
             createTextAttributesKey("KRAKEN_BRACES", DefaultLanguageHighlighterColors.BRACES)
         val PARENTHESES: TextAttributesKey =

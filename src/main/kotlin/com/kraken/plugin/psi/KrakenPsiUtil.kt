@@ -284,6 +284,35 @@ object KrakenPsiUtil {
     fun findEntryPointVisible(from: PsiElement, name: String): KrakenEntryPointDecl? =
         findEntryPointsVisible(from, name).firstOrNull()
 
+    // ------------------------------------------------------------------
+    // Fonctions déclarées en DSL
+    // ------------------------------------------------------------------
+
+    fun findFunctionsVisible(from: PsiElement): List<KrakenFunctionDecl> =
+        visibleFiles(from.containingFile)
+            .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenFunctionDecl::class.java) }
+
+    /**
+     * Le moteur indexe une fonction par `(nom, nombre de paramètres)` — pas par
+     * les types (cf. `FunctionHeader`). Deux `Function` de même nom et de même
+     * arité sont un conflit, pas une surcharge.
+     */
+    fun findFunctionVisible(from: PsiElement, name: String, arity: Int): KrakenFunctionDecl? =
+        findFunctionsVisible(from).firstOrNull { it.name == name && it.arity == arity }
+
+    /** Appels visibles portant ce nom et cette arité, pour Find Usages. */
+    fun findFunctionCallsVisibleTo(declaration: KrakenFunctionDecl): List<KrakenFunctionCall> {
+        val name = declaration.name ?: return emptyList()
+        val declarationFile = declaration.containingFile
+        return krakenFiles(declaration.project)
+            .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenFunctionCall::class.java) }
+            .filter {
+                it.functionName == name &&
+                    it.argumentCount == declaration.arity &&
+                    refSees(it, declarationFile)
+            }
+    }
+
     /** Vrai si le fichier de [refElement] peut voir [declarationFile] (namespaces). */
     private fun refSees(refElement: PsiElement, declarationFile: PsiFile?): Boolean {
         if (declarationFile == null) return false
