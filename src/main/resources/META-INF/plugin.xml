@@ -27,6 +27,15 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.8.2</b>
+        <ul>
+            <li>Declarations now also show who last changed them and when, next
+            to the usage count — the same author inlay other languages get.
+            Clicking it opens the annotation gutter, where every line carries
+            its own commit. Rules, EntryPoints, functions and contexts are all
+            covered; the inlay appears only when the file is under version
+            control.</li>
+        </ul>
         <b>0.8.1</b>
         <ul>
             <li>Declarations now carry a clickable 'N usages' inlay, like any
@@ -245,6 +254,13 @@
              quand le curseur est sur une déclaration. -->
         <codeInsight.daemonBoundCodeVisionProvider
                 implementation="com.kraken.plugin.navigation.KrakenReferencesCodeVisionProvider"/>
+
+        <!-- Inlay « auteur, date ». VcsCodeVisionProvider fait tout le travail
+             VCS ; ce contexte lui dit seulement quels éléments d'un .rules
+             méritent un inlay et où s'arrête leur bloc. -->
+        <vcs.codeVisionLanguageContext
+                language="Kraken"
+                implementationClass="com.kraken.plugin.navigation.KrakenVcsCodeVisionContext"/>
 
         <referencesSearch
                 implementation="com.kraken.plugin.navigation.KrakenReferencesSearcher"/>
