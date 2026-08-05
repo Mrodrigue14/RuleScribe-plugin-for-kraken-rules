@@ -1,15 +1,16 @@
 # Roadmap — RuleScribe for Kraken Rules
 
-## Current — v0.8.2
+## Current — v0.9.0
 
 Shipped: full KEL expression grammar, stub-based Rule index, strict
 namespace-aware resolution (Namespace/Include/Import Rule) with a cached
 visibility model, bidirectional Ctrl+Click navigation that offers every valid
 target, EntryPoint references with rename support, quick documentation,
 structure view with distinct icons, folding, formatter, live templates,
-11 inspections, function support inside rule bodies (built-in catalogue,
+12 inspections, function support inside rule bodies (built-in catalogue,
 completion, parameter info, quick documentation, navigation, highlighting),
-and inlays on every declaration showing usage count and last author. Published on the JetBrains Marketplace, signed and shipped
+inlays on every declaration showing usage count and last author, and
+identifier resolution inside rule bodies. Published on the JetBrains Marketplace, signed and shipped
 with SLSA build provenance and a CycloneDX SBOM. See plugin.xml change notes
 for the detailed history.
 
@@ -162,7 +163,7 @@ registers `JavaVcsCodeVisionContext` there.
 - The inlay appears only when the file is under version control and annotations
   are available; there is nothing to do for the "no VCS" case.
 
-## v0.9.0 — Identifier resolution inside expressions
+## v0.9.0 — Identifier resolution inside expressions ✅ (shipped)
 
 Port the engine's scope model *structurally*, without types. `kraken.el.scope`
 defines five scope kinds — GLOBAL, LOCAL, PATH, FILTER, VARIABLES_MAP — with

@@ -1,0 +1,37 @@
+<html>
+<body>
+Reports a bare identifier in a KEL expression that no scope defines.
+
+<p>
+    Kraken stacks two scopes around a rule expression: a global one holding
+    every context of the project, and a local one whose type is the context
+    targeted by <code>On</code>, which makes its fields referable without a
+    prefix. Variables introduced by the expression itself — <code>set</code>,
+    <code>for</code>, <code>every</code>, <code>some</code> — and the parameters
+    of an enclosing <code>Function</code> shadow both.
+</p>
+
+<p>
+    <b>This inspection is deliberately conservative.</b> The engine resolves
+    identifiers with full type information; this plugin does not have it yet, so
+    an identifier is reported only when its absence is certain. It stays silent
+    on:
+</p>
+
+<ul>
+    <li>path segments (<code>a.b.c</code>) — without the type of <code>a</code>,
+        nothing can be claimed about <code>b</code>;</li>
+    <li>rules whose <code>On</code> target does not resolve, since there is then
+        no reference context to judge against;</li>
+    <li><code>context</code>, the external-context root the engine always places
+        in the global scope;</li>
+    <li>function call heads, which the <i>Unknown function</i> inspection
+        covers.</li>
+</ul>
+
+<p>
+    The trade-off is intentional: this misses mistakes the engine catches, but
+    it must never underline valid code.
+</p>
+</body>
+</html>

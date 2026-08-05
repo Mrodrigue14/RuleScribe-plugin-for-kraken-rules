@@ -9,6 +9,13 @@ Root Context Policy Is BaseEntity {
     String state
     Date effectiveDate
     Child AddressInfo
+    Child* Coverage
+}
+
+// Cardinalité multiple (Child*) : Policy.Coverage désigne une collection,
+// ce que TotalLimit attend dans policy-functions.rules.
+Context Coverage {
+    Money limitAmount
 }
 
 Context AddressInfo {
