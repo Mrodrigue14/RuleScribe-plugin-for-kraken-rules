@@ -59,7 +59,7 @@ class KrakenRuleDecl : StubBasedPsiElementBase<KrakenRuleStub>,
      */
     override fun getPresentation(): ItemPresentation = KrakenPresentations.of(
         this,
-        name?.let { "\"$it\"" } ?: "Rule",
+        KrakenPresentations.declarationText(this, name, "Rule"),
         KrakenPresentations.RULE_ICON,
     )
 
