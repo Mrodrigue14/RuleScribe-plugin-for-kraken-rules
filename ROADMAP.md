@@ -1,6 +1,6 @@
 # Roadmap — RuleScribe for Kraken Rules
 
-## Current — v0.8.1
+## Current — v0.8.2
 
 Shipped: full KEL expression grammar, stub-based Rule index, strict
 namespace-aware resolution (Namespace/Include/Import Rule) with a cached
@@ -9,7 +9,7 @@ target, EntryPoint references with rename support, quick documentation,
 structure view with distinct icons, folding, formatter, live templates,
 11 inspections, function support inside rule bodies (built-in catalogue,
 completion, parameter info, quick documentation, navigation, highlighting),
-and clickable usage inlays on every declaration. Published on the JetBrains Marketplace, signed and shipped
+and inlays on every declaration showing usage count and last author. Published on the JetBrains Marketplace, signed and shipped
 with SLSA build provenance and a CycloneDX SBOM. See plugin.xml change notes
 for the detailed history.
 
@@ -143,7 +143,7 @@ already does better.
   `@Dimension` variant of a rule (v0.7.3) stays a `GotoDeclarationHandler`
   concern; only the declaration → usages direction moves to the platform.
 
-## v0.8.2 — Author and date inlays (VCS Code Vision)
+## v0.8.2 — Author and date inlays (VCS Code Vision) ✅ (shipped)
 
 Next to `N usages`, the platform can show who last touched a block and when —
 clicking opens the annotation gutter, where each line carries its own commit
@@ -161,22 +161,6 @@ registers `JavaVcsCodeVisionContext` there.
   `{ … }` blocks, so it may fit as-is.
 - The inlay appears only when the file is under version control and annotations
   are available; there is nothing to do for the "no VCS" case.
-
-## v0.8.3 — Red reserved for broken braces
-
-Deliberately narrower than the bracket-pair colorization already listed under
-Editor polish, and it should land first: a color that means *error* must not
-also appear as one rainbow hue among others, or it stops meaning anything.
-
-- Depth-based colors for matched `{}` / `()` / `[]`, **excluding red** from
-  the palette.
-- Red reserved for a brace whose partner is missing, or whose pairing is
-  ambiguous because an intervening brace is unbalanced.
-- The existing `KrakenBraceMatcher` decides pairing; the unmatched case is what
-  needs surfacing, and it belongs to an Annotator rather than the lexer, since
-  matching is a tree property.
-- Both configurable in the color settings page, next to the function-call
-  attributes added in v0.8.0.
 
 ## v0.9.0 — Identifier resolution inside expressions
 
@@ -248,9 +232,19 @@ Work:
 - Spellchecker support inside strings (descriptions, messages).
 - Semantic highlighting: visually distinguish resolved vs. unresolved
   references beyond the inspection squiggle.
-- Bracket pair colorization beyond what v0.8.3 covers: remaining palette work
-  and the on/off toggle. Note: overlaps with the third-party Rainbow Brackets
-  plugin — the value is built-in, DSL-tuned colors.
+- Bracket pair colorization: color matching `{}`/`()`/`[]` by nesting depth,
+  most useful for nested KEL expressions. Two constraints decided up front:
+  - **Red is reserved**, and excluded from the depth palette. It marks a brace
+    whose partner is missing, or whose pairing is ambiguous because an
+    intervening brace is unbalanced. A color that means *error* cannot also be
+    one rainbow hue among others, or it stops meaning anything.
+  - Depth colors and the unmatched color both belong to an Annotator rather
+    than the lexer, since matching is a tree property — `KrakenBraceMatcher`
+    already decides pairing, the unmatched case is what needs surfacing.
+
+  Configurable in the color settings page next to the function-call attributes
+  added in v0.8.0, and toggleable. Note: overlaps with the third-party Rainbow
+  Brackets plugin — the value is built-in, DSL-tuned colors.
 
 ## v1.0.0 — Stabilization
 

@@ -6,7 +6,7 @@ Lancer un IDE sandbox avec le plugin : `.\gradlew.bat runIde` (Windows) ou
 ## Tests automatisés
 
 ```bash
-.\gradlew.bat test    # 93 tests : parser, complétion, inspections, navigation
+.\gradlew.bat test    # 96 tests : parser, complétion, inspections, navigation
                       # inter-fichiers et bidirectionnelle, renommage,
                       # namespaces, quick doc, fonctions, inlays d'usages
 ```
@@ -51,6 +51,13 @@ contextes, règles et EntryPoints dans des fichiers séparés, trois namespaces
       référence vient d'un namespace qui ne la voit pas
 - [ ] Ctrl+B sur un item d'EntryPoint → inchangé : saut direct, ou popup des
       variantes `@Dimension`
+
+### Inlays auteur et date (dépôt sous git requis)
+- [ ] À côté de « N usages » : un second inlay avec le dernier auteur du bloc
+- [ ] Présent aussi sur les `Context`, qui n'ont pourtant pas d'usages à compter
+- [ ] Clic → ouvre l'annotation dans la gouttière, une date par ligne
+- [ ] Sur un fichier hors contrôle de version : aucun inlay d'auteur, et
+      « N usages » reste affiché
 
 ### Fonctions (policy-functions.rules et policy-rules.rules)
 - [ ] Ctrl+Espace dans un corps de règle → les 55 natives (icône fonction, signature
