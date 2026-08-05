@@ -1,0 +1,30 @@
+<html>
+<body>
+Reports two type incompatibilities that the engine rejects.
+
+<p>
+    <b>Comparison between incompatible types.</b> Kraken compares numerics with
+    numerics, dates with dates and date-times with date-times.
+    <code>Date</code> and <code>DateTime</code> are <i>not</i> comparable with
+    each other — the classic KEL trap, otherwise only visible when the engine
+    runs. <code>Money</code> and <code>Number</code> are comparable, and
+    <code>Money</code> is assignable to <code>Number</code> but not the reverse.
+</p>
+
+<p>
+    <b>Incompatible function argument.</b> The bundled catalogue carries the real
+    KEL type of every built-in parameter, so a mistyped argument is reported the
+    way the engine words it.
+</p>
+
+<p>
+    <b>What it stays silent on.</b> The plugin does not infer every expression
+    type yet: operators, iteration variables and unresolved references all yield
+    an unknown type, and any check touching one is skipped. Union types such as
+    <code>Date | DateTime</code> and unresolved generics are treated as dynamic.
+    Arguments of project-declared <code>Function</code>s are not checked, since
+    they are commonly expressions the inference does not cover, and checking them
+    would mostly produce noise.
+</p>
+</body>
+</html>
