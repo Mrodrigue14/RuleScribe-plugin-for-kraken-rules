@@ -6,9 +6,9 @@ Lancer un IDE sandbox avec le plugin : `.\gradlew.bat runIde` (Windows) ou
 ## Tests automatisés
 
 ```bash
-.\gradlew.bat test    # 92 tests : parser, complétion, inspections, navigation
+.\gradlew.bat test    # 93 tests : parser, complétion, inspections, navigation
                       # inter-fichiers et bidirectionnelle, renommage,
-                      # namespaces, quick doc, fonctions
+                      # namespaces, quick doc, fonctions, inlays d'usages
 ```
 
 ## Checklist manuelle (dossier examples/multi/)
@@ -39,6 +39,18 @@ contextes, règles et EntryPoints dans des fichiers séparés, trois namespaces
       de `Policy` apparaissent (le namespace inclut `Base`)
 - [ ] Ctrl+clic sur `EntryPoint "Validation"` imbriqué dans `"Defaults"` → saute
       à la déclaration de `"Validation"` dans le même fichier
+
+### Inlays d'usages (toutes les déclarations)
+- [ ] Au-dessus de chaque `Rule`, `EntryPoint` et `Function` : un inlay gris
+      « N usages » (ou « no usages »)
+- [ ] Clic sur l'inlay → popup standard d'usages, groupée par fichier avec
+      l'aperçu du code
+- [ ] Ctrl+B sur le NOM d'une déclaration → la même popup (et non plus la liste
+      plate de libellés d'avant v0.8.1)
+- [ ] `"Hidden elsewhere"` dans **other.rules** affiche « no usages » : sa seule
+      référence vient d'un namespace qui ne la voit pas
+- [ ] Ctrl+B sur un item d'EntryPoint → inchangé : saut direct, ou popup des
+      variantes `@Dimension`
 
 ### Fonctions (policy-functions.rules et policy-rules.rules)
 - [ ] Ctrl+Espace dans un corps de règle → les 55 natives (icône fonction, signature
