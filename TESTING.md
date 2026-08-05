@@ -6,9 +6,9 @@ Lancer un IDE sandbox avec le plugin : `.\gradlew.bat runIde` (Windows) ou
 ## Tests automatisés
 
 ```bash
-.\gradlew.bat test    # 136 tests : parser, complétion, inspections, navigation
+.\gradlew.bat test    # 163 tests : parser, complétion, inspections, navigation
                       # inter-fichiers et bidirectionnelle, renommage,
-                      # namespaces, quick doc, fonctions, inlays, portées d'expression
+                      # namespaces, quick doc, fonctions, inlays, portées d'expression, types
 ```
 
 ## Checklist manuelle (dossier examples/multi/)
@@ -84,6 +84,15 @@ contextes, règles et EntryPoints dans des fichiers séparés, trois namespaces
 - [ ] Écrire `Assert Count(Policy.Coverage[limitAmount > 0]) = 1` → Ctrl+B sur
       `limitAmount` mène au champ de `Coverage`, et rien n'est souligné : dans
       un filtre, le prédicat voit les champs de l'élément filtré
+
+### Types (policy-rules.rules)
+- [ ] `Assert effectiveDate < Today()` → **rien** : Date contre Date
+- [ ] Écrire `Assert effectiveDate < 2020-01-01T10:00:00Z` → « Cannot compare
+      'Date' with 'DateTime' » — le piège classique de KEL
+- [ ] Écrire `Assert Round(policyCd) > 0` → « Incompatible type 'String' …
+      expected 'Number' »
+- [ ] `Assert Round(TotalLimit(Policy.Coverage), 2) > 0` → **rien** : le type
+      d'un appel est son retour, pas celui de ses arguments
 
 ### Complétion
 - [ ] Dans un `EntryPoint { }` : Ctrl+Espace propose les règles visibles (pas `"Hidden elsewhere"`)

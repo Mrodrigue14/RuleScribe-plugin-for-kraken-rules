@@ -13,7 +13,7 @@
             <li>Built-in KEL functions: completion, parameter info and quick
             documentation for the engine's 55 native functions</li>
             <li>Inspections (rule without name, unresolved rule reference,
-            unknown function, unresolved identifier)</li>
+            unknown function, unresolved identifier, incompatible types)</li>
             <li>Intention: add missing 'On' clause</li>
             <li>Navigation between EntryPoint items, Rule declarations and
             'Function' declarations, and from any identifier in an expression to
@@ -28,6 +28,20 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.10.0</b>
+        <ul>
+            <li>KEL types are now inferred, and two incompatibilities reported.
+            Comparing a 'Date' with a 'DateTime' — which the engine refuses, and
+            which nothing revealed before running it — is flagged, as is passing
+            an argument of the wrong type to a built-in function.</li>
+            <li>Inference follows the engine: 'Integer' and 'Decimal' are both
+            'Number', 'Money' widens to 'Number' one way only, projecting a field
+            over a collection yields a collection, and type names are
+            case-insensitive.</li>
+            <li>Anything the plugin cannot type is left alone. Operators,
+            iteration variables, union parameters, generics and collections all
+            make the check abstain rather than guess.</li>
+        </ul>
         <b>0.9.0</b>
         <ul>
             <li>Identifiers inside rule bodies now resolve. Ctrl+Click on a
@@ -341,6 +355,15 @@
                 enabledByDefault="true"
                 level="WARNING"
                 implementationClass="com.kraken.plugin.inspection.KrakenUnresolvedIdentifierInspection"/>
+
+        <localInspection
+                language="Kraken"
+                shortName="KrakenTypeMismatch"
+                displayName="Incompatible types"
+                groupName="Kraken"
+                enabledByDefault="true"
+                level="WARNING"
+                implementationClass="com.kraken.plugin.inspection.KrakenTypeMismatchInspection"/>
 
         <intentionAction>
             <language>Kraken</language>

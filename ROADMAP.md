@@ -1,6 +1,6 @@
 # Roadmap — RuleScribe for Kraken Rules
 
-## Current — v0.9.0
+## Current — v0.10.0
 
 Shipped: full KEL expression grammar, stub-based Rule index, strict
 namespace-aware resolution (Namespace/Include/Import Rule) with a cached
@@ -178,7 +178,7 @@ object are reachable; a FILTER scope falls back to its parent).
 - Unresolved-reference inspection, mirroring the engine's `Reference ''{0}''
   not found.` and `Attribute ''{0}'' not found in ''{1}''.`
 
-## v0.10.0 — KEL type-checking
+## v0.10.0 — KEL type-checking ✅ (shipped, partially)
 
 Port the reference algorithm from kraken-expression-language
 (kraken.el.ast.validation.AstValidatingVisitor) rather than reinventing it.
