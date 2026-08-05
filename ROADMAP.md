@@ -1,13 +1,15 @@
 # Roadmap — RuleScribe for Kraken Rules
 
-## Current — v0.5.5
+## Current — v0.7.3
 
 Shipped: full KEL expression grammar, stub-based Rule index, strict
-namespace-aware resolution (Namespace/Include), EntryPoint references with
-rename support, reverse navigation, quick documentation, structure view
-with distinct icons, folding, formatter, live templates, 6 inspections.
-Published on the JetBrains Marketplace. See plugin.xml change notes for
-the detailed history.
+namespace-aware resolution (Namespace/Include/Import Rule) with a cached
+visibility model, bidirectional Ctrl+Click navigation that offers every valid
+target, EntryPoint references with rename support, quick documentation,
+structure view with distinct icons, folding, formatter, live templates,
+10 inspections. Published on the JetBrains Marketplace, signed and shipped
+with SLSA build provenance and a CycloneDX SBOM. See plugin.xml change notes
+for the detailed history.
 
 ## v0.6.0 — Import Rule resolution ✅ (shipped)
 

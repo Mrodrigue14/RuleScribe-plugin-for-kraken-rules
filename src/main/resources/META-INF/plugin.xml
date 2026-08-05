@@ -21,6 +21,15 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.7.3</b>
+        <ul>
+            <li>Ctrl+Click on a rule or EntryPoint reference now offers every
+            valid implementation instead of a single one. A rule declared in
+            several '@Dimension' variants previously navigated to whichever
+            variant the index happened to return first; each variant is now
+            listed, labelled with its annotation so same-file variants are
+            distinguishable.</li>
+        </ul>
         <b>0.7.2</b>
         <ul>
             <li>New icon: a parchment held by an off-screen kraken, with a quill.
