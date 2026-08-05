@@ -184,6 +184,44 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
     }
 
     // ------------------------------------------------------------------
+    // Portée FILTER : collection[prédicat]
+    // ------------------------------------------------------------------
+
+    /**
+     * Dans `Coverage[limit > 0]`, le prédicat s'évalue sur les champs d'un
+     * `Coverage` — c'est le `ScopeType.FILTER` du moteur. Cas relevé sur le
+     * corpus réel de kraken-rules, où il représentait la totalité des faux
+     * positifs de l'inspection.
+     */
+    fun testFilterPredicateSeesTheItemFields() {
+        configureRule("Assert Count(Coverage[limit > 0]) = 1")
+        val target = resolve("limit")
+        assertNotNull("Le prédicat voit les champs de l'élément filtré", target)
+        assertEquals(KrakenTypes.FIELD_DECL, target!!.node.elementType)
+    }
+
+    /** Le filtre le plus proche gagne, ce qui traite les imbrications. */
+    fun testNestedFilterUsesTheNearestBracket() {
+        configureRule("Assert Count(AddressInfo[postalCode = Count(Coverage[limit > 0])]) = 1")
+        assertNotNull("postalCode vient d'AddressInfo", resolve("postalCode"))
+        assertNotNull("limit vient de Coverage", resolve("limit"))
+    }
+
+    /** Un crochet ne change pas le contexte : filtrer conserve le type. */
+    fun testChainContinuesAfterAFilter() {
+        configureRule("Assert AddressInfo[postalCode != null].postalCode != null")
+        assertNotNull(resolve("postalCode"))
+    }
+
+    /** Tête inconnue : la portée du filtre est indéterminée, pas vide. */
+    fun testFilterOnAnUnknownHeadHasNoContext() {
+        configureRule("Assert IsEmpty(context.additional.items[whatever = 1])")
+        val ref = refTo("whatever")
+        assertTrue(KrakenScopeResolver.isInFilterPredicate(ref))
+        assertNull(KrakenScopeResolver.filterContext(ref))
+    }
+
+    // ------------------------------------------------------------------
     // Complétion
     // ------------------------------------------------------------------
 

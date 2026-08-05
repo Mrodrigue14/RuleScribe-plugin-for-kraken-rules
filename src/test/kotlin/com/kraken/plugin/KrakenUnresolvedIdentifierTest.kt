@@ -21,6 +21,10 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
         Context AddressInfo {
             String postalCode
         }
+
+        Context Coverage {
+            Money limit
+        }
     """.trimIndent()
 
     private fun problems(body: String): List<String> {
@@ -80,6 +84,29 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
         assertEquals(emptyList<String>(), problems("Assert Round(policyCd, 2) != null"))
     }
 
+    /**
+     * Les prédicats de filtre voyaient tous leurs identifiants signalés : c'est
+     * ce que la sonde contre le corpus réel de kraken-rules a révélé, et c'était
+     * la totalité de ses faux positifs.
+     */
+    fun testFilterPredicateFieldsAreAccepted() {
+        assertEquals(
+            emptyList<String>(),
+            problems("Assert Count(AddressInfo[postalCode != null]) = 1")
+        )
+    }
+
+    /**
+     * Filtre sur une tête inconnue — typiquement le contexte externe, dynamique :
+     * la portée est indéterminée, donc on s'abstient au lieu de tout signaler.
+     */
+    fun testFilterOnADynamicHeadIsNotJudged() {
+        assertEquals(
+            emptyList<String>(),
+            problems("Assert IsEmpty(context.additional.vehicles[model = policyCd])")
+        )
+    }
+
     /** `context` vit dans la portée globale du moteur, jamais déclaré en DSL. */
     fun testExternalContextRootIsAccepted() {
         assertEquals(emptyList<String>(), problems("Assert context != null"))
@@ -102,6 +129,49 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
             .mapNotNull { it.description }
             .filter { it.startsWith("Reference ") }
         assertEquals(emptyList<String>(), reported)
+    }
+
+    /**
+     * Plusieurs fichiers visibles peuvent déclarer un contexte homonyme — un
+     * dépôt qui héberge plusieurs produits, ou de simples fixtures à côté du
+     * code. Le champ cherché peut n'exister que dans l'une d'elles ; n'en
+     * consulter qu'une, au hasard de l'ordre des fichiers, produisait un faux
+     * positif sur du code parfaitement valide. Cas signalé en usage réel.
+     */
+    fun testFieldIsFoundAcrossHomonymousContextDeclarations() {
+        myFixture.addFileToProject(
+            "other-policy.rules",
+            """
+            Context Policy {
+                String somethingElse
+            }
+            """.trimIndent()
+        )
+        myFixture.addFileToProject(
+            "real-policy.rules",
+            """
+            Context Policy {
+                Date effectiveDate
+            }
+            """.trimIndent()
+        )
+        myFixture.configureByText(
+            "rule.rules",
+            """
+            Rule "Effective date past" On Policy.effectiveDate {
+                Assert effectiveDate < Today()
+            }
+            """.trimIndent()
+        )
+        myFixture.enableInspections(KrakenUnresolvedIdentifierInspection())
+        val reported = myFixture.doHighlighting()
+            .mapNotNull { it.description }
+            .filter { it.startsWith("Reference ") }
+        assertEquals(
+            "Le champ n'existe que dans l'une des déclarations homonymes",
+            emptyList<String>(),
+            reported
+        )
     }
 
     fun testFunctionParametersAreAccepted() {
