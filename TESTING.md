@@ -67,9 +67,6 @@ contextes, règles et EntryPoints dans des fichiers séparés, trois namespaces
 - [ ] Ctrl+Q sur `ResolvePlanCd` → mention « signature only, implemented in Java »
 - [ ] Ctrl+P entre les parenthèses de `Round(` → les deux signatures (1 et 2 paramètres)
 - [ ] Ctrl+B sur `TotalLimit` depuis policy-rules.rules → policy-functions.rules
-- [ ] `Rnd(1.5)` souligné : « Unknown function 'Rnd' »
-- [ ] `Round(1.5, 2, 3)` souligné : « Function 'Round' with 3 parameter(s) does not
-      exist (declared with 1 or 2) » — le nom existe, c'est l'arité qui ne va pas
 - [ ] `Round` et `TotalLimit` ont deux couleurs distinctes (native vs projet) ;
       `Rnd`, non résolu, garde la couleur d'un identifiant ordinaire
 

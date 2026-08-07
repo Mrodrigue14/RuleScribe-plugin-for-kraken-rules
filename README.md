@@ -41,12 +41,14 @@
 - **Live templates**: `rule`, `ep`, `ctx`, `dim` + Tab.
 - **Quick documentation** (Ctrl+Q) on rules: description, target, payloads, dimensions.
 - **Intention**: *Add missing 'On' clause* (Alt+Enter on a rule without a target).
-- **10 inspections**: rule without name, unresolved rule/entry point reference,
-  unknown context, duplicate rules without a differentiating `@Dimension`,
-  rule never referenced by any entry point, undeclared dimension, and 4
-  rule-import checks mirroring the engine (unknown source namespace, rule
-  missing from the source namespace, import colliding with a local rule,
-  ambiguous import).
+- **12 inspections**: rule without name, unresolved rule/entry point reference,
+  unresolved identifier in an expression, incompatible types, unknown context,
+  duplicate rules without a differentiating `@Dimension`, rule never
+  referenced by any entry point, undeclared dimension, and 4 rule-import
+  checks mirroring the engine (unknown source namespace, rule missing from
+  the source namespace, import colliding with a local rule, ambiguous
+  import). Function calls are not checked — see
+  [ROADMAP.md](ROADMAP.md#function-validation-removed) for why.
 - **Stub-based index**: rule resolution goes through a persistent index —
   fast even on projects with hundreds of `.rules` files.
 - See [ROADMAP.md](ROADMAP.md) for what's next (KEL type-checking, rule runner).
@@ -67,7 +69,7 @@
 ./gradlew buildPlugin
 ```
 
-The packaged plugin is written to `build/distributions/rulescribe-0.10.3.zip`.
+The packaged plugin is written to `build/distributions/rulescribe-0.10.4.zip`.
 
 > 💡 Don't want to build? Every push to `main` produces the zip automatically
 > on GitHub Actions — see [Grabbing a build from GitHub Actions](#grabbing-a-build-from-github-actions).
@@ -90,7 +92,7 @@ chmod +x gradlew
 ./gradlew buildPlugin
 ```
 
-The zip lands in the same place: `build/distributions/rulescribe-0.10.3.zip`.
+The zip lands in the same place: `build/distributions/rulescribe-0.10.4.zip`.
 To try it in a sandbox IDE: `./gradlew runIde`.
 
 ### Other useful tasks
@@ -106,7 +108,7 @@ To try it in a sandbox IDE: `./gradlew runIde`.
 
 1. `.\gradlew.bat buildPlugin`
 2. In IntelliJ: *Settings → Plugins → ⚙ → Install Plugin from Disk…*
-3. Select `build/distributions/rulescribe-0.10.3.zip`
+3. Select `build/distributions/rulescribe-0.10.4.zip`
 4. Restart the IDE and open a `.rules` file (e.g. `examples/demo.rules`, or the
    multi-file sample project `examples/multi/` to try cross-file navigation —
    full manual checklist in [TESTING.md](TESTING.md))
@@ -190,7 +192,7 @@ CI-built plugin zips can be downloaded without installing anything:
 2. Click the latest green run of the **Build** workflow
 3. Scroll to the **Artifacts** section → download `rulescribe`
 4. ⚠️ GitHub wraps artifacts in an extra zip: **extract**
-   `rulescribe.zip` to get `rulescribe-0.10.3.zip`
+   `rulescribe.zip` to get `rulescribe-0.10.4.zip`
    (the plugin's name always contains the version number)
 5. Install that *inner* zip via *Settings → Plugins → ⚙ → Install Plugin from Disk…*
 
