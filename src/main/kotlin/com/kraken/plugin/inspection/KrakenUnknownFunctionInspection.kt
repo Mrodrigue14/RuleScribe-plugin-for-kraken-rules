@@ -32,11 +32,14 @@ import com.kraken.plugin.psi.KrakenPsiUtil
  * voit — pas de faux positif. Mais une bibliothèque maison **avec** `@Native`
  * est visible du moteur sans rien déclarer. Deux réponses, dans cet ordre :
  *
- * 1. **Découverte automatique** — [KrakenProjectFunctions] relève les
- *    `@ExpressionFunction` des sources Java du projet, et, via
- *    [com.kraken.plugin.functions.KrakenLibraryFunctions], des classes
- *    compilées dans les dépendances Maven quand le plugin Java est présent.
- *    C'est le cas courant, et il ne demande aucune configuration.
+ * 1. **Découverte automatique** — [KrakenProjectFunctions] résout les
+ *    classes enregistrées comme `FunctionLibrary` (fichier SPI
+ *    `META-INF/services/kraken.el.functionregistry.FunctionLibrary`, la
+ *    seule source que le moteur regarde) et relève leurs
+ *    `@ExpressionFunction`, dans le projet comme dans ses dépendances Maven,
+ *    via [com.kraken.plugin.functions.KrakenLibraryFunctions] quand le
+ *    plugin Java est présent. C'est le cas courant, et il ne demande aucune
+ *    configuration.
  * 2. [additionalNativeFunctions] — pour ce que la découverte ne voit pas :
  *    fonctions implémentées seulement en TypeScript, ou IDE sans plugin Java,
  *    dont la forme déclarative ne permet pas une détection fiable.

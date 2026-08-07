@@ -13,10 +13,13 @@ import java.io.File
  * utilisateur en production : une bibliothèque `FunctionLibrary` interne, vue
  * en bytecode décompilé, faisait signaler ~300 appels valides comme inconnus.
  *
- * `library-functions.jar` (testData/functions) est un fixture précompilé —
- * une seule classe `com.acme.lib.LibraryFunctions` avec
- * `@ExpressionFunction("IsTrue")` — pour reproduire ce scénario sans dépendre
- * d'un compilateur Java disponible au moment du test.
+ * `library-functions.jar` (testData/functions) est un fixture précompilé qui
+ * contient, comme un vrai JAR Kraken, une entrée
+ * `META-INF/services/kraken.el.functionregistry.FunctionLibrary` listant
+ * `com.acme.lib.LibraryFunctions` (`@ExpressionFunction("IsTrue")`) — c'est
+ * ce fichier SPI, et non l'annotation elle-même, que la découverte cherche
+ * maintenant en premier. Précompilé pour ne pas dépendre d'un compilateur
+ * Java disponible au moment du test.
  */
 class KrakenLibraryFunctionsTest : BasePlatformTestCase() {
 

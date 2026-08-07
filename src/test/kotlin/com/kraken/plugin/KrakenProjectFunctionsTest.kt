@@ -5,23 +5,33 @@ import com.kraken.plugin.functions.KrakenProjectFunctions
 import com.kraken.plugin.inspection.KrakenUnknownFunctionInspection
 
 /**
- * Découverte des fonctions natives déclarées par le projet.
- *
- * Le moteur met en portée toute méthode `@ExpressionFunction` d'une
- * bibliothèque `@Native`, sans aucune déclaration DSL. Sans les lire, le plugin
+ * Découverte des fonctions natives déclarées par le projet — l'union de la
+ * résolution SPI de [com.kraken.plugin.functions.KrakenLibraryFunctions] et
+ * du repli par mot-index (voir la KDoc de
+ * [com.kraken.plugin.functions.KrakenProjectFunctions] pour pourquoi les
+ * deux tournent, même quand le plugin Java est présent). Sans ça, le plugin
  * signalait des centaines d'appels valides dans un projet d'entreprise
  * (issue #43).
  */
 class KrakenProjectFunctionsTest : BasePlatformTestCase() {
+
+    // Stubs minimaux de l'API Kraken : le vrai JAR n'est pas une dépendance
+    // du plugin (voir KrakenLibraryFunctionsTest pour la version JAR compilé).
+    private val api = """
+        package kraken.el.functionregistry;
+        import java.lang.annotation.*;
+        @Retention(RetentionPolicy.RUNTIME)
+        public @interface ExpressionFunction { String value(); }
+    """.trimIndent()
+
+    private val functionLibrary = "package kraken.el.functionregistry; public interface FunctionLibrary {}"
 
     private val library = """
         package com.acme.rules;
 
         import kraken.el.functionregistry.ExpressionFunction;
         import kraken.el.functionregistry.FunctionLibrary;
-        import kraken.el.functionregistry.Native;
 
-        @Native
         public class AcmeFunctions implements FunctionLibrary {
 
             @ExpressionFunction("ResolveTerritory")
@@ -36,8 +46,21 @@ class KrakenProjectFunctionsTest : BasePlatformTestCase() {
         }
     """.trimIndent()
 
+    // Pas de préfixe "src/" : la racine source du fixture léger est déjà
+    // positionnée là où addFileToProject écrit — un préfixe double le
+    // segment et casse la résolution par chemin relatif depuis cette racine.
+    private fun addAcmeFunctions() {
+        myFixture.addFileToProject("kraken/el/functionregistry/ExpressionFunction.java", api)
+        myFixture.addFileToProject("kraken/el/functionregistry/FunctionLibrary.java", functionLibrary)
+        myFixture.addFileToProject("com/acme/rules/AcmeFunctions.java", library)
+        myFixture.addFileToProject(
+            "META-INF/services/kraken.el.functionregistry.FunctionLibrary",
+            "com.acme.rules.AcmeFunctions"
+        )
+    }
+
     private fun problems(body: String): List<String> {
-        myFixture.addFileToProject("src/AcmeFunctions.java", library)
+        addAcmeFunctions()
         myFixture.configureByText(
             "rules.rules",
             """
@@ -57,7 +80,7 @@ class KrakenProjectFunctionsTest : BasePlatformTestCase() {
     }
 
     fun testAnnotationNamesAreDiscovered() {
-        myFixture.addFileToProject("src/AcmeFunctions.java", library)
+        addAcmeFunctions()
         val found = KrakenProjectFunctions.names(project)
         assertTrue("ResolveTerritory", found.contains("ResolveTerritory"))
         assertTrue("espaces dans l'annotation", found.contains("RatingFactor"))
@@ -88,6 +111,22 @@ class KrakenProjectFunctionsTest : BasePlatformTestCase() {
             listOf("Unknown function 'NotDeclaredAnywhere'"),
             problems("Assert NotDeclaredAnywhere(policyCd) != null")
         )
+    }
+
+    /**
+     * Sans confirmation qu'un projet d'entreprise enregistre toujours ses
+     * bibliothèques par SPI (le mécanisme documenté de l'OSS Kraken, mais pas
+     * vérifié pour toute plateforme construite dessus), le repli par
+     * mot-index reste actif même quand le plugin Java est présent : une
+     * classe annotée sans fichier SPI est quand même trouvée, plutôt que de
+     * régresser silencieusement vers « inconnue ».
+     */
+    fun testAnnotatedClassWithoutSpiRegistrationIsStillDiscoveredViaFallback() {
+        myFixture.addFileToProject("kraken/el/functionregistry/ExpressionFunction.java", api)
+        myFixture.addFileToProject("kraken/el/functionregistry/FunctionLibrary.java", functionLibrary)
+        myFixture.addFileToProject("com/acme/rules/AcmeFunctions.java", library)
+        // Pas de META-INF/services ici, volontairement.
+        assertTrue(KrakenProjectFunctions.names(project).contains("ResolveTerritory"))
     }
 
     /** Un projet sans source Java ne coûte rien et ne découvre rien. */

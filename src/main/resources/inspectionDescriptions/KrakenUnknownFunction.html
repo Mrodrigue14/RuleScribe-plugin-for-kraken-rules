@@ -29,12 +29,14 @@ Reports a function call in a KEL expression that matches no known function.
 </p>
 
 <p>
-    Those <code>@Native</code> libraries are found by reading the project's Java
-    sources for <code>@ExpressionFunction</code> — and, when the Java plugin is
-    available, by the same search over compiled classes in Maven dependencies,
-    so a library shipped only as a JAR is found too. No configuration is needed
-    in the common case. Because the Java signature is not analysed, such a
-    function is accepted at any number of arguments.
+    Those libraries are found the same way the engine finds them: by resolving
+    the classes listed in a project's or a dependency's
+    <code>META-INF/services/kraken.el.functionregistry.FunctionLibrary</code>
+    file and reading their <code>@ExpressionFunction</code> methods. A library
+    shipped only as a compiled JAR is found this way too, when the Java plugin
+    is available. No configuration is needed in the common case. Because the
+    Java signature is not analysed, such a function is accepted at any number
+    of arguments.
 </p>
 
 <p>
