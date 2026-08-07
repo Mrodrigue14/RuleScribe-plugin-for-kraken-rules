@@ -28,6 +28,15 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.10.2</b>
+        <ul>
+            <li>Custom functions declared in a Maven dependency — not the
+            project's own sources — are now found too: a '@Native' function
+            library shipped as a compiled JAR was still being reported as
+            hundreds of unknown-function warnings after 0.10.1, which only
+            read '.java' files. Requires the bundled Java plugin; unaffected
+            otherwise.</li>
+        </ul>
         <b>0.10.1</b>
         <ul>
             <li>Custom functions a project implements in Java are now found
@@ -251,6 +260,11 @@
     ]]></change-notes>
 
     <depends>com.intellij.modules.platform</depends>
+    <!-- Optionnelle : n'active la découverte de fonctions dans les bibliothèques
+         (src/main/kotlin/.../KrakenLibraryFunctions.kt) que si le plugin Java
+         est présent. Sans lui, le plugin reste utilisable sur toute IDE de la
+         plateforme, comme avant. -->
+    <depends optional="true" config-file="withJava.xml">com.intellij.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <fileType

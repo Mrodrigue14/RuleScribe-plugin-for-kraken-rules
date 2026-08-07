@@ -1,0 +1,8 @@
+<!--
+    Fragment chargé uniquement quand le plugin Java est présent (voir le
+    <depends optional="true"> dans plugin.xml). Aucune extension à déclarer
+    ici : son seul rôle est d'accorder au classloader du plugin l'accès aux
+    classes du module com.intellij.java, dont KrakenLibraryFunctions a besoin.
+-->
+<idea-plugin>
+</idea-plugin>

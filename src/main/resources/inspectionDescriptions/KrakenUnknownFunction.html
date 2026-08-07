@@ -30,15 +30,17 @@ Reports a function call in a KEL expression that matches no known function.
 
 <p>
     Those <code>@Native</code> libraries are found by reading the project's Java
-    sources for <code>@ExpressionFunction</code>, so no configuration is needed
+    sources for <code>@ExpressionFunction</code> — and, when the Java plugin is
+    available, by the same search over compiled classes in Maven dependencies,
+    so a library shipped only as a JAR is found too. No configuration is needed
     in the common case. Because the Java signature is not analysed, such a
     function is accepted at any number of arguments.
 </p>
 
 <p>
-    What the scan cannot see — functions shipped inside a JAR, or implemented
-    only in TypeScript, whose declaration form makes reliable detection
-    impossible — can be listed by name in the inspection options.
+    What the scan still cannot see — a function implemented only in
+    TypeScript, or an IDE with no Java support at all — can be listed by name
+    in the inspection options.
 </p>
 </body>
 </html>
