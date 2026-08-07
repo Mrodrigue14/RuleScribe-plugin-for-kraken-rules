@@ -30,8 +30,8 @@
     <change-notes><![CDATA[
         <b>0.10.2</b>
         <ul>
-            <li>Custom functions declared in a Maven dependency — not the
-            project's own sources — are now found too: a '@Native' function
+            <li>Custom functions declared in a Maven dependency, not just the
+            project's own sources, are now found too. A '@Native' function
             library shipped as a compiled JAR was still being reported as
             hundreds of unknown-function warnings after 0.10.1, which only
             read '.java' files. Requires the bundled Java plugin; unaffected
