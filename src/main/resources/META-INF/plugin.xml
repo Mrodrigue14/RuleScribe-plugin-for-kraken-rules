@@ -28,6 +28,14 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.10.3</b>
+        <ul>
+            <li>Function discovery is faster on large projects. It now uses the
+            platform's word index to find the handful of files that mention
+            the annotation instead of reading every '.java' file, and the
+            compiled-class scan is now scoped to library dependencies instead
+            of the whole classpath. No behavior change.</li>
+        </ul>
         <b>0.10.2</b>
         <ul>
             <li>Custom functions declared in a Maven dependency, not just the

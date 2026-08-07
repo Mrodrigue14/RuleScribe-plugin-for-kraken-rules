@@ -1,6 +1,6 @@
 # Roadmap — RuleScribe for Kraken Rules
 
-## Current — v0.10.2
+## Current — v0.10.3
 
 Shipped: full KEL expression grammar, stub-based Rule index, strict
 namespace-aware resolution (Namespace/Include/Import Rule) with a cached
