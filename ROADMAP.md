@@ -1,6 +1,6 @@
 # Roadmap — RuleScribe for Kraken Rules
 
-## Current — v0.10.0
+## Current — v0.10.2
 
 Shipped: full KEL expression grammar, stub-based Rule index, strict
 namespace-aware resolution (Namespace/Include/Import Rule) with a cached
@@ -9,10 +9,12 @@ target, EntryPoint references with rename support, quick documentation,
 structure view with distinct icons, folding, formatter, live templates,
 12 inspections, function support inside rule bodies (built-in catalogue,
 completion, parameter info, quick documentation, navigation, highlighting),
-inlays on every declaration showing usage count and last author, and
-identifier resolution inside rule bodies. Published on the JetBrains Marketplace, signed and shipped
-with SLSA build provenance and a CycloneDX SBOM. See plugin.xml change notes
-for the detailed history.
+inlays on every declaration showing usage count and last author, identifier
+resolution inside rule bodies, KEL type inference, and automatic discovery of
+project-declared native functions — both in the project's own Java sources
+and in compiled classes from Maven dependencies. Published on the JetBrains
+Marketplace, signed and shipped with SLSA build provenance and a CycloneDX
+SBOM. See plugin.xml change notes for the detailed history.
 
 ## v0.6.0 — Import Rule resolution ✅ (shipped)
 

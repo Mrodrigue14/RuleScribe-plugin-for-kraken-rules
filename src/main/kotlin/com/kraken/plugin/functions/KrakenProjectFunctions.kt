@@ -1,6 +1,7 @@
 package com.kraken.plugin.functions
 
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiManager
 import com.intellij.psi.search.FilenameIndex
@@ -29,18 +30,36 @@ import com.intellij.psi.util.PsiModificationTracker
  * Conséquence assumée : une fonction du projet est connue **à toute arité**.
  * Sans analyser la signature Java, on ne peut pas vérifier le nombre de
  * paramètres, et prétendre le contraire produirait de faux diagnostics.
+ *
+ * Une bibliothèque Maven livrée en `.class` — donc absente des sources du
+ * projet — échappe à cette lecture. [KrakenLibraryFunctions] la couvre via le
+ * PSI Java, qui indexe les classes compilées comme les sources ; l'appel est
+ * protégé, car ce module n'existe que si le plugin Java est présent
+ * (dépendance optionnelle).
  */
 object KrakenProjectFunctions {
 
     private val KEY = Key.create<CachedValue<Set<String>>>("kraken.project.functions")
 
-    /** Noms déclarés par `@ExpressionFunction` dans les sources Java du projet. */
+    /** Noms déclarés par `@ExpressionFunction` dans le projet et ses dépendances. */
     fun names(project: Project): Set<String> =
         CachedValuesManager.getManager(project).getCachedValue(project, KEY, {
-            CachedValueProvider.Result.create(scan(project), PsiModificationTracker.MODIFICATION_COUNT)
+            CachedValueProvider.Result.create(
+                scan(project) + libraryNames(project),
+                PsiModificationTracker.MODIFICATION_COUNT,
+                ProjectRootManager.getInstance(project)
+            )
         }, false)
 
     fun contains(project: Project, name: String): Boolean = name in names(project)
+
+    /** Absent silencieusement si le plugin Java n'est pas chargé dans cet IDE. */
+    private fun libraryNames(project: Project): Set<String> =
+        try {
+            KrakenLibraryFunctions.names(project)
+        } catch (e: LinkageError) {
+            emptySet()
+        }
 
     private fun scan(project: Project): Set<String> {
         val scope = GlobalSearchScope.projectScope(project)

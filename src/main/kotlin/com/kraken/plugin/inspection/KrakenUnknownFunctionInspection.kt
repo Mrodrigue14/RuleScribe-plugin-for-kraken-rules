@@ -30,15 +30,15 @@ import com.kraken.plugin.psi.KrakenPsiUtil
  * annotées `@Native`. Une `FunctionLibrary` maison **sans** `@Native` doit donc
  * être déclarée par une signature `Function` dans un `.rules`, que le plugin
  * voit — pas de faux positif. Mais une bibliothèque maison **avec** `@Native`
- * est visible du moteur sans rien déclarer, et un plugin d'analyse statique,
- * qui n'exécute rien et ne lit pas le classpath, ne peut pas la découvrir.
- * Deux réponses, dans cet ordre :
+ * est visible du moteur sans rien déclarer. Deux réponses, dans cet ordre :
  *
- * 1. **Découverte automatique** — [KrakenProjectFunctions] lit les sources Java
- *    du projet et relève les `@ExpressionFunction`. C'est le cas courant, et il
- *    ne demande aucune configuration.
+ * 1. **Découverte automatique** — [KrakenProjectFunctions] relève les
+ *    `@ExpressionFunction` des sources Java du projet, et, via
+ *    [com.kraken.plugin.functions.KrakenLibraryFunctions], des classes
+ *    compilées dans les dépendances Maven quand le plugin Java est présent.
+ *    C'est le cas courant, et il ne demande aucune configuration.
  * 2. [additionalNativeFunctions] — pour ce que la découverte ne voit pas :
- *    fonctions livrées dans un JAR, ou implémentées seulement en TypeScript,
+ *    fonctions implémentées seulement en TypeScript, ou IDE sans plugin Java,
  *    dont la forme déclarative ne permet pas une détection fiable.
  */
 class KrakenUnknownFunctionInspection : LocalInspectionTool() {
