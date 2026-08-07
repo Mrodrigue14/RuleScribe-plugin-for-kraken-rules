@@ -13,7 +13,7 @@
             <li>Built-in KEL functions: completion, parameter info and quick
             documentation for the engine's 55 native functions</li>
             <li>Inspections (rule without name, unresolved rule reference,
-            unknown function, unresolved identifier, incompatible types)</li>
+            unresolved identifier, incompatible types)</li>
             <li>Intention: add missing 'On' clause</li>
             <li>Navigation between EntryPoint items, Rule declarations and
             'Function' declarations, and from any identifier in an expression to
@@ -28,6 +28,19 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.10.4</b>
+        <ul>
+            <li>The 'unknown function' inspection is removed. 0.10.1 through
+            0.10.3 tried three different ways to recognize a project's own
+            Java functions so it would not misreport them, and the last of
+            those still found nothing on a real project it was tested
+            against. Verifying this needs a project with a real custom
+            function library to test against, which is not available, so the
+            inspection is gone rather than left half-working.</li>
+            <li>Completion, parameter info, quick documentation, navigation
+            and highlighting for the engine's 55 built-in functions and for
+            DSL-declared 'Function's are unaffected.</li>
+        </ul>
         <b>0.10.3</b>
         <ul>
             <li>Function discovery is faster on large projects. It now uses the
@@ -268,11 +281,6 @@
     ]]></change-notes>
 
     <depends>com.intellij.modules.platform</depends>
-    <!-- Optionnelle : n'active la découverte de fonctions dans les bibliothèques
-         (src/main/kotlin/.../KrakenLibraryFunctions.kt) que si le plugin Java
-         est présent. Sans lui, le plugin reste utilisable sur toute IDE de la
-         plateforme, comme avant. -->
-    <depends optional="true" config-file="withJava.xml">com.intellij.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <fileType
@@ -372,15 +380,6 @@
                 enabledByDefault="true"
                 level="WARNING"
                 implementationClass="com.kraken.plugin.inspection.KrakenUnresolvedRuleRefInspection"/>
-
-        <localInspection
-                language="Kraken"
-                shortName="KrakenUnknownFunction"
-                displayName="Unknown function"
-                groupName="Kraken"
-                enabledByDefault="true"
-                level="WARNING"
-                implementationClass="com.kraken.plugin.inspection.KrakenUnknownFunctionInspection"/>
 
         <localInspection
                 language="Kraken"

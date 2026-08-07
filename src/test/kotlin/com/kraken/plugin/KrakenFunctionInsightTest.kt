@@ -4,15 +4,16 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.documentation.KrakenDocumentationProvider
 import com.kraken.plugin.documentation.KrakenFunctionDoc
-import com.kraken.plugin.inspection.KrakenUnknownFunctionInspection
 import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenFunctionDecl
 
 /**
- * Complétion, documentation et inspection autour des fonctions KEL.
+ * Complétion et documentation autour des fonctions KEL.
  *
  * [KrakenFunctionResolutionTest] couvre la résolution ; ici on vérifie ce que
- * l'utilisateur voit réellement dans l'éditeur.
+ * l'utilisateur voit réellement dans l'éditeur. Il n'y a plus d'inspection
+ * « unknown function » (voir ROADMAP.md : nécessiterait un projet propriétaire
+ * pour être vérifiée fiablement contre de vraies bibliothèques Java).
  */
 class KrakenFunctionInsightTest : BasePlatformTestCase() {
 
@@ -72,122 +73,6 @@ class KrakenFunctionInsightTest : BasePlatformTestCase() {
             suggestions.contains("Round")
         )
         assertTrue(suggestions.contains("\"Some rule\""))
-    }
-
-    // ------------------------------------------------------------------
-    // Inspection
-    // ------------------------------------------------------------------
-
-    private fun highlightsFor(text: String): List<String> {
-        myFixture.configureByText("inspect.rules", text)
-        myFixture.enableInspections(KrakenUnknownFunctionInspection())
-        return myFixture.doHighlighting()
-            .mapNotNull { it.description }
-            .filter { it.contains("function", ignoreCase = true) }
-    }
-
-    fun testNativeAndDeclaredCallsAreNotReported() {
-        val problems = highlightsFor(
-            """
-            Function Plan(PackageDetails details) : String {
-                details.planCd
-            }
-
-            Rule "Valid calls" On Policy.state {
-                Assert Round(Sum(coverages.limitAmount), 2) > 0 and Plan(details) != null
-            }
-            """.trimIndent()
-        )
-        assertEquals("Aucun appel inconnu", emptyList<String>(), problems)
-    }
-
-    /** Une signature nue est une déclaration valide : elle ne doit rien déclencher. */
-    fun testSignatureWithoutBodySatisfiesTheInspection() {
-        val problems = highlightsFor(
-            """
-            Function GetPolicyCd(Policy) : String
-
-            Rule "Calls a Java function" On Policy.state {
-                Assert GetPolicyCd(policy) != null
-            }
-            """.trimIndent()
-        )
-        assertEquals(emptyList<String>(), problems)
-    }
-
-    fun testUnknownNameIsReported() {
-        val problems = highlightsFor(
-            """
-            Rule "Typo" On Policy.state {
-                Assert Rnd(1.5) > 0
-            }
-            """.trimIndent()
-        )
-        assertEquals(listOf("Unknown function 'Rnd'"), problems)
-    }
-
-    /** Le nom existe mais pas à cette arité : le message doit le dire. */
-    fun testWrongArityReportsTheDeclaredOnes() {
-        val problems = highlightsFor(
-            """
-            Rule "Too many arguments" On Policy.state {
-                Assert Round(1.5, 2, 3) > 0
-            }
-            """.trimIndent()
-        )
-        assertEquals(
-            listOf("Function 'Round' with 3 parameter(s) does not exist (declared with 1 or 2)"),
-            problems
-        )
-    }
-
-    /**
-     * Un projet peut embarquer sa propre `FunctionLibrary` annotée `@Native` :
-     * le moteur la met en portée sans qu'aucune signature ne soit déclarée, et
-     * une analyse statique ne peut pas la découvrir. L'option évite que ces
-     * appels parfaitement valides soient signalés.
-     */
-    fun testProjectNativeFunctionsCanBeDeclaredInTheOptions() {
-        val inspection = KrakenUnknownFunctionInspection()
-        inspection.additionalNativeFunctions = mutableListOf("ResolveTerritory")
-
-        myFixture.configureByText(
-            "custom.rules",
-            """
-            Rule "Uses a project native" On Policy.state {
-                Assert ResolveTerritory(Policy.address, 2) != null
-            }
-            """.trimIndent()
-        )
-        myFixture.enableInspections(inspection)
-
-        val problems = myFixture.doHighlighting()
-            .mapNotNull { it.description }
-            .filter { it.contains("function", ignoreCase = true) }
-        assertEquals("Le nom listé dans les options n'est plus signalé", emptyList<String>(), problems)
-    }
-
-    fun testFunctionFromAnInvisibleNamespaceIsReported() {
-        myFixture.addFileToProject(
-            "library.rules",
-            """
-            Namespace Library
-
-            Function Hidden(Policy p) : String {
-                p.policyCd
-            }
-            """.trimIndent()
-        )
-        val problems = highlightsFor(
-            """
-            Namespace Consumer
-
-            Rule "Cannot see it" On Policy.state {
-                Assert Hidden(policy) != null
-            }
-            """.trimIndent()
-        )
-        assertEquals(listOf("Unknown function 'Hidden'"), problems)
     }
 
     // ------------------------------------------------------------------

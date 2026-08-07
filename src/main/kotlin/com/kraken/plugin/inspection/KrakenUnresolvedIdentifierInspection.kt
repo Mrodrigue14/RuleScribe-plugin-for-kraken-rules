@@ -31,8 +31,9 @@ import com.kraken.plugin.psi.KrakenScopeResolver
  * - les prédicats de filtre dont le type de l'élément est inconnu, par exemple
  *   `context.additional.vehicles[model = …]` : la portée y est indéterminée,
  *   et le moteur lui-même y accepte tout (`Scope.isDynamic`) ;
- * - les têtes d'appel de fonction, qui relèvent de
- *   [KrakenUnknownFunctionInspection].
+ * - les têtes d'appel de fonction — aucune inspection ne les valide (voir
+ *   ROADMAP.md : nécessiterait un projet propriétaire pour être vérifié
+ *   fiablement).
  *
  * Le compromis est assumé : cette inspection laisse passer des erreurs que le
  * moteur attrape. Elle ne doit pas, en revanche, souligner du code valide.

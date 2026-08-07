@@ -56,9 +56,8 @@ class KrakenFunctionCall(node: ASTNode) : ASTWrapperPsiElement(node) {
 
 /**
  * Référence **souple** : une fonction native n'a pas de déclaration à ouvrir,
- * donc une résolution nulle est un cas normal, pas une erreur. C'est
- * `KrakenUnknownFunctionInspection` qui décide de ce qui est réellement inconnu,
- * en consultant aussi le catalogue.
+ * donc une résolution nulle est un cas normal, pas une erreur — voir
+ * [KrakenFunctionCall.isResolvable] pour la même logique côté vérification.
  */
 class KrakenFunctionReference(element: KrakenFunctionCall, range: TextRange) :
     PsiReferenceBase<KrakenFunctionCall>(element, range, true) {

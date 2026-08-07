@@ -1,6 +1,6 @@
 # Roadmap — RuleScribe for Kraken Rules
 
-## Current — v0.10.3
+## Current — v0.10.4
 
 Shipped: full KEL expression grammar, stub-based Rule index, strict
 namespace-aware resolution (Namespace/Include/Import Rule) with a cached
@@ -10,11 +10,10 @@ structure view with distinct icons, folding, formatter, live templates,
 12 inspections, function support inside rule bodies (built-in catalogue,
 completion, parameter info, quick documentation, navigation, highlighting),
 inlays on every declaration showing usage count and last author, identifier
-resolution inside rule bodies, KEL type inference, and automatic discovery of
-project-declared native functions — both in the project's own Java sources
-and in compiled classes from Maven dependencies. Published on the JetBrains
-Marketplace, signed and shipped with SLSA build provenance and a CycloneDX
-SBOM. See plugin.xml change notes for the detailed history.
+resolution inside rule bodies, and KEL type inference. Published on the
+JetBrains Marketplace, signed and shipped with SLSA build provenance and a
+CycloneDX SBOM. See plugin.xml change notes for the detailed history.
+See [Function validation (removed)](#function-validation-removed) below.
 
 ## v0.6.0 — Import Rule resolution ✅ (shipped)
 
@@ -276,3 +275,36 @@ Work:
 ## Deferred / not currently planned
 
 Anything not listed above and not requested by users.
+
+### Function validation (removed)
+
+v0.10.1 through v0.10.3 tried to make the "unknown function" inspection aware
+of a project's own `@Native` Java functions and of functions declared in a
+Maven dependency JAR, so calls to them wouldn't be misreported. Three
+attempts, each fixing what the previous one got wrong (regex scan over
+project sources, then an annotation-index search over the whole classpath,
+then resolving classes registered in
+`META-INF/services/kraken.el.functionregistry.FunctionLibrary`, the mechanism
+the engine itself uses) — and the last of those still came back empty on a
+real enterprise project the plugin was tested against, with no way to tell
+whether that meant the target library isn't SPI-registered, or something else
+entirely.
+
+The `KrakenUnknownFunctionInspection` and the `KrakenProjectFunctions` /
+`KrakenLibraryFunctions` discovery code have been removed rather than kept in
+a half-working state. The problem isn't the search technique — it's that
+verifying *any* discovery mechanism needs a real project with a real custom
+Java function library to test against, and confidential proprietary source
+can't be shared into this repo to build or debug that. Without one, every
+attempt is a guess validated only against a synthetic fixture, which is
+exactly the gap that let three releases ship without actually fixing the
+reported case.
+
+**Revisit only** with access to a non-confidential project (or a
+consenting, anonymizable customer project) that declares custom Kraken Java
+functions, so a fix can be verified against it directly instead of shipped
+on faith. Until then, there is no "unknown function" inspection at all — a
+typo'd function name is not flagged either, not just a legitimate custom one.
+Completion, parameter info, quick documentation, navigation and highlighting
+for the engine's 55 built-in functions and for DSL-declared `Function`s are
+unaffected; they never depended on this inspection.

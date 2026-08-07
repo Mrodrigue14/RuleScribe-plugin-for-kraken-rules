@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "com.kraken.plugin"
-version = "0.10.3"
+version = "0.10.4"
 
 repositories {
     mavenCentral()
@@ -26,11 +26,6 @@ dependencies {
 intellij {
     version.set("2024.1.7")
     type.set("IC")
-    // Bundled avec IC, nécessaire seulement pour compiler contre le PSI Java
-    // (KrakenLibraryFunctions). La dépendance reste optionnelle à l'exécution
-    // (plugin.xml : <depends optional="true">) — un IDE sans lui reste
-    // fonctionnel.
-    plugins.set(listOf("com.intellij.java"))
 }
 
 kotlin {
