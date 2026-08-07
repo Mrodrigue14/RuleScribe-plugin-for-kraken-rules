@@ -7,6 +7,7 @@ import com.intellij.codeInspection.options.OptPane
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.kraken.plugin.functions.KrakenFunctionCatalog
+import com.kraken.plugin.functions.KrakenProjectFunctions
 import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenPsiUtil
 
@@ -31,8 +32,14 @@ import com.kraken.plugin.psi.KrakenPsiUtil
  * voit — pas de faux positif. Mais une bibliothèque maison **avec** `@Native`
  * est visible du moteur sans rien déclarer, et un plugin d'analyse statique,
  * qui n'exécute rien et ne lit pas le classpath, ne peut pas la découvrir.
- * D'où [additionalNativeFunctions] : les projets concernés y listent leurs
- * noms plutôt que de désactiver l'inspection entière.
+ * Deux réponses, dans cet ordre :
+ *
+ * 1. **Découverte automatique** — [KrakenProjectFunctions] lit les sources Java
+ *    du projet et relève les `@ExpressionFunction`. C'est le cas courant, et il
+ *    ne demande aucune configuration.
+ * 2. [additionalNativeFunctions] — pour ce que la découverte ne voit pas :
+ *    fonctions livrées dans un JAR, ou implémentées seulement en TypeScript,
+ *    dont la forme déclarative ne permet pas une détection fiable.
  */
 class KrakenUnknownFunctionInspection : LocalInspectionTool() {
 
@@ -60,6 +67,9 @@ class KrakenUnknownFunctionInspection : LocalInspectionTool() {
                 val arity = element.argumentCount
                 if (element.isResolvable()) return
                 if (name in additionalNativeFunctions) return
+                // Fonctions @ExpressionFunction déclarées par les sources Java
+                // du projet : le moteur les met en portée sans déclaration DSL.
+                if (KrakenProjectFunctions.contains(element.project, name)) return
 
                 val knownArities = knownArities(element, name)
                 val message = if (knownArities.isEmpty()) {

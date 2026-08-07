@@ -28,6 +28,19 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.10.1</b>
+        <ul>
+            <li>Custom functions a project implements in Java are now found
+            automatically: the plugin reads the project sources for
+            '@ExpressionFunction' and stops reporting those calls as unknown.
+            A project shipping a large '@Native' function library was seeing
+            hundreds of warnings on perfectly valid rules (issue #43).</li>
+            <li>Because the Java signature is not analysed, a discovered
+            function is accepted at any number of arguments. What the scan
+            cannot see — functions inside a JAR, or implemented only in
+            TypeScript — can still be listed by name in the inspection
+            options.</li>
+        </ul>
         <b>0.10.0</b>
         <ul>
             <li>KEL types are now inferred, and two incompatibilities reported.
