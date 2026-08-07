@@ -3,6 +3,7 @@ package com.kraken.plugin.functions
 import com.intellij.openapi.project.Project
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.search.ProjectScope
 import com.intellij.psi.search.searches.AnnotatedElementsSearch
 
 /**
@@ -23,16 +24,18 @@ internal object KrakenLibraryFunctions {
     private const val ANNOTATION_FQN = "kraken.el.functionregistry.ExpressionFunction"
 
     fun names(project: Project): Set<String> {
-        val scope = GlobalSearchScope.allScope(project)
-        val annotationClass = JavaPsiFacade.getInstance(project).findClass(ANNOTATION_FQN, scope)
+        val facade = JavaPsiFacade.getInstance(project)
+        val annotationClass = facade.findClass(ANNOTATION_FQN, GlobalSearchScope.allScope(project))
             ?: return emptySet() // Ni le projet ni ses dépendances ne connaissent Kraken.
 
+        // Bibliothèques seulement : les sources du projet sont déjà couvertes,
+        // à moindre coût, par le mot-index de KrakenProjectFunctions.scan().
+        val librariesScope = ProjectScope.getLibrariesScope(project)
         val names = LinkedHashSet<String>()
-        for (method in AnnotatedElementsSearch.searchPsiMethods(annotationClass, scope)) {
+        for (method in AnnotatedElementsSearch.searchPsiMethods(annotationClass, librariesScope)) {
             val annotation = method.getAnnotation(ANNOTATION_FQN) ?: continue
             val value = annotation.findAttributeValue("value")
-            val name = JavaPsiFacade.getInstance(project).constantEvaluationHelper
-                .computeConstantExpression(value) as? String ?: continue
+            val name = facade.constantEvaluationHelper.computeConstantExpression(value) as? String ?: continue
             names += name
         }
         return names

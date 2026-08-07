@@ -3,9 +3,8 @@ package com.kraken.plugin.functions
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.Key
-import com.intellij.psi.PsiManager
-import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.search.PsiSearchHelper
 import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
 import com.intellij.psi.util.PsiModificationTracker
@@ -26,6 +25,13 @@ import com.intellij.psi.util.PsiModificationTracker
  * IDE de la plateforme. L'annotation est déclarative et sa forme est stable,
  * ce qui rend le compromis raisonnable — on récupère des noms, pas des
  * signatures.
+ *
+ * La recherche du mot passe par l'index de mots de la plateforme
+ * ([PsiSearchHelper]) plutôt que par une énumération de tous les `.java` du
+ * projet suivie d'une lecture de chacun : sur un projet d'entreprise à
+ * plusieurs milliers de fichiers, l'index ramène directement la poignée de
+ * fichiers qui contiennent réellement l'annotation, sans charger le texte des
+ * autres. La regex ne s'applique plus qu'à ce sous-ensemble.
  *
  * Conséquence assumée : une fonction du projet est connue **à toute arité**.
  * Sans analyser la signature Java, on ne peut pas vérifier le nombre de
@@ -63,22 +69,23 @@ object KrakenProjectFunctions {
 
     private fun scan(project: Project): Set<String> {
         val scope = GlobalSearchScope.projectScope(project)
-        val manager = PsiManager.getInstance(project)
         val names = LinkedHashSet<String>()
-        for (file in FilenameIndex.getAllFilesByExt(project, "java", scope)) {
-            if (file.length > MAX_FILE_SIZE) continue
-            val text = manager.findFile(file)?.text ?: continue
-            // Filtre bon marché avant la regex : la quasi-totalité des fichiers
-            // d'un projet d'entreprise ne contient pas l'annotation.
-            if (!text.contains(ANNOTATION)) continue
-            for (match in PATTERN.findAll(text)) {
-                names += match.groupValues[1]
+        PsiSearchHelper.getInstance(project).processAllFilesWithWord(WORD, scope, { file ->
+            val virtualFile = file.virtualFile
+            if (virtualFile != null &&
+                virtualFile.extension.equals("java", ignoreCase = true) &&
+                virtualFile.length <= MAX_FILE_SIZE
+            ) {
+                for (match in PATTERN.findAll(file.text)) {
+                    names += match.groupValues[1]
+                }
             }
-        }
+            true
+        }, true)
         return names
     }
 
-    private const val ANNOTATION = "@ExpressionFunction"
+    private const val WORD = "ExpressionFunction"
     private const val MAX_FILE_SIZE = 1_000_000L
     private val PATTERN = Regex("""@ExpressionFunction\s*\(\s*"([^"]+)"\s*\)""")
 }
