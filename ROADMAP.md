@@ -1,6 +1,6 @@
 # Roadmap — RuleScribe for Kraken Rules
 
-## Current — v0.10.4
+## Current — v0.11.0
 
 Shipped: full KEL expression grammar, stub-based Rule index, strict
 namespace-aware resolution (Namespace/Include/Import Rule) with a cached
@@ -10,7 +10,8 @@ structure view with distinct icons, folding, formatter, live templates,
 12 inspections, function support inside rule bodies (built-in catalogue,
 completion, parameter info, quick documentation, navigation, highlighting),
 inlays on every declaration showing usage count and last author, identifier
-resolution inside rule bodies, and KEL type inference. Published on the
+resolution inside rule bodies, KEL type inference, and diagnostics that carry
+the engine's own codes, wording and severity. Published on the
 JetBrains Marketplace, signed and shipped with SLSA build provenance and a
 CycloneDX SBOM. See plugin.xml change notes for the detailed history.
 See [Function validation (removed)](#function-validation-removed) below.
@@ -194,7 +195,7 @@ Depends on v0.9.0: the validator works on resolved symbols.
   PSI shape.
 - Validate against the 103-file corpus via tools/sim_parser.py.
 
-## v0.11.0 — Diagnostics that match the engine
+## v0.11.0 — Diagnostics that match the engine ✅ (shipped)
 
 Today every inspection message is worded by hand, so the IDE and the build say
 different things about the same defect. The engine publishes two coded
@@ -208,21 +209,33 @@ catalogues we can align to:
 
 Work:
 
-- Carry the engine's code and wording on every inspection that has an
-  equivalent, so a developer reads the same message in the IDE and in the build
-  log. Where RuleScribe reports something the engine does not, say so plainly
-  rather than inventing a code.
-- Take severity from the engine's declaration instead of choosing one.
-- **Tighten the operator token.** `&&` and `||` already parse — the lexer scans
-  a maximal run of `+-=!?|&%^~` into a single `OP`, and `binary_op` accepts it.
-  The problem is the opposite of a missing feature: `a &|&~ b` parses cleanly
-  too. Replacing the blanket run with the operator set the official grammar
-  actually defines (`Common.g4`) turns operator typos into a precise parse
-  error at the right offset instead of a confusing failure further down the
-  expression. Small change, and the main lever on parse-error quality.
-- Review `pin=` placement in the BNF for the error messages it produces — pin
-  position is what decides whether a broken expression reports one clear error
-  or a cascade.
+- ✅ `KrakenDiagnostic` carries the engine's code and wording on every
+  inspection that has an equivalent, prefixed as `[kvr027]` so the same string
+  is searchable in the IDE and in the build log. Two checks deliberately carry
+  no code, because the engine has no equivalent: the unused-rule inspection,
+  and the undeclared-dimension one (the engine filters unknown dimension names
+  out silently rather than validating them).
+- ✅ Severity comes from the engine's declaration; six inspections moved from
+  WARNING to ERROR. `GENERIC_ERROR` was replaced by `GENERIC_ERROR_OR_WARNING`
+  so the configured level actually governs — previously the code forced a
+  severity regardless of the inspection profile.
+- ✅ **Operator token tightened.** The lexer now recognises only the operators
+  `Common.g4` defines. `a &|&~ b` used to lex as one `OP` that `binary_op`
+  accepted; it now yields a `BAD_CHARACTER` at each offending character. `^`
+  and `~` belong to no operator at all, and `&` alone is not one either.
+  `tools/sim_parser.py` carried the identical maximal-run logic and changed in
+  lockstep. Verified: 103/103 corpus files still parse.
+- ✅ **A bug this uncovered.** `>=` and `<=` were never single tokens — `<`
+  and `>` hit the single-character table first, so `a >= b` lexed as `GT` then
+  `OP('=')`. The type inspection took that `=` for the right operand and
+  abstained, so no wide comparison had ever been checked. Both are whole
+  tokens now, which `binary_op` already accepted.
+- ✅ **`pin=` reviewed, no change needed.** All 44 pins sit on the
+  distinguishing token of their rule, which is the correct placement. Checked
+  against deliberately broken input: a missing brace reports inside
+  `rule_body`, an incomplete `if` reports inside `if_expr` rather than
+  backtracking to something vague. The operator token was the real lever on
+  error quality, as this section predicted.
 
 ## v0.12.0 — Editor polish
 
