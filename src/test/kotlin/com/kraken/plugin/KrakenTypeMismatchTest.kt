@@ -101,6 +101,32 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         assertEquals(emptyList<String>(), problems("Assert limitAmount = premium"))
     }
 
+    /**
+     * `>=` et `<=` se lexaient en deux tokens (`GT` puis `OP('=')`), si bien
+     * que la vérification prenait le `=` pour l'opérande droite et renonçait :
+     * aucune comparaison large n'a jamais été vérifiée avant la v0.11.0.
+     */
+    fun testWideComparisonIsChecked() {
+        assertEquals(
+            listOf(
+                "[kvr049] Operation MoreThanOrEquals can only be performed on comparable types, " +
+                    "but was performed on 'Date' and 'DateTime'."
+            ),
+            problems("Assert effectiveDate >= createdOn")
+        )
+        assertEquals(
+            listOf(
+                "[kvr049] Operation LessThanOrEquals can only be performed on comparable types, " +
+                    "but was performed on 'Date' and 'DateTime'."
+            ),
+            problems("Assert effectiveDate <= createdOn")
+        )
+    }
+
+    fun testWideComparisonBetweenComparableTypesIsAccepted() {
+        assertEquals(emptyList<String>(), problems("Assert limitAmount >= premium"))
+    }
+
     fun testMoneyAndNumberAreComparable() {
         assertEquals(emptyList<String>(), problems("Assert limitAmount < premium"))
     }
