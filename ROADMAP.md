@@ -272,6 +272,57 @@ Work:
   process + results tool window). Large effort, revisit once the above
   is stable.
 
+### Decision Table (`.dtables`) — basic editor support
+
+The "Kraken Rules & Decision Tables" training deck describes a second DSL:
+the Decision Table Framework (DTF), an EIS/Genesis product used to represent
+dimensional Kraken rules in a compact tabular form. Unlike `.rules`, DTF is
+not part of the public eisgroup/kraken-rules repository — no published
+grammar, no public test corpus, just a handful of example snippets in an
+internal slide deck. That's the same gap that caused three failed releases
+of function discovery (see "Function validation (removed)" above), so scope
+this to what a lexer-level highlighter can get right without a verified
+grammar behind it.
+
+Structure shown in the deck:
+
+```
+@EntryPoint("dataGather", "issue", "propose")
+@Category("KrakenRules")
+Table "Limit Amounts" {
+    InputColumn "EntryPoint" : entryPoint
+    AspectColumn "Entity" : entity
+    AspectColumn "Min" : min
+    AspectColumn "Max" : max
+}
+```
+
+**Confident starting scope:**
+- Syntax highlighting for `Table`, `InputColumn`, `AspectColumn`, `Column`,
+  the `@EntryPoint(...)` / `@Category(...)` / `@RuleOrder` annotations,
+  string literals, and dotted paths (`dimension.age`, `aspect.score`) — a
+  hand-written lexer in the same style as `KrakenLexer`. Highlighting alone
+  doesn't need a grammar or PSI tree.
+- Code folding on `Table "Name" { ... }` blocks, same brace-matching
+  approach already used for `.rules`.
+- Structure view listing the `Table` declarations in a file.
+- Completion for the aspect names the deck documents by name (`default`,
+  `min`, `max`, `mandatory`, `visible`, `accessible`, `entryPoints`,
+  `applicability`, `relationshipType`) — these come from the training
+  material itself, not from inference.
+
+**Deliberately deferred**, until a real (or anonymized) `.dtables` file
+exists to check assumptions against:
+- A real BNF grammar and PSI tree. Worth building once the deck's handful of
+  examples can be checked against actual files, not before.
+- Code Vision or any cross-reference between a `Table` and the Rules Model
+  that lists it (`.grules` files: `Model X`, `Namespace Y`, `EntryPoints
+  [...]`, `Decision Tables [...]`) — a related but separate file format the
+  deck also mentions, not scoped here.
+- Any inspection that claims correctness (unknown aspect, bad column
+  reference). Same trap as the removed function-discovery inspection: don't
+  ship a check nobody here can verify against a real project.
+
 ## Deferred / not currently planned
 
 Anything not listed above and not requested by users.
