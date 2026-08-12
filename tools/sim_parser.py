@@ -21,7 +21,8 @@ KEYWORDS.update({'and':'AND_KW','or':'OR_KW','not':'NOT_KW','if':'IF_KW','then':
  'this':'THIS_KW','instanceof':'INSTANCEOF_KW','typeof':'TYPEOF_KW','satisfies':'SATISFIES_KW'})
 SINGLE = {'{':'LBRACE','}':'RBRACE','(':'LPAREN',')':'RPAREN','[':'LBRACKET',']':'RBRACKET',
           ',':'COMMA','.':'DOT',':':'COLON','@':'AT','*':'STAR','<':'LT','>':'GT','/':'OP'}
-OPCHARS = set('+-=!?|&%^~')
+TWO_CHAR_OPS = {'!=','==','&&','||'}
+SINGLE_CHAR_OPS = set('+-=!?|%')
 DATE_RE = re.compile(r'\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z?)?')
 
 def lex(s):
@@ -61,16 +62,18 @@ def lex(s):
             toks.append((KEYWORDS.get(w.lower(),'IDENTIFIER'),w)); i=j; continue
         if c=='*' and i+1<n and s[i+1]=='*':
             toks.append(('OP','**')); i+=2; continue
+        if c in ('>','<') and i+1<n and s[i+1]=='=':
+            toks.append(('OP',s[i:i+2])); i+=2; continue
         if c in SINGLE:
             toks.append((SINGLE[c],c)); i+=1; continue
         if c=='?' and i+1<n and s[i+1]=='.':
             toks.append(('QDOT','?.')); i+=2; continue
         if c=='?' and i+1<n and s[i+1]=='[':
             toks.append(('QLBRACKET','?[')); i+=2; continue
-        if c in OPCHARS:
-            j=i+1
-            while j<n and s[j] in OPCHARS: j+=1
-            toks.append(('OP',s[i:j])); i=j; continue
+        if s[i:i+2] in TWO_CHAR_OPS:
+            toks.append(('OP',s[i:i+2])); i+=2; continue
+        if c in SINGLE_CHAR_OPS:
+            toks.append(('OP',c)); i+=1; continue
         toks.append(('BAD',c)); i+=1
     return toks
 

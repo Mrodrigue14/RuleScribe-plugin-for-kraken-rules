@@ -57,6 +57,11 @@ class KrakenLexer : LexerBase() {
             c == '?' && peek(1) == '.' -> twoCharToken(KrakenTypes.QDOT)
             c == '?' && peek(1) == '[' -> twoCharToken(KrakenTypes.QLBRACKET)
             c == '*' && peek(1) == '*' -> twoCharToken(KrakenTypes.OP)
+            // Avant SINGLE_CHAR_TOKENS, qui rendrait sinon `<` puis `=`
+            // séparément : `>=` est un opérateur à part entière côté moteur
+            // (`OP_MORE_EQUALS` dans Common.g4), et le découper empêchait
+            // toute analyse de la comparaison.
+            (c == '>' || c == '<') && peek(1) == '=' -> twoCharToken(KrakenTypes.OP)
             else -> scanSymbol(c)
         }
     }
@@ -144,8 +149,17 @@ class KrakenLexer : LexerBase() {
             currentToken = single
             return
         }
-        if (c in OPERATOR_CHARS) {
-            tokenEnd = scanWhile(tokenStart + 1) { it in OPERATOR_CHARS }
+        // Plus long opérateur réel d'abord, plutôt qu'une suite maximale de
+        // caractères d'opérateur : `a &|&~ b` se lexait en un seul `OP` que la
+        // grammaire acceptait sans broncher. En ne reconnaissant que les
+        // opérateurs de Common.g4, une faute de frappe devient une erreur
+        // précise, au bon offset.
+        if ("$c${peek(1)}" in TWO_CHAR_OPERATORS) {
+            twoCharToken(KrakenTypes.OP)
+            return
+        }
+        if (c in SINGLE_CHAR_OPERATORS) {
+            tokenEnd = tokenStart + 1
             currentToken = KrakenTypes.OP
             return
         }
@@ -154,7 +168,16 @@ class KrakenLexer : LexerBase() {
     }
 
     companion object {
-        private const val OPERATOR_CHARS = "+-=!?|&%^~"
+        /**
+         * Opérateurs de `Common.g4`, et rien d'autre. `^` et `~` n'y figurent
+         * pas, `&` seul non plus (seul `&&` existe) : les accepter revenait à
+         * laisser passer n'importe quelle suite de symboles.
+         *
+         * `**`, `?.`, `?[`, `>=` et `<=` sont reconnus en amont, avant la
+         * table des tokens à un caractère.
+         */
+        private val TWO_CHAR_OPERATORS = setOf("!=", "==", "&&", "||")
+        private const val SINGLE_CHAR_OPERATORS = "+-=!?|%"
 
         private val DATE_TIME_REGEX =
             Regex("""\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z?)?""")
