@@ -28,6 +28,28 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.11.0</b>
+        <ul>
+            <li>Diagnostics now carry the engine's own code and wording, so
+            '[kvr027] Missing context definition with name ...' reads the same
+            in the IDE as in the build log and the code can be searched across
+            both. Severity comes from the engine's declaration as well, which
+            moves six inspections from a warning to an error.</li>
+            <li>Two checks have no engine equivalent and say so by carrying no
+            code: a rule that no entry point references, and an undeclared
+            '@Dimension' name, which the engine ignores rather than
+            validating.</li>
+            <li>Comparison checking follows the engine more closely. Ordering
+            ('&lt;', '&gt;') and equality ('=', '!=') answer to different rules
+            there: two strings can be compared for equality but not ordered.
+            Treating them alike let 'a &lt; b' on two strings pass.</li>
+            <li>The lexer accepts only the operators the grammar defines.
+            'a &amp;|&amp;~ b' used to parse as valid Kraken; a typo now points
+            at the offending character instead of failing further along the
+            expression. This also made '&gt;=' and '&lt;=' whole tokens rather
+            than two, which is why no wide comparison had ever been
+            type-checked.</li>
+        </ul>
         <b>0.10.4</b>
         <ul>
             <li>The 'unknown function' inspection is removed. 0.10.1 through
