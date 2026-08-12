@@ -26,7 +26,7 @@ class KrakenUnknownContextInspection : LocalInspectionTool() {
                 if (known.isNotEmpty() && nameLeaf.text !in known) {
                     holder.registerProblem(
                         nameLeaf,
-                        "Unknown context '${nameLeaf.text}'",
+                        KrakenDiagnostic.RULE_TARGET_CONTEXT_UNKNOWN.format(nameLeaf.text),
                         ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
                     )
                 }

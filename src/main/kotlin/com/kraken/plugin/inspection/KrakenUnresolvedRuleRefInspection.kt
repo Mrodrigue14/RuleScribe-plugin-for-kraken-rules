@@ -19,14 +19,14 @@ class KrakenUnresolvedRuleRefInspection : LocalInspectionTool() {
                 if (element is KrakenRuleRef && element.reference.resolve() == null) {
                     holder.registerProblem(
                         element,
-                        "Unknown rule '${element.ruleName}'",
+                        KrakenDiagnostic.ENTRYPOINT_UNKNOWN_RULE.format(element.ruleName),
                         ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
                     )
                 }
                 if (element is KrakenEpRef && element.reference?.resolve() == null) {
                     holder.registerProblem(
                         element,
-                        "Unknown entry point '${element.entryPointName}'",
+                        KrakenDiagnostic.ENTRYPOINT_UNKNOWN_INCLUDE.format(element.entryPointName),
                         ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
                     )
                 }

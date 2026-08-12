@@ -27,6 +27,15 @@ Two parts of this plugin are derived from the open-source project:
    functions so the plugin can offer completion and documentation for them
    without executing or linking against the engine.
 
+3. The diagnostic catalogue
+   (src/main/kotlin/com/kraken/plugin/inspection/KrakenDiagnostic.kt), whose
+   message codes and text are reproduced from the Message enums of
+   kraken.model.project.validator.ValidationMessageBuilder and
+   kraken.message.SystemMessageBuilder, plus the expression messages of
+   kraken.el.ast.validation.AstValidatingVisitor. Carrying the engine's own
+   codes and wording lets a developer read the same diagnostic in the IDE and
+   in the build log.
+
 A copy of the Apache License, Version 2.0, applicable to those derived
 portions, is included in the file third_party/Apache-2.0.txt and is also
 available at:

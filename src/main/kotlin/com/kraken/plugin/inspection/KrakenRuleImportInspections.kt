@@ -32,6 +32,13 @@ private abstract class KrakenRuleImportVisitorBase(
     )
 }
 
+/**
+ * Namespace du fichier courant : les messages du moteur nomment toujours le
+ * namespace de destination de l'import (« … to ''{2}'' »).
+ */
+private fun targetNamespaceOf(decl: PsiElement): String =
+    (decl.containingFile as? KrakenFile)?.let { KrakenPsiUtil.namespaceOf(it) }.orEmpty()
+
 /** Le namespace nommé après `From` n'existe dans aucun fichier du projet. */
 class KrakenImportUnknownNamespaceInspection : LocalInspectionTool() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor =
@@ -45,7 +52,9 @@ class KrakenImportUnknownNamespaceInspection : LocalInspectionTool() {
                 if (!KrakenPsiUtil.namespaceExists(decl.project, first.sourceNamespace)) {
                     holder.registerProblem(
                         first.namespaceElement,
-                        "Unknown namespace '${first.sourceNamespace}'",
+                        KrakenDiagnostic.IMPORT_UNKNOWN_NAMESPACE.format(
+                            first.ruleName, first.sourceNamespace, targetNamespaceOf(decl)
+                        ),
                         ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
                     )
                 }
@@ -72,8 +81,9 @@ class KrakenImportUnknownRuleInspection : LocalInspectionTool() {
                     if (found == null) {
                         holder.registerProblem(
                             import.nameElement,
-                            "Rule '${import.ruleName}' does not exist in namespace " +
-                                "'${import.sourceNamespace}'",
+                            KrakenDiagnostic.IMPORT_UNKNOWN_RULE.format(
+                                import.ruleName, import.sourceNamespace, targetNamespaceOf(decl)
+                            ),
                             ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
                         )
                     }
@@ -100,9 +110,10 @@ class KrakenImportNameClashInspection : LocalInspectionTool() {
                     if (local != null) {
                         holder.registerProblem(
                             import.nameElement,
-                            "Imported rule '${import.ruleName}' collides with a rule " +
-                                "declared in this namespace",
-                            ProblemHighlightType.GENERIC_ERROR
+                            KrakenDiagnostic.IMPORT_DUPLICATE.format(
+                                import.ruleName, import.sourceNamespace, localNs
+                            ),
+                            ProblemHighlightType.GENERIC_ERROR_OR_WARNING
                         )
                     }
                 }
@@ -129,9 +140,10 @@ class KrakenImportAmbiguousInspection : LocalInspectionTool() {
                             .joinToString(", ")
                         holder.registerProblem(
                             import.nameElement,
-                            "Rule '${import.ruleName}' is imported more than once " +
-                                "(from: $sources)",
-                            ProblemHighlightType.GENERIC_ERROR
+                            KrakenDiagnostic.IMPORT_AMBIGUOUS.format(
+                                import.ruleName, targetNamespaceOf(decl), sources
+                            ),
+                            ProblemHighlightType.GENERIC_ERROR_OR_WARNING
                         )
                     }
                 }

@@ -70,7 +70,7 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
         val highlights = myFixture.doHighlighting()
         assertTrue(
             "Expected unknown context problem, got: ${highlights.map { it.description }}",
-            highlights.any { it.description == "Unknown context 'Nowhere'" }
+            highlights.any { it.description == "[kvr027] Missing context definition with name 'Nowhere'." }
         )
     }
 
@@ -99,8 +99,8 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
             """.trimIndent()
         )
         val highlights = myFixture.doHighlighting()
-        val duplicates = highlights.filter { it.description?.startsWith("Duplicate rule") == true }
-        assertEquals("Only the two 'Same' rules should be flagged: $duplicates", 2, duplicates.size)
+        val duplicates = highlights.filter { it.description?.startsWith("[kvr053]") == true }
+        assertEquals("Only the two Same rules should be flagged: $duplicates", 2, duplicates.size)
     }
 
     fun testUnusedRuleInspection() {

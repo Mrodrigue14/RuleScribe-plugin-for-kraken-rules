@@ -44,7 +44,7 @@ class KrakenEntryPointRefTest : BasePlatformTestCase() {
         val highlights = myFixture.doHighlighting()
         assertTrue(
             "Expected 'Unknown entry point' problem, got: ${highlights.map { it.description }}",
-            highlights.any { it.description == "Unknown entry point 'Missing'" }
+            highlights.any { it.description == "[kve002] Included entry point 'Missing' does not exist." }
         )
     }
 

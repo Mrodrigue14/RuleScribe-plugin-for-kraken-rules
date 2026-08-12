@@ -62,9 +62,16 @@ sealed class KrakenType {
     }
 
     /**
-     * `Type.isComparableWith` : les numériques entre eux, les dates entre
-     * elles, les date-heures entre elles. **Date et DateTime ne sont pas
-     * comparables** — c'est le piège classique de KEL.
+     * `Type.isComparableWith` : l'ordre (`<`, `>`, `<=`, `>=`) n'a de sens que
+     * sur les numériques entre eux, les dates entre elles, les date-heures
+     * entre elles. **Date et DateTime ne sont pas comparables** — c'est le
+     * piège classique de KEL.
+     *
+     * Il n'y a volontairement pas de repli `this == other` : deux `String` ne
+     * sont pas ordonnables, et le moteur refuse `a < b` sur deux `String`
+     * exactement comme sur `Date` contre `DateTime`. Pour l'égalité, qui elle
+     * accepte n'importe quels types assignables entre eux, voir
+     * [isAssignableFrom].
      */
     fun isComparableWith(other: KrakenType): kotlin.Boolean = when {
         isDynamic || other.isDynamic -> true
@@ -72,7 +79,7 @@ sealed class KrakenType {
         areNumeric(this, other) -> true
         this == Date && other == Date -> true
         this == DateTime && other == DateTime -> true
-        else -> this == other
+        else -> false
     }
 
     companion object {

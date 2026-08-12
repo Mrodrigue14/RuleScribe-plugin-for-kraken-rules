@@ -28,7 +28,7 @@ class KrakenDuplicateRuleInspection : LocalInspectionTool() {
                 if (duplicates.size > 1) {
                     holder.registerProblem(
                         element.nameIdentifier ?: element,
-                        "Duplicate rule '$name' without a differentiating @Dimension annotation",
+                        KrakenDiagnostic.DUPLICATE_RULE_VERSION.format(),
                         ProblemHighlightType.GENERIC_ERROR_OR_WARNING
                     )
                 }

@@ -12,19 +12,22 @@ import com.kraken.plugin.types.KrakenType
 import com.kraken.plugin.types.KrakenTypeInference
 
 /**
- * Signale deux incompatibilités de types que l'inférence sait établir avec
- * certitude.
+ * Signale les incompatibilités de types que l'inférence sait établir avec
+ * certitude, sur les trois cas que `AstValidatingVisitor` distingue.
  *
- * **Comparaison impossible.** `Type.isComparableWith` du moteur : les
- * numériques entre eux, les dates entre elles, les date-heures entre elles.
- * `Date` et `DateTime` ne sont **pas** comparables — c'est le piège classique
- * de KEL, et le seul moyen de s'en apercevoir aujourd'hui est de faire tourner
- * le moteur.
+ * **Ordre impossible** (`<`, `>`, `<=`, `>=`). `validateBinaryComparison` du
+ * moteur exige `Type.isComparableWith` : les numériques entre eux, les dates
+ * entre elles, les date-heures entre elles. `Date` contre `DateTime` est le
+ * piège classique de KEL, et deux `String` ne sont pas ordonnables non plus.
+ *
+ * **Égalité entre types différents** (`=`, `!=`). `validateTypeCompatibility`
+ * applique un critère plus large — chaque côté doit être assignable à l'autre
+ * — parce que comparer deux `String` est parfaitement légitime là où les
+ * ordonner ne l'est pas. Confondre les deux critères, comme le faisait la
+ * v0.10.x, laissait passer `a < b` sur deux `String`.
  *
  * **Argument de fonction mal typé.** Le catalogue des natives porte les types
- * KEL réels de chaque paramètre, donc la vérification est directe :
- * « Incompatible type ''{0}'' of function parameter at index {1} … » dans
- * `AstValidatingVisitor`.
+ * KEL réels de chaque paramètre, donc la vérification est directe.
  *
  * Comme en v0.9.0, tout ce qui touche à [KrakenType.Unknown] ou
  * [KrakenType.Any] est laissé passer : le plugin ne type pas tout, et un
@@ -48,7 +51,7 @@ class KrakenTypeMismatchInspection : LocalInspectionTool() {
         // lui-même n'y figure pas.
         val children = KrakenTypeInference.significantChildren(chain)
         for ((index, child) in children.withIndex()) {
-            if (!isComparisonOperator(child)) continue
+            val operator = operatorName(child) ?: continue
             val left = children.getOrNull(index - 1) ?: continue
             val right = children.getOrNull(index + 1) ?: continue
             val leftType = KrakenTypeInference.typeOf(left)
@@ -59,20 +62,35 @@ class KrakenTypeMismatchInspection : LocalInspectionTool() {
             // version ne modélise qu'en partie : on s'abstient dès qu'un côté
             // en est une.
             if (leftType is KrakenType.Array || rightType is KrakenType.Array) continue
-            if (leftType.isComparableWith(rightType)) continue
-            holder.registerProblem(
-                chain,
-                "Cannot compare '${leftType.displayName()}' with '${rightType.displayName()}'",
-                ProblemHighlightType.GENERIC_ERROR_OR_WARNING
-            )
+
+            val message = if (operator in EQUALITY_NAMES) {
+                // Assignable dans un sens ou dans l'autre, comme
+                // `areVersusAssignable` du moteur.
+                if (leftType.isAssignableFrom(rightType) || rightType.isAssignableFrom(leftType)) continue
+                KrakenDiagnostic.NOT_SAME_TYPE.format(
+                    operator, leftType.displayName(), rightType.displayName()
+                )
+            } else {
+                if (leftType.isComparableWith(rightType)) continue
+                KrakenDiagnostic.NOT_COMPARABLE.format(
+                    operator, leftType.displayName(), rightType.displayName()
+                )
+            }
+            holder.registerProblem(chain, message, ProblemHighlightType.GENERIC_ERROR_OR_WARNING)
             return
         }
     }
 
-    private fun isComparisonOperator(element: PsiElement): Boolean {
-        val type = element.node?.elementType
-        if (type == KrakenTypes.LT || type == KrakenTypes.GT) return true
-        return type == KrakenTypes.OP && element.text in COMPARISONS
+    /**
+     * Nom du nœud tel que le moteur l'imprime dans ses messages (`NodeType`
+     * rend son `name`, pas le symbole), ou null si l'élément n'est pas un
+     * opérateur de comparaison.
+     */
+    private fun operatorName(element: PsiElement): String? = when (element.node?.elementType) {
+        KrakenTypes.LT -> "LessThan"
+        KrakenTypes.GT -> "MoreThan"
+        KrakenTypes.OP -> OPERATOR_NAMES[element.text]
+        else -> null
     }
 
     /**
@@ -99,15 +117,25 @@ class KrakenTypeMismatchInspection : LocalInspectionTool() {
             if (expected.isAssignableFrom(actual)) continue
             holder.registerProblem(
                 argument,
-                "Incompatible type '${actual.displayName()}' for parameter " +
-                    "'${parameter.name}' of '${call.functionName}', expected " +
-                    "'${expected.displayName()}'",
+                KrakenDiagnostic.INCOMPATIBLE_PARAMETER.format(
+                    actual.displayName(), index, call.functionName, expected.displayName()
+                ),
                 ProblemHighlightType.GENERIC_ERROR_OR_WARNING
             )
         }
     }
 
     private companion object {
-        val COMPARISONS = setOf("<=", ">=", "=", "==", "!=")
+        /** Symbole KEL → nom du `NodeType` correspondant côté moteur. */
+        val OPERATOR_NAMES = mapOf(
+            "<=" to "LessThanOrEquals",
+            ">=" to "MoreThanOrEquals",
+            "=" to "Equals",
+            "==" to "Equals",
+            "!=" to "NotEquals",
+        )
+
+        /** Ceux qui relèvent de l'assignabilité, pas de l'ordre. */
+        val EQUALITY_NAMES = setOf("Equals", "NotEquals")
     }
 }

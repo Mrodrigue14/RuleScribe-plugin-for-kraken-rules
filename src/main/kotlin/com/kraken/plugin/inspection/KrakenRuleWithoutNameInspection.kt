@@ -19,8 +19,8 @@ class KrakenRuleWithoutNameInspection : LocalInspectionTool() {
                     val anchor = element.ruleKeyword() ?: element
                     holder.registerProblem(
                         anchor,
-                        "Rule has no name",
-                        ProblemHighlightType.GENERIC_ERROR
+                        KrakenDiagnostic.RULE_NAME_IS_NULL.format(),
+                        ProblemHighlightType.GENERIC_ERROR_OR_WARNING
                     )
                 }
             }
