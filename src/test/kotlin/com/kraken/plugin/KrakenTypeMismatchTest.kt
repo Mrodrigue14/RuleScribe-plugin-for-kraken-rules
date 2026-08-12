@@ -37,7 +37,7 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         myFixture.enableInspections(KrakenTypeMismatchInspection())
         return myFixture.doHighlighting()
             .mapNotNull { it.description }
-            .filter { it.startsWith("Cannot compare") || it.startsWith("Incompatible type") }
+            .filter { it.startsWith("[kvr049]") }
     }
 
     // ------------------------------------------------------------------
@@ -47,16 +47,58 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
     /** Le piège classique : le moteur refuse Date contre DateTime. */
     fun testDateComparedWithDateTimeIsReported() {
         assertEquals(
-            listOf("Cannot compare 'Date' with 'DateTime'"),
+            listOf(
+                "[kvr049] Operation LessThan can only be performed on comparable types, " +
+                    "but was performed on 'Date' and 'DateTime'."
+            ),
             problems("Assert effectiveDate < createdOn")
         )
     }
 
     fun testStringComparedWithNumberIsReported() {
         assertEquals(
-            listOf("Cannot compare 'String' with 'Number'"),
+            listOf(
+                "[kvr049] Operation LessThan can only be performed on comparable types, " +
+                    "but was performed on 'String' and 'Number'."
+            ),
             problems("Assert policyCd < premium")
         )
+    }
+
+    /**
+     * Deux `String` ne s'ordonnent pas davantage qu'une `Date` et une
+     * `DateTime` : `isComparableWith` du moteur ne connaît que les numériques,
+     * les dates et les date-heures. La v0.10.x laissait passer ce cas.
+     */
+    fun testTwoStringsCannotBeOrdered() {
+        assertEquals(
+            listOf(
+                "[kvr049] Operation LessThan can only be performed on comparable types, " +
+                    "but was performed on 'String' and 'String'."
+            ),
+            problems("Assert policyCd < policyCd")
+        )
+    }
+
+    /** L'égalité, elle, accepte deux `String` : critère d'assignabilité. */
+    fun testTwoStringsCanBeCompared() {
+        assertEquals(emptyList<String>(), problems("Assert policyCd = policyCd"))
+    }
+
+    /** Mais pas deux types étrangers l'un à l'autre. */
+    fun testEqualityBetweenUnrelatedTypesIsReported() {
+        assertEquals(
+            listOf(
+                "[kvr049] Both sides of operator 'Equals' must have same type, " +
+                    "but left side was of type 'String' and right side was of type 'Number'."
+            ),
+            problems("Assert policyCd = premium")
+        )
+    }
+
+    /** `Money` reste assignable à `Number`, dans ce sens-là. */
+    fun testEqualityBetweenMoneyAndNumberIsAccepted() {
+        assertEquals(emptyList<String>(), problems("Assert limitAmount = premium"))
     }
 
     fun testMoneyAndNumberAreComparable() {
@@ -84,8 +126,11 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
     fun testWrongArgumentTypeIsReported() {
         val reported = problems("Assert Round(policyCd) > 0")
         assertEquals(1, reported.size)
-        assertTrue(reported.single().contains("Incompatible type 'String'"))
-        assertTrue(reported.single().contains("expected 'Number'"))
+        assertEquals(
+            "[kvr049] Incompatible type 'String' of function parameter at index 0 " +
+                "when invoking function Round. Expected type is 'Number'.",
+            reported.single()
+        )
     }
 
     fun testMoneyIsAcceptedWhereNumberIsExpected() {
@@ -144,7 +189,7 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         myFixture.enableInspections(KrakenTypeMismatchInspection())
         val reported = myFixture.doHighlighting()
             .mapNotNull { it.description }
-            .filter { it.startsWith("Incompatible type") || it.startsWith("Cannot compare") }
+            .filter { it.startsWith("[kvr049]") }
         assertEquals(emptyList<String>(), reported)
     }
 
@@ -167,7 +212,7 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         myFixture.enableInspections(KrakenTypeMismatchInspection())
         val reported = myFixture.doHighlighting()
             .mapNotNull { it.description }
-            .filter { it.startsWith("Cannot compare") }
+            .filter { it.startsWith("[kvr049]") }
         assertEquals("STRING, string et String sont le même type", emptyList<String>(), reported)
     }
 
@@ -190,7 +235,7 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         myFixture.enableInspections(KrakenTypeMismatchInspection())
         val reported = myFixture.doHighlighting()
             .mapNotNull { it.description }
-            .filter { it.startsWith("Incompatible type") }
+            .filter { it.startsWith("[kvr049]") }
         assertEquals(emptyList<String>(), reported)
     }
 }

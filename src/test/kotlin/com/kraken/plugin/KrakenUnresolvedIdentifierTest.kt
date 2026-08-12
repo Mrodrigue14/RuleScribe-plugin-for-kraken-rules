@@ -41,7 +41,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
         myFixture.enableInspections(KrakenUnresolvedIdentifierInspection())
         return myFixture.doHighlighting()
             .mapNotNull { it.description }
-            .filter { it.startsWith("Reference ") }
+            .filter { it.startsWith("[kvr049] Reference ") }
     }
 
     // ------------------------------------------------------------------
@@ -49,7 +49,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
     // ------------------------------------------------------------------
 
     fun testUnknownIdentifierIsReported() {
-        assertEquals(listOf("Reference 'notAThing' not found"), problems("Assert notAThing > 0"))
+        assertEquals(listOf("[kvr049] Reference 'notAThing' not found."), problems("Assert notAThing > 0"))
     }
 
     // ------------------------------------------------------------------
@@ -127,7 +127,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
         myFixture.enableInspections(KrakenUnresolvedIdentifierInspection())
         val reported = myFixture.doHighlighting()
             .mapNotNull { it.description }
-            .filter { it.startsWith("Reference ") }
+            .filter { it.startsWith("[kvr049] Reference ") }
         assertEquals(emptyList<String>(), reported)
     }
 
@@ -166,7 +166,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
         myFixture.enableInspections(KrakenUnresolvedIdentifierInspection())
         val reported = myFixture.doHighlighting()
             .mapNotNull { it.description }
-            .filter { it.startsWith("Reference ") }
+            .filter { it.startsWith("[kvr049] Reference ") }
         assertEquals(
             "Le champ n'existe que dans l'une des déclarations homonymes",
             emptyList<String>(),
@@ -188,7 +188,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
         myFixture.enableInspections(KrakenUnresolvedIdentifierInspection())
         val reported = myFixture.doHighlighting()
             .mapNotNull { it.description }
-            .filter { it.startsWith("Reference ") }
+            .filter { it.startsWith("[kvr049] Reference ") }
         assertEquals("Un paramètre de fonction est en portée", emptyList<String>(), reported)
     }
 }

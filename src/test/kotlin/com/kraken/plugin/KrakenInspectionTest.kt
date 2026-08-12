@@ -19,7 +19,7 @@ class KrakenInspectionTest : BasePlatformTestCase() {
         val highlights = myFixture.doHighlighting()
         assertTrue(
             "Expected 'Rule has no name' problem, got: ${highlights.map { it.description }}",
-            highlights.any { it.description == "Rule has no name" }
+            highlights.any { it.description == "[kvr001] Rule name is not defined." }
         )
     }
 
@@ -34,7 +34,7 @@ class KrakenInspectionTest : BasePlatformTestCase() {
             """.trimIndent()
         )
         val highlights = myFixture.doHighlighting()
-        assertFalse(highlights.any { it.description == "Rule has no name" })
+        assertFalse(highlights.any { it.description == "[kvr001] Rule name is not defined." })
     }
 
     fun testUnresolvedRuleReferenceIsReported() {
@@ -54,7 +54,7 @@ class KrakenInspectionTest : BasePlatformTestCase() {
         val highlights = myFixture.doHighlighting()
         assertTrue(
             "Expected 'Unknown rule' problem, got: ${highlights.map { it.description }}",
-            highlights.any { it.description == "Unknown rule 'Missing'" }
+            highlights.any { it.description == "[kve005] Rule is included in entry point, but such rule does not exist: Missing." }
         )
     }
 

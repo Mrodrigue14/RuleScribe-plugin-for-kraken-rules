@@ -378,7 +378,7 @@
                 displayName="Unresolved rule reference in entry point"
                 groupName="Kraken"
                 enabledByDefault="true"
-                level="WARNING"
+                level="ERROR"
                 implementationClass="com.kraken.plugin.inspection.KrakenUnresolvedRuleRefInspection"/>
 
         <localInspection
@@ -387,7 +387,7 @@
                 displayName="Unresolved identifier in expression"
                 groupName="Kraken"
                 enabledByDefault="true"
-                level="WARNING"
+                level="ERROR"
                 implementationClass="com.kraken.plugin.inspection.KrakenUnresolvedIdentifierInspection"/>
 
         <localInspection
@@ -396,7 +396,7 @@
                 displayName="Incompatible types"
                 groupName="Kraken"
                 enabledByDefault="true"
-                level="WARNING"
+                level="ERROR"
                 implementationClass="com.kraken.plugin.inspection.KrakenTypeMismatchInspection"/>
 
         <intentionAction>
@@ -436,7 +436,7 @@
                 displayName="Unknown context in 'On' clause"
                 groupName="Kraken"
                 enabledByDefault="true"
-                level="WARNING"
+                level="ERROR"
                 implementationClass="com.kraken.plugin.inspection.KrakenUnknownContextInspection"/>
 
         <localInspection
@@ -472,7 +472,7 @@
                 displayName="Rule import from unknown namespace"
                 groupName="Kraken"
                 enabledByDefault="true"
-                level="WARNING"
+                level="ERROR"
                 implementationClass="com.kraken.plugin.inspection.KrakenImportUnknownNamespaceInspection"/>
 
         <localInspection
@@ -481,7 +481,7 @@
                 displayName="Imported rule not found in source namespace"
                 groupName="Kraken"
                 enabledByDefault="true"
-                level="WARNING"
+                level="ERROR"
                 implementationClass="com.kraken.plugin.inspection.KrakenImportUnknownRuleInspection"/>
 
         <localInspection

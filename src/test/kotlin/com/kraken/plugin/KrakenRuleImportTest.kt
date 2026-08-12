@@ -48,7 +48,7 @@ class KrakenRuleImportTest : BasePlatformTestCase() {
         assertFalse(
             "Imported rule must resolve without Include, got: " +
                 highlights.map { it.description },
-            highlights.any { it.description?.startsWith("Unknown rule 'Base rule'") == true }
+            highlights.any { it.description?.startsWith("[kve005]") == true }
         )
     }
 
@@ -68,7 +68,7 @@ class KrakenRuleImportTest : BasePlatformTestCase() {
         val highlights = myFixture.doHighlighting()
         assertTrue(
             "Without import nor Include the rule must stay unresolved",
-            highlights.any { it.description?.startsWith("Unknown rule 'Base rule'") == true }
+            highlights.any { it.description?.startsWith("[kve005]") == true }
         )
     }
 
@@ -140,7 +140,7 @@ class KrakenRuleImportTest : BasePlatformTestCase() {
         assertTrue(
             "Unknown source namespace must be flagged, got: " +
                 highlights.map { it.description },
-            highlights.any { it.description == "Unknown namespace 'Nowhere'" }
+            highlights.any { it.description == "[kbs026] Cannot import rule 'Ghost' from namespace 'Nowhere' to 'Policy', because namespace does not exist." }
         )
     }
 
@@ -160,7 +160,7 @@ class KrakenRuleImportTest : BasePlatformTestCase() {
             "Missing rule in the source namespace must be flagged, got: " +
                 highlights.map { it.description },
             highlights.any {
-                it.description == "Rule 'Ghost' does not exist in namespace 'Base'"
+                it.description == "[kbs025] Cannot import rule 'Ghost' from namespace 'Base' to 'Policy', because rule does not exist."
             }
         )
     }
@@ -186,7 +186,8 @@ class KrakenRuleImportTest : BasePlatformTestCase() {
                 highlights.map { it.description },
             highlights.any {
                 it.description ==
-                    "Imported rule 'Base rule' collides with a rule declared in this namespace"
+                    "[kbs027] Cannot import rule 'Base rule' from namespace 'Base' to 'Policy', " +
+                    "because rule is already defined."
             }
         )
     }
@@ -217,7 +218,7 @@ class KrakenRuleImportTest : BasePlatformTestCase() {
         assertTrue(
             "A rule imported twice must be flagged as ambiguous, got: " +
                 highlights.map { it.description },
-            highlights.any { it.description?.startsWith("Rule 'Base rule' is imported more than once") == true }
+            highlights.any { it.description?.startsWith("[kbs027] Cannot import rule 'Base rule' to") == true }
         )
     }
 }

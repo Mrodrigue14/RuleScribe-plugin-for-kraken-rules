@@ -66,7 +66,7 @@ class KrakenUnresolvedIdentifierInspection : LocalInspectionTool() {
                 if (element.reference?.resolve() != null) return
                 holder.registerProblem(
                     element,
-                    "Reference '$name' not found",
+                    KrakenDiagnostic.REFERENCE_NOT_FOUND.format(name),
                     ProblemHighlightType.GENERIC_ERROR_OR_WARNING
                 )
             }

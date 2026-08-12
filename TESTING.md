@@ -75,7 +75,7 @@ contextes, règles et EntryPoints dans des fichiers séparés, trois namespaces
 - [ ] Ctrl+B sur `Policy` dans `When Policy.policyCd != null` → le contexte racine
 - [ ] Ctrl+B sur `policyCd` du même `When` → le champ, via la chaîne d'accès
 - [ ] Dans policy-functions.rules, Ctrl+B sur `coverages` → le paramètre de `TotalLimit`
-- [ ] Écrire `Assert nimportequoi > 0` → « Reference 'nimportequoi' not found »
+- [ ] Écrire `Assert nimportequoi > 0` → « [kvr049] Reference 'nimportequoi' not found. »
 - [ ] Écrire `Assert Policy.nimportequoi > 0` → **rien** : un segment de chaîne
       n'est pas jugeable sans les types
 - [ ] Écrire `Assert Count(Policy.Coverage[limitAmount > 0]) = 1` → Ctrl+B sur
@@ -84,10 +84,14 @@ contextes, règles et EntryPoints dans des fichiers séparés, trois namespaces
 
 ### Types (policy-rules.rules)
 - [ ] `Assert effectiveDate < Today()` → **rien** : Date contre Date
-- [ ] Écrire `Assert effectiveDate < 2020-01-01T10:00:00Z` → « Cannot compare
-      'Date' with 'DateTime' » — le piège classique de KEL
-- [ ] Écrire `Assert Round(policyCd) > 0` → « Incompatible type 'String' …
-      expected 'Number' »
+- [ ] Écrire `Assert effectiveDate < 2020-01-01T10:00:00Z` → « [kvr049] Operation
+      LessThan can only be performed on comparable types… » — le piège classique
+      de KEL
+- [ ] Écrire `Assert policyCd < policyCd` → même message : deux `String` ne
+      s'ordonnent pas non plus
+- [ ] Écrire `Assert policyCd = policyCd` → **rien** : l'égalité, elle, l'accepte
+- [ ] Écrire `Assert Round(policyCd) > 0` → « [kvr049] Incompatible type 'String'
+      of function parameter at index 0… »
 - [ ] `Assert Round(TotalLimit(Policy.Coverage), 2) > 0` → **rien** : le type
       d'un appel est son retour, pas celui de ses arguments
 
@@ -110,11 +114,11 @@ contextes, règles et EntryPoints dans des fichiers séparés, trois namespaces
 ### Refactoring et inspections
 - [ ] Maj+F6 sur une règle dans policy-rules.rules : renomme aussi sa référence
       dans policy-entrypoints.rules
-- [ ] Supprimer le nom d'une règle → erreur « Rule has no name »
-- [ ] Dupliquer une règle sans `@Dimension` → avertissement « Duplicate rule »
+- [ ] Supprimer le nom d'une règle → erreur « [kvr001] Rule name is not defined. »
+- [ ] Dupliquer une règle sans `@Dimension` → avertissement « [kvr053] Rule version has duplicates… »
 - [ ] Une règle jamais référencée → « not referenced by any entry point »
 - [ ] `@Dimension("inconnu", "x")` → « Dimension 'inconnu' is not declared »
-- [ ] `On ContexteInconnu.x` → « Unknown context »
+- [ ] `On ContexteInconnu.x` → « [kvr027] Missing context definition with name… »
 - [ ] Alt+Entrée dans une règle sans `On` → intention « Add missing 'On' clause »
 
 ### Vérifications hors IDE
