@@ -27,7 +27,8 @@ class KrakenUndeclaredDimensionInspection : LocalInspectionTool() {
                     holder.registerProblem(
                         stringLeaf.psi,
                         "Dimension '$name' is not declared (expected one of: ${declared.joinToString(", ")})",
-                        ProblemHighlightType.WEAK_WARNING
+                        ProblemHighlightType.WEAK_WARNING,
+                        KrakenDeclareDimensionFix(name)
                     )
                 }
             }
