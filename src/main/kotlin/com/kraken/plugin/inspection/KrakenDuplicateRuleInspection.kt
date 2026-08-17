@@ -29,7 +29,8 @@ class KrakenDuplicateRuleInspection : LocalInspectionTool() {
                     holder.registerProblem(
                         element.nameIdentifier ?: element,
                         KrakenDiagnostic.DUPLICATE_RULE_VERSION.format(),
-                        ProblemHighlightType.GENERIC_ERROR_OR_WARNING
+                        ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
+                        KrakenAddDimensionAnnotationFix()
                     )
                 }
             }
