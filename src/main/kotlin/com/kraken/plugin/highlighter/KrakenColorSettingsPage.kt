@@ -88,6 +88,8 @@ class KrakenColorSettingsPage : ColorSettingsPage {
             AttributesDescriptor("Identifier", KrakenSyntaxHighlighter.IDENTIFIER),
             AttributesDescriptor("Function call//Built-in", KrakenSyntaxHighlighter.NATIVE_FUNCTION),
             AttributesDescriptor("Function call//Declared in the project", KrakenSyntaxHighlighter.DECLARED_FUNCTION),
+            AttributesDescriptor("Reference//Context name", KrakenSyntaxHighlighter.CONTEXT_REFERENCE),
+            AttributesDescriptor("Reference//Field or variable", KrakenSyntaxHighlighter.FIELD_REFERENCE),
             AttributesDescriptor("Operator", KrakenSyntaxHighlighter.OPERATOR),
             AttributesDescriptor("Braces", KrakenSyntaxHighlighter.BRACES),
             AttributesDescriptor("Parentheses", KrakenSyntaxHighlighter.PARENTHESES),

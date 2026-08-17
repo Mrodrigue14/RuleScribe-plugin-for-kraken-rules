@@ -381,6 +381,18 @@
                 language="Kraken"
                 implementationClass="com.kraken.plugin.highlighter.KrakenFunctionAnnotator"/>
 
+        <!-- Même raison : un nom résolu et un nom inconnu sont deux IDENTIFIER
+             pour le lexer. Seule la résolution de portée les sépare. -->
+        <annotator
+                language="Kraken"
+                implementationClass="com.kraken.plugin.highlighter.KrakenReferenceAnnotator"/>
+
+        <!-- Orthographe des chaînes et commentaires : ces messages finissent
+             affichés à l'utilisateur final. -->
+        <spellchecker.support
+                language="Kraken"
+                implementationClass="com.kraken.plugin.lang.KrakenSpellcheckingStrategy"/>
+
         <codeInsight.parameterInfo
                 language="Kraken"
                 implementationClass="com.kraken.plugin.documentation.KrakenParameterInfoHandler"/>

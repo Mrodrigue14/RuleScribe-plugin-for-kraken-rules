@@ -51,6 +51,20 @@ class KrakenSyntaxHighlighter : SyntaxHighlighterBase() {
                 "KRAKEN_DECLARED_FUNCTION",
                 DefaultLanguageHighlighterColors.FUNCTION_CALL
             )
+        // Même raison que ci-dessus, un cran plus loin : un nom résolu et un
+        // nom inconnu sont tous deux IDENTIFIER. KrakenReferenceAnnotator ne
+        // pose ces clés que sur ce qui se résout réellement — colorer un nom
+        // inconnu reviendrait à affirmer qu'il désigne quelque chose.
+        val CONTEXT_REFERENCE: TextAttributesKey =
+            createTextAttributesKey(
+                "KRAKEN_CONTEXT_REFERENCE",
+                DefaultLanguageHighlighterColors.CLASS_REFERENCE
+            )
+        val FIELD_REFERENCE: TextAttributesKey =
+            createTextAttributesKey(
+                "KRAKEN_FIELD_REFERENCE",
+                DefaultLanguageHighlighterColors.INSTANCE_FIELD
+            )
         val BRACES: TextAttributesKey =
             createTextAttributesKey("KRAKEN_BRACES", DefaultLanguageHighlighterColors.BRACES)
         val PARENTHESES: TextAttributesKey =
