@@ -121,6 +121,19 @@ contextes, règles et EntryPoints dans des fichiers séparés, trois namespaces
 - [ ] `On ContexteInconnu.x` → « [kvr027] Missing context definition with name… »
 - [ ] Alt+Entrée dans une règle sans `On` → intention « Add missing 'On' clause »
 
+### Accolades colorées (examples/brackets-broken.rules)
+Ce fichier est volontairement déséquilibré — ne pas le « corriger ».
+- [ ] Règle « Nested » : les trois niveaux d'imbrication ont trois teintes
+      distinctes, et aucune n'est rouge
+- [ ] Règle « Unclosed paren » : la `(` jamais refermée est rouge
+- [ ] Règle « Stray close » : la `)` en trop est rouge
+- [ ] Règle « Mismatched » : `Round(limit]` → le `]` dépareillé **et** la `(`
+      restée seule sont rouges
+- [ ] Règle « Null safe » : `Coverage?[limit > 0]` n'a **rien** de rouge — `?[`
+      compte comme une ouvrante
+- [ ] Settings → Editor → Color Scheme → Kraken Rules : la case « Rainbow »
+      décoche les teintes de profondeur, mais le rouge des orphelines reste
+
 ### Vérifications hors IDE
 
 ```bash

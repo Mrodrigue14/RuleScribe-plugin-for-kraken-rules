@@ -71,6 +71,25 @@ class KrakenSyntaxHighlighter : SyntaxHighlighterBase() {
             createTextAttributesKey("KRAKEN_PARENTHESES", DefaultLanguageHighlighterColors.PARENTHESES)
         val BRACKETS: TextAttributesKey =
             createTextAttributesKey("KRAKEN_BRACKETS", DefaultLanguageHighlighterColors.BRACKETS)
+        /**
+         * Profondeur d'imbrication des accolades, parenthèses et crochets.
+         * Trois teintes qui se répètent : au-delà, distinguer les niveaux à
+         * l'œil ne marche plus de toute façon.
+         *
+         * **Le rouge en est exclu**, et réservé à [UNMATCHED_BRACKET]. Une
+         * couleur qui signifie « erreur » ne peut pas être en même temps une
+         * teinte de l'arc-en-ciel, sinon elle ne signifie plus rien.
+         */
+        val BRACKET_DEPTH: List<TextAttributesKey> = listOf(
+            createTextAttributesKey("KRAKEN_BRACKET_DEPTH_1"),
+            createTextAttributesKey("KRAKEN_BRACKET_DEPTH_2"),
+            createTextAttributesKey("KRAKEN_BRACKET_DEPTH_3"),
+        )
+
+        /** Accolade sans partenaire, ou dont l'appariement est ambigu. */
+        val UNMATCHED_BRACKET: TextAttributesKey =
+            createTextAttributesKey("KRAKEN_UNMATCHED_BRACKET")
+
         val COMMA: TextAttributesKey =
             createTextAttributesKey("KRAKEN_COMMA", DefaultLanguageHighlighterColors.COMMA)
         val DOT: TextAttributesKey =

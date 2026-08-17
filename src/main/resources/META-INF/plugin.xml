@@ -387,6 +387,16 @@
                 language="Kraken"
                 implementationClass="com.kraken.plugin.highlighter.KrakenReferenceAnnotator"/>
 
+        <!-- Profondeur d'imbrication et accolades orphelines. L'appariement
+             est une propriété d'arbre, que PairedBraceMatcher n'expose pas. -->
+        <annotator
+                language="Kraken"
+                implementationClass="com.kraken.plugin.highlighter.KrakenBracketAnnotator"/>
+
+        <!-- Couleurs par défaut, sans lesquelles les clés ne peignent rien. -->
+        <additionalTextAttributes scheme="Default" file="colorSchemes/KrakenDefault.xml"/>
+        <additionalTextAttributes scheme="Darcula" file="colorSchemes/KrakenDarcula.xml"/>
+
         <!-- Orthographe des chaînes et commentaires : ces messages finissent
              affichés à l'utilisateur final. -->
         <spellchecker.support
