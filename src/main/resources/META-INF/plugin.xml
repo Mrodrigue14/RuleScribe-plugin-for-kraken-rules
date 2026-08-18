@@ -28,6 +28,35 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.12.0</b>
+        <ul>
+            <li>Brackets are coloured by nesting depth, which helps most in the
+            deeply nested expressions KEL encourages. Red is kept out of that
+            palette and marks a bracket with no partner, or one whose pairing
+            is ambiguous because a pair inside it is unbalanced; it stays
+            visible when the depth colours are switched off, since it reports a
+            problem rather than decorating. The switch is the platform's own
+            Rainbow checkbox, under Color Scheme.</li>
+            <li>Syntax errors are readable again. A broken expression used to
+            produce a message over four hundred characters long, every token
+            prefixed with the parser's class name and each of the thirteen
+            binary operators spelled out. The same case now reads: '(', ')',
+            ',', &lt;bracket access&gt;, &lt;dot access&gt; or &lt;operator&gt;
+            expected, got ']'.</li>
+            <li>Two inspections offer a fix instead of only reporting: an
+            undeclared '@Dimension' name can declare itself, and a duplicate
+            rule can take the annotation that tells it apart. Neither invents a
+            value, since a dimension's type and the value separating two rules
+            cannot be derived from the file.</li>
+            <li>References are coloured by what they resolve to, a context name
+            apart from a field or variable. A name that resolves to nothing
+            keeps the ordinary identifier colour: painting it as a field would
+            claim it denotes one.</li>
+            <li>Spellchecking covers the text a person reads — comments, a
+            'Description', and the message of an 'Error' clause. Rule names,
+            entry point names and error codes are left alone, since flagging
+            business vocabulary on every line would bury the real typos.</li>
+        </ul>
         <b>0.11.0</b>
         <ul>
             <li>Diagnostics now carry the engine's own code and wording, so
