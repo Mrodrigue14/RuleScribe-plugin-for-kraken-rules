@@ -1,0 +1,29 @@
+<scheme name="Default" version="142" parent_scheme="Default">
+    <!-- Couleurs par défaut de la colorisation par profondeur. Sans elles, les
+         clés existent mais ne peignent rien : la fonctionnalité serait
+         invisible tant que l'utilisateur n'a pas ouvert les réglages.
+         Le rouge n'apparaît que sur KRAKEN_UNMATCHED_BRACKET. -->
+    <attributes>
+        <option name="KRAKEN_BRACKET_DEPTH_1">
+            <value>
+                <option name="FOREGROUND" value="8A6D1F"/>
+            </value>
+        </option>
+        <option name="KRAKEN_BRACKET_DEPTH_2">
+            <value>
+                <option name="FOREGROUND" value="7B3FA0"/>
+            </value>
+        </option>
+        <option name="KRAKEN_BRACKET_DEPTH_3">
+            <value>
+                <option name="FOREGROUND" value="1F7A8C"/>
+            </value>
+        </option>
+        <option name="KRAKEN_UNMATCHED_BRACKET">
+            <value>
+                <option name="FOREGROUND" value="CC0000"/>
+                <option name="FONT_TYPE" value="1"/>
+            </value>
+        </option>
+    </attributes>
+</scheme>

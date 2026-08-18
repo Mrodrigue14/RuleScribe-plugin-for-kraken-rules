@@ -1,0 +1,32 @@
+// Fichier volontairement déséquilibré, pour vérifier à l'œil que le rouge
+// tombe sur la bonne accolade. Ne pas "corriger".
+
+Root Context Policy {
+    String state
+    Money limit
+}
+
+// 1. Imbrication saine : trois profondeurs qui doivent se distinguer.
+Rule "Nested" On Policy.state {
+    Assert Round(Sum(Count(limit))) > 0
+}
+
+// 2. Parenthèse jamais refermée.
+Rule "Unclosed paren" On Policy.state {
+    Assert Round(limit > 0
+}
+
+// 3. Fermante en trop.
+Rule "Stray close" On Policy.state {
+    Assert limit) > 0
+}
+
+// 4. Paire dépareillée : l'appariement devient ambigu.
+Rule "Mismatched" On Policy.state {
+    Assert Round(limit] > 0
+}
+
+// 5. Crochet null-safe, qui doit rester vert (pas orphelin).
+Rule "Null safe" On Policy.state {
+    Assert Count(Coverage?[limit > 0]) = 1
+}

@@ -1,0 +1,29 @@
+<scheme name="Darcula" version="142" parent_scheme="Darcula">
+    <!-- Couleurs par défaut de la colorisation par profondeur. Sans elles, les
+         clés existent mais ne peignent rien : la fonctionnalité serait
+         invisible tant que l'utilisateur n'a pas ouvert les réglages.
+         Le rouge n'apparaît que sur KRAKEN_UNMATCHED_BRACKET. -->
+    <attributes>
+        <option name="KRAKEN_BRACKET_DEPTH_1">
+            <value>
+                <option name="FOREGROUND" value="FFD866"/>
+            </value>
+        </option>
+        <option name="KRAKEN_BRACKET_DEPTH_2">
+            <value>
+                <option name="FOREGROUND" value="C792EA"/>
+            </value>
+        </option>
+        <option name="KRAKEN_BRACKET_DEPTH_3">
+            <value>
+                <option name="FOREGROUND" value="82AAFF"/>
+            </value>
+        </option>
+        <option name="KRAKEN_UNMATCHED_BRACKET">
+            <value>
+                <option name="FOREGROUND" value="FF5370"/>
+                <option name="FONT_TYPE" value="1"/>
+            </value>
+        </option>
+    </attributes>
+</scheme>

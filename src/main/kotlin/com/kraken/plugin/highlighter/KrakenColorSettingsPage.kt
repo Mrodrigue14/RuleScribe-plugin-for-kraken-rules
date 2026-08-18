@@ -1,14 +1,30 @@
 package com.kraken.plugin.highlighter
 
-import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.fileTypes.SyntaxHighlighter
 import com.intellij.openapi.options.colors.AttributesDescriptor
 import com.intellij.openapi.options.colors.ColorDescriptor
+import com.intellij.lang.Language
+import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.options.colors.ColorSettingsPage
+import com.intellij.openapi.options.colors.RainbowColorSettingsPage
+import com.kraken.plugin.lang.KrakenLanguage
 import com.kraken.plugin.lang.KrakenIcons
 import javax.swing.Icon
 
-class KrakenColorSettingsPage : ColorSettingsPage {
+/**
+ * Implémente [RainbowColorSettingsPage] pour obtenir la case « Rainbow » que
+ * la plateforme gère elle-même, plutôt qu'un réglage maison :
+ * [KrakenBracketAnnotator] la lit via `RainbowHighlighter.isRainbowEnabled`.
+ * Elle ne commande que les teintes de profondeur — le rouge des accolades
+ * orphelines reste affiché, puisqu'il signale une erreur.
+ */
+class KrakenColorSettingsPage : ColorSettingsPage, RainbowColorSettingsPage {
+
+    override fun isRainbowType(type: TextAttributesKey?): Boolean =
+        type in KrakenSyntaxHighlighter.BRACKET_DEPTH
+
+    override fun getLanguage(): Language = KrakenLanguage
+
 
     override fun getIcon(): Icon = KrakenIcons.FILE
 
@@ -96,7 +112,11 @@ class KrakenColorSettingsPage : ColorSettingsPage {
             AttributesDescriptor("Brackets", KrakenSyntaxHighlighter.BRACKETS),
             AttributesDescriptor("Comma", KrakenSyntaxHighlighter.COMMA),
             AttributesDescriptor("Dot", KrakenSyntaxHighlighter.DOT),
-            AttributesDescriptor("Bad character", KrakenSyntaxHighlighter.BAD_CHARACTER)
+            AttributesDescriptor("Bad character", KrakenSyntaxHighlighter.BAD_CHARACTER),
+            AttributesDescriptor("Nesting//Depth 1", KrakenSyntaxHighlighter.BRACKET_DEPTH[0]),
+            AttributesDescriptor("Nesting//Depth 2", KrakenSyntaxHighlighter.BRACKET_DEPTH[1]),
+            AttributesDescriptor("Nesting//Depth 3", KrakenSyntaxHighlighter.BRACKET_DEPTH[2]),
+            AttributesDescriptor("Nesting//Unmatched bracket", KrakenSyntaxHighlighter.UNMATCHED_BRACKET)
         )
     }
 }
