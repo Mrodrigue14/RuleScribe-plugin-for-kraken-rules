@@ -8,7 +8,7 @@ plugins {
     id("org.jetbrains.grammarkit") version "2022.3.2.2"
     id("org.owasp.dependencycheck") version "12.2.2"
     id("org.jetbrains.kotlinx.kover") version "0.9.9"
-    id("org.cyclonedx.bom") version "3.4.0"
+    id("org.cyclonedx.bom") version "3.4.1"
 }
 
 group = "com.kraken.plugin"
