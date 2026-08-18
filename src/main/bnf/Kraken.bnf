@@ -268,7 +268,7 @@ set_var ::= !(SET_KW set_kind) SET_KW id TO_KW? value_chain {pin=2}
 value_chain ::= expr_operand (binary_op expr_operand)*
 private binary_op ::= OP | LT | GT | STAR | COLON
                     | IN_KW | IS_KW | AND_KW | OR_KW
-                    | INSTANCEOF_KW | TYPEOF_KW | SATISFIES_KW | MATCHES_KW
+                    | INSTANCEOF_KW | TYPEOF_KW | SATISFIES_KW | MATCHES_KW {name="operator"}
 
 private expr_operand ::= if_expr | for_expr | quantifier_expr | simple_operand
 if_expr ::= IF_KW expression THEN_KW expression (ELSE_KW expression)? {pin=1}
