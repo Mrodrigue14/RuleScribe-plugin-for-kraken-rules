@@ -1,6 +1,6 @@
 # Roadmap — RuleScribe for Kraken Rules
 
-## Current — v0.11.0
+## Current — v0.12.0
 
 Shipped: full KEL expression grammar, stub-based Rule index, strict
 namespace-aware resolution (Namespace/Include/Import Rule) with a cached
@@ -10,11 +10,13 @@ structure view with distinct icons, folding, formatter, live templates,
 12 inspections, function support inside rule bodies (built-in catalogue,
 completion, parameter info, quick documentation, navigation, highlighting),
 inlays on every declaration showing usage count and last author, identifier
-resolution inside rule bodies, KEL type inference, and diagnostics that carry
-the engine's own codes, wording and severity. Published on the
+resolution inside rule bodies, KEL type inference, diagnostics that carry the
+engine's own codes, wording and severity, quick-fixes, spellchecking of prose,
+semantic colouring of references, and depth-coloured brackets. Published on the
 JetBrains Marketplace, signed and shipped with SLSA build provenance and a
 CycloneDX SBOM. See plugin.xml change notes for the detailed history.
-See [Function validation (removed)](#function-validation-removed) below.
+See [Type grammar gaps](#type-grammar-gaps) and [Function validation
+(removed)](#function-validation-removed) below.
 
 ## v0.6.0 — Import Rule resolution ✅ (shipped)
 
@@ -237,16 +239,25 @@ Work:
   backtracking to something vague. The operator token was the real lever on
   error quality, as this section predicted.
 
-## v0.12.0 — Editor polish
+## v0.12.0 — Editor polish ✅ (shipped)
 
-- Quick-fixes for existing inspections (e.g. add missing `@Dimension`,
-  add differentiating dimension on duplicate rules) — currently
-  report-only.
-- Semantics for Function generic bounds (`<T is SomeType>`) — currently
-  parsed but inert.
-- Spellchecker support inside strings (descriptions, messages).
-- Semantic highlighting: visually distinguish resolved vs. unresolved
-  references beyond the inspection squiggle.
+- ✅ Quick-fixes on the two inspections that have a mechanical one: declare an
+  undeclared `@Dimension` name, and annotate a duplicate rule. Neither invents
+  a value — a dimension's type and the value separating two rules are not
+  derivable from the file — so both leave a placeholder.
+- ⏸️ Semantics for Function generic bounds (`<T is SomeType>`) — **deferred**.
+  Giving them meaning while `type_ref` cannot parse two of the three
+  constructs `Value.g4`'s type production defines (`#UnionType`,
+  `#PlainTypePrecedence`) would build on the broken part. See
+  [Type grammar gaps](#type-grammar-gaps) below.
+- ✅ Spellchecking, restricted to the two prose positions the grammar defines:
+  the string of a `description_clause`, and the *last* string of a
+  `payload_message` (`Error "code" : "message"` puts the code first). Rule
+  names and error codes are left alone — flagging `AZStateCoverateVisibility`
+  on every line would bury the real typos.
+- ✅ Semantic highlighting by what a reference resolves to, a context name
+  apart from a field or variable. Nothing is painted when resolution fails:
+  colouring an unknown name as a field would claim it denotes one.
 - Bracket pair colorization: color matching `{}`/`()`/`[]` by nesting depth,
   most useful for nested KEL expressions. Two constraints decided up front:
   - **Red is reserved**, and excluded from the depth palette. It marks a brace
@@ -260,6 +271,16 @@ Work:
   Configurable in the color settings page next to the function-call attributes
   added in v0.8.0, and toggleable. Note: overlaps with the third-party Rainbow
   Brackets plugin — the value is built-in, DSL-tuned colors.
+
+  **Shipped, with one correction to the plan above.** `KrakenBraceMatcher` does
+  *not* already decide pairing: `PairedBraceMatcher` only exposes `getPairs`,
+  `isPairedBracesAllowedBeforeType` and `getCodeConstructStart`, which drive
+  the highlight of the pair under the caret and answer nothing about which
+  brace partners which, nor about orphans. Pairing is computed with a stack in
+  `KrakenBracketAnnotator`, once per file. The toggle is the platform's own
+  `RainbowColorSettingsPage` checkbox rather than a bespoke setting; since the
+  platform treats "unset" as off, unset counts as on here so the feature is
+  not invisible on install.
 
 ## v1.0.0 — Stabilization
 
@@ -339,6 +360,34 @@ exists to check assumptions against:
 ## Deferred / not currently planned
 
 Anything not listed above and not requested by users.
+
+### Type grammar gaps
+
+`Value.g4` defines the engine's type production as `identifier`,
+`( type )` (`#PlainTypePrecedence`), `type[]` (`#ArrayType`),
+`type | type` (`#UnionType`) and `<identifier>` (`#GenericType`).
+RuleScribe's `type_ref` covers only the first, the array suffix, and a
+differently-shaped generic:
+
+```
+type_ref ::= id (LT type_ref (COMMA type_ref)* GT)? (LBRACKET RBRACKET)?
+```
+
+So a union type fails to parse, verified against the real parser:
+`Function GetDay(Date | DateTime d) : Number { 1 }`, the same in return
+position, and in a bare signature. This matters more than it looks: the
+plugin's own bundled catalogue carries `"type": "Date | DateTime"` for three
+built-ins, and `KrakenType.fromDslName` already splits on `|` — the type layer
+knows about unions, the grammar does not. Redeclaring such a signature in DSL
+therefore gets a syntax error on valid Kraken.
+
+The 103/103 corpus check does not catch this: no corpus `.rules` file declares
+a union parameter, because those unions live in Java-annotated built-ins
+rather than in DSL source.
+
+Not scheduled — raised and deliberately set aside. Fixing it is a grammar
+change (add the union, parenthesised and generic alternatives to `type_ref`)
+and belongs in its own change with corpus validation.
 
 ### Function validation (removed)
 
