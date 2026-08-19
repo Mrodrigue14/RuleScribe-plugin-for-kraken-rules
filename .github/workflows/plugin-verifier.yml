@@ -47,7 +47,11 @@ jobs:
         # avance automatiquement quand JetBrains y ajoute de nouvelles versions
         # (2026.x compris, le jour venu) — contrairement à l'API data.services/IIC
         # qui était en retard et annonçait des versions non téléchargeables.
-        # On vérifie la version cible (base) + la dernière version IC testable.
+        # On vérifie le dernier patch de CHAQUE majeure depuis la version cible,
+        # pas seulement les deux extrémités : une API retirée en 2024.3 puis
+        # réintroduite ensuite passait entre les mailles quand seules la base et
+        # la dernière version étaient testées. Cinq IDE au lieu de deux, mais le
+        # job est hebdomadaire, jamais sur un push.
         # OVERRIDE passé par env, jamais interpolé dans le script → pas d'injection.
         env:
           OVERRIDE: ${{ github.event.inputs.ide_versions }}
@@ -57,11 +61,18 @@ jobs:
             IDE_VERSIONS="$OVERRIDE"
           else
             BASE="IC-2024.1.7"
-            LATEST=$(curl -fsSL "https://jb.gg/intellij-platform-builds-list" \
-              | grep -oE 'IC-20[0-9]{2}\.[0-9]+(\.[0-9]+)?' | sort -uV | tail -1)
-            LIST="$BASE"
-            [ -n "$LATEST" ] && LIST="$LIST,$LATEST"
-            IDE_VERSIONS=$(printf '%s' "$LIST" | tr ',' '\n' | awk 'NF && !seen[$0]++' | paste -sd,)
+            ALL=$(curl -fsSL "https://jb.gg/intellij-platform-builds-list" \
+              | grep -oE 'IC-20[0-9]{2}\.[0-9]+(\.[0-9]+)?' | sort -uV)
+            # Filtre les majeures antérieures à la base (sinceBuild=241), puis
+            # garde le dernier patch de chacune, dans l'ordre des versions.
+            PER_MAJOR=$(printf '%s\n' "$ALL" \
+              | awk -F'[-.]' '$2>2024 || ($2==2024 && $3>=1)' \
+              | awk -F. '{maj=$1"."$2; last[maj]=$0; ord[maj]=NR} END{for(m in last) print ord[m]"\t"last[m]}' \
+              | sort -n | cut -f2)
+            # La base reste explicite : si JetBrains retire 2024.1 de la liste,
+            # on continue de vérifier ce que le plugin déclare supporter.
+            IDE_VERSIONS=$(printf '%s\n%s\n' "$BASE" "$PER_MAJOR" \
+              | awk 'NF && !seen[$0]++' | paste -sd,)
           fi
           echo "Versions vérifiées : $IDE_VERSIONS"
           echo "ide_versions=$IDE_VERSIONS" >> "$GITHUB_OUTPUT"

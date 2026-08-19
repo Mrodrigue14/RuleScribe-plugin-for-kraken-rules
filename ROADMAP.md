@@ -284,14 +284,34 @@ Work:
 
 ## v1.0.0 — Stabilization
 
-- Extend IntelliJ Platform compatibility testing (K2 mode, newer
-  2024.x/2025.x builds) beyond the single pinned 2024.1.7 target.
-- Migrate to the IntelliJ Platform Gradle Plugin 2.x (the 1.x line is already
-  incompatible with Gradle 9). Once that lands, **re-evaluate Qodana**: it was
-  removed because its container ships a JDK that Gradle 8.14.5 cannot run
-  under, which silently broke project resolution and produced 92% false
-  positives. A Gradle 9 toolchain removes that incompatibility. Qodana did earn
-  its keep once — it found four dead functions before being removed.
+- ✅ Compatibility testing now covers the latest patch of **every** major
+  since the target, not just the two endpoints: 2024.1, 2024.2, 2024.3, 2025.1
+  and 2025.2 as of writing, resolved from JetBrains' own testable-builds list
+  so the set advances on its own. An API removed in an intermediate major and
+  restored later used to slip through. Five IDE downloads instead of two, which
+  the weekly schedule absorbs.
+- ⏸️ **K2 mode does not apply here** — not deferred, simply not a thing to
+  test. K2 changes the Kotlin plugin's analysis engine; RuleScribe declares
+  only `com.intellij.modules.platform`, depends on no Kotlin plugin, and uses
+  no Kotlin PSI or analysis API. Being *written* in Kotlin is a compile-time
+  fact with no bearing on it. Adding a "K2 run" would be theatre.
+- ⏸️ **Migration to the IntelliJ Platform Gradle Plugin 2.x — deferred.**
+  1.x works on Gradle 8.14.5, which is what CI runs, so nothing is broken
+  today. What makes it worth waiting for a release of its own: 2.x renames the
+  plugin id, restructures `intellij {}` into `intellijPlatform {}`, and changes
+  how `runIde`, `buildPlugin`, `signPlugin`, `publishPlugin`,
+  `runPluginVerifier` and `patchPluginXml` are configured — a large share of
+  the ~200 commented lines in `build.gradle.kts`. And the publish pipeline has
+  no dry run: the workflow fires on a tag, and a manual dispatch would publish
+  to the Marketplace, so the only full rehearsal is a real release. When it
+  happens it ships alone, with each task checked individually rather than as
+  one green `gradlew` invocation.
+
+  **Qodana stays parked behind it.** It was removed because its container
+  ships a JDK that Gradle 8.14.5 cannot run under, which silently broke project
+  resolution and produced 92% false positives. A Gradle 9 toolchain removes
+  that incompatibility. It did earn its keep once — it found four dead
+  functions before being removed.
 - Refactorings: Extract rule, Move rule/EntryPoint to another
   namespace or file.
 - ✅ `publish.yml` uses `actions/attest` instead of the deprecated
