@@ -1,6 +1,6 @@
 # Roadmap — RuleScribe for Kraken Rules
 
-## Current — v0.12.0
+## Current — v0.13.0
 
 Shipped: full KEL expression grammar, stub-based Rule index, strict
 namespace-aware resolution (Namespace/Include/Import Rule) with a cached
@@ -14,7 +14,8 @@ resolution inside rule bodies, KEL type inference, diagnostics that carry the
 engine's own codes, wording and severity, quick-fixes, spellchecking of prose,
 semantic colouring of references, and depth-coloured brackets. Published on the
 JetBrains Marketplace, signed and shipped with SLSA build provenance and a
-CycloneDX SBOM. See plugin.xml change notes for the detailed history.
+CycloneDX SBOM, and verified against every IntelliJ major since the target.
+See plugin.xml change notes for the detailed history.
 See [Type grammar gaps](#type-grammar-gaps) and [Function validation
 (removed)](#function-validation-removed) below.
 
@@ -282,7 +283,7 @@ Work:
   platform treats "unset" as off, unset counts as on here so the feature is
   not invisible on install.
 
-## v1.0.0 — Stabilization
+## v1.0.0 — Stabilization (partly shipped in 0.13.0)
 
 - ✅ Compatibility testing now covers the latest patch of **every** major
   since the target, not just the two endpoints: 2024.1, 2024.2, 2024.3, 2025.1
@@ -312,8 +313,36 @@ Work:
   resolution and produced 92% false positives. A Gradle 9 toolchain removes
   that incompatibility. It did earn its keep once — it found four dead
   functions before being removed.
-- Refactorings: Extract rule, Move rule/EntryPoint to another
-  namespace or file.
+- ⏸️ **Refactorings — deferred, with the design constraint now known.**
+
+  *Move rule/EntryPoint.* The obstacle is not the plumbing, it is the
+  semantics. Rule references are **by name and soft**: `KrakenRuleRef`
+  resolves through `findRulesVisible()` and therefore `visibleFiles()`. A move
+  changes no reference text at all — it changes whether those references still
+  resolve. Moving a rule into a namespace that a referring file cannot see
+  breaks every one of those `EntryPoint` entries silently, and directionally,
+  per the namespace rules the plugin already implements. A text-level move
+  gets this wrong invisibly, which is the same failure shape that cost
+  v0.10.1 through v0.10.3.
+
+  So a correct Move needs, in order: a conflict analysis that computes which
+  references would stop resolving, a destination chooser (the platform's
+  `MoveHandlerDelegate.doMove` receives a target container, and for a rule
+  there is no natural one to offer), cross-file document manipulation without
+  a PSI element factory, and tests that assert **resolution** after the move
+  rather than comparing text. Either refuse on conflict, or compensate by
+  adding `Import Rule "X" From Ns` to each file that would lose sight of it —
+  the second option has to avoid tripping the existing name-clash and
+  ambiguous-import inspections.
+
+  *Extract rule* is underspecified as written. It reads as two different
+  features: pulling an inline rule out of a `Rules { }` block into a top-level
+  declaration (mostly formatting), or lifting a repeated KEL expression into a
+  `Function` (real value, and the grammar already supports
+  `Function f(params) : T { expr }`) — but that one is Extract **function**.
+  Pick one deliberately before writing code.
+
+  Worth its own release rather than a corner of one.
 - ✅ `publish.yml` uses `actions/attest` instead of the deprecated
   `actions/attest-sbom`. The generic action makes the predicate type explicit
   where the old one implied it; its value is fixed by contract, since the
