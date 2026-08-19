@@ -134,6 +134,7 @@ class KrakenSyntaxHighlighter : SyntaxHighlighterBase() {
             map[KrakenTypes.AT] = ANNOTATION
             map[KrakenTypes.IDENTIFIER] = IDENTIFIER
             map[KrakenTypes.OP] = OPERATOR
+            map[KrakenTypes.PIPE] = OPERATOR
             map[KrakenTypes.LT] = OPERATOR
             map[KrakenTypes.GT] = OPERATOR
             map[KrakenTypes.STAR] = OPERATOR

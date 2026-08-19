@@ -30,6 +30,11 @@
     STAR='*'
     LT='<'
     GT='>'
+    // `|` seul. Distinct de OP parce qu'il sépare aussi les membres d'un type
+    // union (`Date | DateTime`), position où la grammaire doit pouvoir le
+    // reconnaître sans accepter n'importe quel opérateur. Même découpage que
+    // OP_PIPE dans Common.g4. `||` reste un OP à deux caractères.
+    PIPE='|'
 
     NAMESPACE_KW='Namespace'
     INCLUDE_KW='Include'
@@ -252,7 +257,20 @@ generic_bound ::= id IS_KW type_ref {pin=2}
 function_params ::= function_param (COMMA function_param)*
 function_param ::= type_ref id?
 return_type ::= COLON type_ref {pin=1}
-type_ref ::= id (LT type_ref (COMMA type_ref)* GT)? (LBRACKET RBRACKET)?
+// Type Kraken, repris de la production `type` de Value.g4 :
+//   identifier | ( type ) | type[] | type '|' type | <identifier>
+// Grammar-Kit descend récursivement, donc la récursion à gauche du `|` et du
+// `[]` est déroulée en trois niveaux. L'ordre donne la précédence : `[]` lie
+// plus fort que `|`, comme dans la grammaire officielle.
+type_ref ::= union_type
+private union_type ::= array_type (PIPE array_type)*
+private array_type ::= atom_type (LBRACKET RBRACKET)*
+// `Name<A, B>` n'existe pas dans Value.g4 mais était accepté depuis toujours :
+// on le garde par tolérance, le parseur étant volontairement plus permissif
+// que le moteur.
+private atom_type ::= LPAREN type_ref RPAREN
+                    | LT id GT
+                    | id (LT type_ref (COMMA type_ref)* GT)?
 function_body ::= LBRACE expression RBRACE {pin=1}
 
 // ---------- Expressions KEL (structurées, v0.3) ----------
@@ -266,7 +284,7 @@ private return_block ::= RETURN_KW value_chain
 set_var ::= !(SET_KW set_kind) SET_KW id TO_KW? value_chain {pin=2}
 
 value_chain ::= expr_operand (binary_op expr_operand)*
-private binary_op ::= OP | LT | GT | STAR | COLON
+private binary_op ::= OP | PIPE | LT | GT | STAR | COLON
                     | IN_KW | IS_KW | AND_KW | OR_KW
                     | INSTANCEOF_KW | TYPEOF_KW | SATISFIES_KW | MATCHES_KW {name="operator"}
 
