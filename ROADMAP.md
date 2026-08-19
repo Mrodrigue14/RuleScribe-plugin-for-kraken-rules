@@ -294,9 +294,14 @@ Work:
   its keep once — it found four dead functions before being removed.
 - Refactorings: Extract rule, Move rule/EntryPoint to another
   namespace or file.
-- `publish.yml`: replace the deprecated `actions/attest-sbom` with
-  `actions/attest` (flagged by GitHub Actions since the v0.7.2 release run;
-  no functional impact yet, just a deprecation warning).
+- ✅ `publish.yml` uses `actions/attest` instead of the deprecated
+  `actions/attest-sbom`. The generic action makes the predicate type explicit
+  where the old one implied it; its value is fixed by contract, since the
+  release notes publish it in the verification command and every attestation
+  already emitted carries it. Verified against the published v0.12.0 artifact
+  before changing anything: `gh attestation verify … --predicate-type
+  https://cyclonedx.org/bom` passes. The step runs before `publishPlugin`, so
+  a mistake here aborts a release rather than shipping a broken one.
 
 ## Future / exploratory
 

@@ -116,11 +116,19 @@ jobs:
 
       # Attesté, donc lié cryptographiquement au zip : le SBOM se vérifie avec
       # le même `gh attestation verify` que la provenance.
+      #
+      # `actions/attest-sbom` est déprécié en faveur de `actions/attest`, qui
+      # est générique : le type de prédicat, implicite dans l'ancienne action,
+      # devient explicite. Sa valeur n'est pas libre — c'est celle que les
+      # notes de release publient dans la commande de vérification, et que les
+      # attestations déjà émises portent. La changer casserait la vérification
+      # des releases passées comme des futures.
       - name: Attester le SBOM
-        uses: actions/attest-sbom@v4
+        uses: actions/attest@v3
         with:
           subject-path: ${{ steps.artifact.outputs.path }}
-          sbom-path: build/reports/cyclonedx-direct/rulescribe-sbom.json
+          predicate-type: https://cyclonedx.org/bom
+          predicate-path: build/reports/cyclonedx-direct/rulescribe-sbom.json
 
       # Rôle LECTEUR de la stratégie OWASP "single updater + readers" : on
       # restaure la base NVD pré-construite depuis la release `nvd-cache`
