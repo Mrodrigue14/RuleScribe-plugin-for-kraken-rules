@@ -25,6 +25,9 @@ class KrakenOperatorLexingTest : BasePlatformTestCase() {
             if (type != TokenType.WHITE_SPACE) {
                 val name = when (type) {
                     KrakenTypes.OP -> "OP"
+                    // `|` a son propre token depuis qu'il sert aussi à séparer
+                    // les membres d'un type union.
+                    KrakenTypes.PIPE -> "PIPE"
                     TokenType.BAD_CHARACTER -> "BAD"
                     else -> type.toString()
                 }
@@ -36,7 +39,7 @@ class KrakenOperatorLexingTest : BasePlatformTestCase() {
     }
 
     private fun operators(source: String): List<Pair<String, String>> =
-        tokens(source).filter { it.first == "OP" || it.first == "BAD" }
+        tokens(source).filter { it.first in setOf("OP", "PIPE", "BAD") }
 
     fun testWideComparisonsAreSingleTokens() {
         assertEquals(listOf("OP" to ">="), operators("a >= b"))
@@ -52,15 +55,25 @@ class KrakenOperatorLexingTest : BasePlatformTestCase() {
     }
 
     fun testSingleCharOperatorsStillLex() {
-        for (op in listOf("+", "-", "=", "%", "|")) {
+        for (op in listOf("+", "-", "=", "%")) {
             assertEquals("opérateur $op", listOf("OP" to op), operators("a $op b"))
         }
+    }
+
+    /**
+     * `|` seul est un token distinct de `OP` : il sépare aussi les membres d'un
+     * type union (`Date | DateTime`), position où la grammaire doit le
+     * reconnaître sans accepter n'importe quel opérateur. `||` reste un `OP`.
+     */
+    fun testLoneBarIsItsOwnTokenButDoubleBarIsNot() {
+        assertEquals(listOf("PIPE" to "|"), operators("a | b"))
+        assertEquals(listOf("OP" to "||"), operators("a || b"))
     }
 
     /** Le cas qui motivait le changement. */
     fun testGarbageOperatorRunIsRejectedPerCharacter() {
         assertEquals(
-            listOf("BAD" to "&", "OP" to "|", "BAD" to "&", "BAD" to "~"),
+            listOf("BAD" to "&", "PIPE" to "|", "BAD" to "&", "BAD" to "~"),
             operators("a &|&~ b")
         )
     }

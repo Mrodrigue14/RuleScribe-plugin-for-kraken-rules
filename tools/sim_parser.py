@@ -20,9 +20,10 @@ KEYWORDS.update({'and':'AND_KW','or':'OR_KW','not':'NOT_KW','if':'IF_KW','then':
  'else':'ELSE_KW','for':'FOR_KW','every':'EVERY_KW','some':'SOME_KW','return':'RETURN_KW',
  'this':'THIS_KW','instanceof':'INSTANCEOF_KW','typeof':'TYPEOF_KW','satisfies':'SATISFIES_KW'})
 SINGLE = {'{':'LBRACE','}':'RBRACE','(':'LPAREN',')':'RPAREN','[':'LBRACKET',']':'RBRACKET',
-          ',':'COMMA','.':'DOT',':':'COLON','@':'AT','*':'STAR','<':'LT','>':'GT','/':'OP'}
+          ',':'COMMA','.':'DOT',':':'COLON','@':'AT','*':'STAR','<':'LT','>':'GT','/':'OP',
+          '|':'PIPE'}
 TWO_CHAR_OPS = {'!=','==','&&','||'}
-SINGLE_CHAR_OPS = set('+-=!?|%')
+SINGLE_CHAR_OPS = set('+-=!?%')
 DATE_RE = re.compile(r'\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z?)?')
 
 def lex(s):
@@ -64,6 +65,8 @@ def lex(s):
             toks.append(('OP','**')); i+=2; continue
         if c in ('>','<') and i+1<n and s[i+1]=='=':
             toks.append(('OP',s[i:i+2])); i+=2; continue
+        if c=='|' and i+1<n and s[i+1]=='|':
+            toks.append(('OP','||')); i+=2; continue
         if c in SINGLE:
             toks.append((SINGLE[c],c)); i+=1; continue
         if c=='?' and i+1<n and s[i+1]=='.':
@@ -186,7 +189,7 @@ define('for_expr', seqp(1, 'for_expr', tk('FOR_KW'),R('id'),tk('IN_KW'),R('expre
 define('quantifier_expr', seqp(1, 'quantifier_expr', alt(tk('EVERY_KW'),tk('SOME_KW')),R('id'),
  opt(seq(tk('IN_KW'),R('expression'))),opt(seq(tk('SATISFIES_KW'),R('expression')))))
 define('expr_operand', alt(R('if_expr'),R('for_expr'),R('quantifier_expr'),R('simple_operand')))
-define('binary_op', alt(tk('OP'),tk('LT'),tk('GT'),tk('STAR'),tk('COLON'),tk('IN_KW'),tk('IS_KW'),
+define('binary_op', alt(tk('OP'),tk('PIPE'),tk('LT'),tk('GT'),tk('STAR'),tk('COLON'),tk('IN_KW'),tk('IS_KW'),
  tk('AND_KW'),tk('OR_KW'),tk('INSTANCEOF_KW'),tk('TYPEOF_KW'),tk('SATISFIES_KW'),tk('MATCHES_KW')))
 define('value_chain', seq(R('expr_operand'),many(seq(R('binary_op'),R('expr_operand')))))
 define('set_var', seqp(2, 'set_var', not_(seq(tk('SET_KW'),R('set_kind'))),tk('SET_KW'),R('id'),opt(tk('TO_KW')),R('value_chain')))
@@ -285,8 +288,13 @@ define('entry_points_block', seqp(2, 'entry_points_block', many(R('annotation'))
 
 # ---- dimension / function ----
 define('dimension_decl', seqp(1, 'dimension_decl', tk('DIMENSION_KW'),tk('STRING'),tk('COLON'),R('id')))
-define('type_ref', seq(R('id'),opt(seq(tk('LT'),R('type_ref'),many(seq(tk('COMMA'),R('type_ref'))),tk('GT'))),
- opt(seq(tk('LBRACKET'),tk('RBRACKET')))))
+# Type Kraken, aligné sur la production `type` de Value.g4 : les trois niveaux
+# déroulent la récursion à gauche du `|` et du `[]`, `[]` liant plus fort.
+define('atom_type', alt(seq(tk('LPAREN'),R('type_ref'),tk('RPAREN')),
+ seq(tk('LT'),R('id'),tk('GT')),
+ seq(R('id'),opt(seq(tk('LT'),R('type_ref'),many(seq(tk('COMMA'),R('type_ref'))),tk('GT'))))))
+define('array_type', seq(R('atom_type'),many(seq(tk('LBRACKET'),tk('RBRACKET')))))
+define('type_ref', seq(R('array_type'),many(seq(tk('PIPE'),R('array_type')))))
 define('generic_bound', seqp(2, 'generic_bound', R('id'),tk('IS_KW'),R('type_ref')))
 define('generic_bounds', seqp(1, 'generic_bounds', tk('LT'),R('generic_bound'),many(seq(tk('COMMA'),R('generic_bound'))),tk('GT')))
 define('function_param', seq(R('type_ref'),opt(R('id'))))

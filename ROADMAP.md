@@ -439,9 +439,19 @@ The 103/103 corpus check does not catch this: no corpus `.rules` file declares
 a union parameter, because those unions live in Java-annotated built-ins
 rather than in DSL source.
 
-Not scheduled — raised and deliberately set aside. Fixing it is a grammar
-change (add the union, parenthesised and generic alternatives to `type_ref`)
-and belongs in its own change with corpus validation.
+**Closed.** `type_ref` now covers the whole production, unrolled into three
+levels since Grammar-Kit descends recursively and `Value.g4` is left-recursive:
+`type_ref → array_type (PIPE array_type)*`, `array_type → atom_type ([])*`,
+`atom_type → ( type ) | <id> | id`. Order gives the precedence, so `[]` binds
+tighter than `|`, as in the official grammar. `Name<A, B>` is not in `Value.g4`
+but was always accepted, and stays — the parser is deliberately more permissive
+than the engine.
+
+`|` needed its own token. It was lexed as `OP`, and Grammar-Kit cannot match
+"an `OP` whose text is `|`"; `PIPE` mirrors `OP_PIPE` in `Common.g4`. `||` is
+still a two-character `OP`, caught before the single-character table — without
+that ordering it would have split into two `PIPE`. `binary_op` accepts `PIPE`
+so `a | b` keeps parsing as an expression.
 
 ### Function validation (removed)
 

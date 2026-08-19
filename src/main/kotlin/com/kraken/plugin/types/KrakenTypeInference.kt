@@ -67,7 +67,7 @@ object KrakenTypeInference {
             .map { it.psi }
 
     fun isOperator(element: PsiElement): Boolean = when (element.node?.elementType) {
-        KrakenTypes.OP, KrakenTypes.LT, KrakenTypes.GT, KrakenTypes.STAR, KrakenTypes.COLON,
+        KrakenTypes.OP, KrakenTypes.PIPE, KrakenTypes.LT, KrakenTypes.GT, KrakenTypes.STAR, KrakenTypes.COLON,
         KrakenTypes.IN_KW, KrakenTypes.IS_KW, KrakenTypes.AND_KW, KrakenTypes.OR_KW,
         KrakenTypes.INSTANCEOF_KW, KrakenTypes.TYPEOF_KW, KrakenTypes.SATISFIES_KW,
         KrakenTypes.MATCHES_KW -> true

@@ -62,6 +62,10 @@ class KrakenLexer : LexerBase() {
             // (`OP_MORE_EQUALS` dans Common.g4), et le découper empêchait
             // toute analyse de la comparaison.
             (c == '>' || c == '<') && peek(1) == '=' -> twoCharToken(KrakenTypes.OP)
+            // Même raison, en sens inverse : `|` figure dans la table des
+            // tokens simples (PIPE), qui est consultée avant les opérateurs à
+            // deux caractères. Sans ce cas, `||` se découperait en deux PIPE.
+            c == '|' && peek(1) == '|' -> twoCharToken(KrakenTypes.OP)
             else -> scanSymbol(c)
         }
     }
@@ -177,7 +181,7 @@ class KrakenLexer : LexerBase() {
          * table des tokens à un caractère.
          */
         private val TWO_CHAR_OPERATORS = setOf("!=", "==", "&&", "||")
-        private const val SINGLE_CHAR_OPERATORS = "+-=!?|%"
+        private const val SINGLE_CHAR_OPERATORS = "+-=!?%"
 
         private val DATE_TIME_REGEX =
             Regex("""\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z?)?""")
@@ -197,7 +201,11 @@ class KrakenLexer : LexerBase() {
                 '*' to KrakenTypes.STAR,
                 '<' to KrakenTypes.LT,
                 '>' to KrakenTypes.GT,
-                '/' to KrakenTypes.OP
+                '/' to KrakenTypes.OP,
+                // `|` seul : token propre, parce qu'il sépare aussi les membres
+                // d'un type union. `||` est capté avant, comme OP à deux
+                // caractères.
+                '|' to KrakenTypes.PIPE
             )
         }
 
