@@ -28,6 +28,16 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.13.0</b>
+        <ul>
+            <li>Nothing changes in the editor: this release is about what
+            guards it. Compatibility is now checked against the latest build of
+            every IntelliJ major since the supported one, rather than only the
+            oldest and the newest, so an API removed in a version in between no
+            longer slips past. The build attestation moves off an action GitHub
+            deprecated, keeping the published verification command working
+            unchanged.</li>
+        </ul>
         <b>0.12.0</b>
         <ul>
             <li>Brackets are coloured by nesting depth, which helps most in the
