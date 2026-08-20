@@ -416,6 +416,12 @@
         <!-- Les appels de fonction ne sont pas reconnaissables au niveau lexical
              (un nom appelé est un IDENTIFIER comme un autre) : c'est un
              Annotator, qui voit le PSI, qui les colore. -->
+        <!-- Déplacement d'une règle vers un autre fichier (F6). Passe par
+             tryToMove : la plateforme n'a pas de conteneur de destination
+             naturel à proposer pour une règle. -->
+        <refactoring.moveHandler
+                implementation="com.kraken.plugin.refactoring.KrakenMoveRuleHandler"/>
+
         <annotator
                 language="Kraken"
                 implementationClass="com.kraken.plugin.highlighter.KrakenFunctionAnnotator"/>

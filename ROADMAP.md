@@ -313,36 +313,37 @@ Work:
   resolution and produced 92% false positives. A Gradle 9 toolchain removes
   that incompatibility. It did earn its keep once — it found four dead
   functions before being removed.
-- ⏸️ **Refactorings — deferred, with the design constraint now known.**
+- ✅ **Move rule to another file**, on F6. The obstacle was never the
+  plumbing, it was the semantics: rule references are **by name and soft**, so
+  a move changes no reference text at all — only whether those references
+  still resolve. `KrakenMoveConflicts` computes, before anything is written,
+  which references would stop resolving, counting `Import Rule` as its own
+  axis: an import naming the destination namespace keeps working, one naming
+  the old namespace does not. The user is warned with that count and can
+  cancel; nothing is written until they accept.
 
-  *Move rule/EntryPoint.* The obstacle is not the plumbing, it is the
-  semantics. Rule references are **by name and soft**: `KrakenRuleRef`
-  resolves through `findRulesVisible()` and therefore `visibleFiles()`. A move
-  changes no reference text at all — it changes whether those references still
-  resolve. Moving a rule into a namespace that a referring file cannot see
-  breaks every one of those `EntryPoint` entries silently, and directionally,
-  per the namespace rules the plugin already implements. A text-level move
-  gets this wrong invisibly, which is the same failure shape that cost
-  v0.10.1 through v0.10.3.
+  Built on `MoveHandlerDelegate.tryToMove` rather than `doMove`, since the
+  platform has no natural destination container to offer for a rule — the
+  handler runs the whole flow and picks the target with a `TreeFileChooser`
+  restricted to `.rules`. `WriteCommandAction`, not `WriteAction`: the
+  platform refuses document edits outside a command, and the command is what
+  makes the move undoable. Insertion precedes deletion, so a failure leaves
+  the rule duplicated — which an inspection already reports — rather than
+  nowhere.
 
-  So a correct Move needs, in order: a conflict analysis that computes which
-  references would stop resolving, a destination chooser (the platform's
-  `MoveHandlerDelegate.doMove` receives a target container, and for a rule
-  there is no natural one to offer), cross-file document manipulation without
-  a PSI element factory, and tests that assert **resolution** after the move
-  rather than comparing text. Either refuse on conflict, or compensate by
-  adding `Import Rule "X" From Ns` to each file that would lose sight of it —
-  the second option has to avoid tripping the existing name-clash and
-  ambiguous-import inspections.
+  Tests assert **resolution** after the move, never text, including the case
+  where a reference keeps its exact wording and stops resolving.
 
-  *Extract rule* is underspecified as written. It reads as two different
-  features: pulling an inline rule out of a `Rules { }` block into a top-level
-  declaration (mostly formatting), or lifting a repeated KEL expression into a
-  `Function` (real value, and the grammar already supports
-  `Function f(params) : T { expr }`) — but that one is Extract **function**.
-  Pick one deliberately before writing code.
+- ⏸️ *Extract rule* stays deferred because it is still underspecified, not
+  because it is hard. The phrase covers two different features: pulling an
+  inline rule out of a `Rules { }` block into a top-level declaration (mostly
+  formatting), or lifting a repeated KEL expression into a `Function` (real
+  value, and the grammar already supports `Function f(params) : T { expr }`) —
+  but that one is Extract **function**. Pick one deliberately before writing
+  code.
 
-  Worth its own release rather than a corner of one.
+- ⏸️ *Move EntryPoint* follows the same shape as Move rule and is a small
+  step from it, once the rule case has been used in anger.
 - ✅ `publish.yml` uses `actions/attest` instead of the deprecated
   `actions/attest-sbom`. The generic action makes the predicate type explicit
   where the old one implied it; its value is fixed by contract, since the
