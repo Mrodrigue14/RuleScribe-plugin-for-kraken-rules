@@ -1,6 +1,6 @@
 # Roadmap — RuleScribe for Kraken Rules
 
-## Current — v0.13.0
+## Current — v0.14.0
 
 Shipped: full KEL expression grammar, stub-based Rule index, strict
 namespace-aware resolution (Namespace/Include/Import Rule) with a cached
@@ -12,7 +12,9 @@ completion, parameter info, quick documentation, navigation, highlighting),
 inlays on every declaration showing usage count and last author, identifier
 resolution inside rule bodies, KEL type inference, diagnostics that carry the
 engine's own codes, wording and severity, quick-fixes, spellchecking of prose,
-semantic colouring of references, and depth-coloured brackets. Published on the
+semantic colouring of references, depth-coloured brackets, the engine's full
+type production including unions, and a Move refactoring that reports what it
+would break before writing. Published on the
 JetBrains Marketplace, signed and shipped with SLSA build provenance and a
 CycloneDX SBOM, and verified against every IntelliJ major since the target.
 See plugin.xml change notes for the detailed history.

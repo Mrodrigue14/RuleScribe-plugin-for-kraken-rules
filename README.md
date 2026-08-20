@@ -29,6 +29,12 @@
   gutter icons on referenced rules and entry points.
 - **Rename refactoring**: renaming a `Rule` or an `EntryPoint` (Shift+F6) updates
   all of its references.
+- **Move refactoring** (F6): moves a `Rule` to another `.rules` file, and reports
+  first what the move would break. Kraken references name a rule, not a file, so
+  moving one changes no reference text at all — only whether those references
+  still resolve. A rule sent where a referring file cannot see it breaks every
+  entry point entry that names it, so the count is shown before anything is
+  written. `Import Rule` is weighed separately from `Include`.
 - **Namespace-aware resolution**: `Namespace`/`Include` bound visibility in both
   directions — a reference living in a namespace that cannot see the declaration
   does not count for navigation, Find Usages, or the unused-rule inspection
@@ -73,7 +79,7 @@
 ./gradlew buildPlugin
 ```
 
-The packaged plugin is written to `build/distributions/rulescribe-0.13.0.zip`.
+The packaged plugin is written to `build/distributions/rulescribe-0.14.0.zip`.
 
 > 💡 Don't want to build? Every push to `main` produces the zip automatically
 > on GitHub Actions — see [Grabbing a build from GitHub Actions](#grabbing-a-build-from-github-actions).
@@ -96,7 +102,7 @@ chmod +x gradlew
 ./gradlew buildPlugin
 ```
 
-The zip lands in the same place: `build/distributions/rulescribe-0.13.0.zip`.
+The zip lands in the same place: `build/distributions/rulescribe-0.14.0.zip`.
 To try it in a sandbox IDE: `./gradlew runIde`.
 
 ### Other useful tasks
@@ -112,7 +118,7 @@ To try it in a sandbox IDE: `./gradlew runIde`.
 
 1. `.\gradlew.bat buildPlugin`
 2. In IntelliJ: *Settings → Plugins → ⚙ → Install Plugin from Disk…*
-3. Select `build/distributions/rulescribe-0.13.0.zip`
+3. Select `build/distributions/rulescribe-0.14.0.zip`
 4. Restart the IDE and open a `.rules` file (e.g. `examples/demo.rules`, or the
    multi-file sample project `examples/multi/` to try cross-file navigation —
    full manual checklist in [TESTING.md](TESTING.md))
@@ -196,7 +202,7 @@ CI-built plugin zips can be downloaded without installing anything:
 2. Click the latest green run of the **Build** workflow
 3. Scroll to the **Artifacts** section → download `rulescribe`
 4. ⚠️ GitHub wraps artifacts in an extra zip: **extract**
-   `rulescribe.zip` to get `rulescribe-0.13.0.zip`
+   `rulescribe.zip` to get `rulescribe-0.14.0.zip`
    (the plugin's name always contains the version number)
 5. Install that *inner* zip via *Settings → Plugins → ⚙ → Install Plugin from Disk…*
 
