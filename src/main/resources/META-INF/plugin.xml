@@ -28,6 +28,25 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.14.0</b>
+        <ul>
+            <li>A rule can be moved to another file with F6, and the plugin
+            says what that would break before writing anything. Kraken
+            references name a rule, not a file, so a move changes no reference
+            text at all — only whether those references still find their
+            target. Sending a rule where a referring file cannot see it breaks
+            every one of its entry point entries without a line changing over
+            there, so the count is shown first and nothing happens until you
+            accept. 'Import Rule' is weighed separately: one naming the
+            destination namespace keeps working, one naming the old namespace
+            does not.</li>
+            <li>Union types parse. 'Function GetDay(Date | DateTime d)' is
+            valid Kraken and was reported as a syntax error, in return position
+            and in a bare signature too — which is how a built-in gets
+            redeclared. Parenthesised types and the '&lt;T&gt;' generic
+            reference are covered as well, so the whole of the engine's type
+            production is now accepted.</li>
+        </ul>
         <b>0.13.0</b>
         <ul>
             <li>Nothing changes in the editor: this release is about what
