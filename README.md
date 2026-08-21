@@ -47,18 +47,21 @@
 - **Live templates**: `rule`, `ep`, `ctx`, `dim` + Tab.
 - **Quick documentation** (Ctrl+Q) on rules: description, target, payloads, dimensions.
 - **Intention**: *Add missing 'On' clause* (Alt+Enter on a rule without a target).
-- **12 inspections**: rule without name, unresolved rule/entry point reference,
+- **16 inspections**: rule without name, unresolved rule/entry point reference,
   unresolved identifier in an expression, incompatible types, unknown context,
   duplicate rules without a differentiating `@Dimension`, rule never
-  referenced by any entry point, undeclared dimension, and 4 rule-import
+  referenced by any entry point, undeclared dimension, 4 rule-import
   checks mirroring the engine (unknown source namespace, rule missing from
   the source namespace, import colliding with a local rule, ambiguous
-  import). Each message carries the engine's own diagnostic code and wording
-  (`[kvr027] Missing context definition with name 'X'.`), so it reads the same
-  in the IDE as in the build log; severity follows the engine's declaration.
-  The two checks the engine has no equivalent for carry no code. Function
-  calls are not checked — see
-  [ROADMAP.md](ROADMAP.md#function-validation-removed) for why.
+  import), and 4 `Function` declaration checks (invalid generic bound, a type
+  mixing a union with a generic, duplicate parameter name, a function
+  shadowing a native). Each message carries the engine's own diagnostic code
+  and wording (`[kvr027] Missing context definition with name 'X'.`), so it
+  reads the same in the IDE as in the build log; severity follows the engine's
+  declaration. A bodyless `Function` is a *signature* for the engine, validated
+  by a different class, so it gets that class's codes. The two checks the
+  engine has no equivalent for carry no code. Function **calls** are not
+  checked — see [ROADMAP.md](ROADMAP.md#function-validation-removed) for why.
 - **Stub-based index**: rule resolution goes through a persistent index —
   fast even on projects with hundreds of `.rules` files.
 - See [ROADMAP.md](ROADMAP.md) for what's next (KEL type-checking, rule runner).
@@ -155,8 +158,10 @@ The grammar is derived from the official ANTLR grammar (`KrakenDSL.g4`,
 ## Known limitations
 
 - KEL expressions are parsed structurally but not typed (no type-checking).
-- `Function` generic bounds (`<T is SomeType>`) are supported syntactically
-  but carry no semantics.
+- `Function` generic bounds (`<T is SomeType>`) are checked for the defects the
+  engine checks structurally, but a generic is not *substituted*: a call to
+  `<T is Number> F(<T> x)` is not verified against the bound, and a bound that
+  is itself a union is not propagated into the parameter type.
 
 ## Grammar validation
 
