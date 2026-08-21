@@ -248,11 +248,9 @@ Work:
   undeclared `@Dimension` name, and annotate a duplicate rule. Neither invents
   a value — a dimension's type and the value separating two rules are not
   derivable from the file — so both leave a placeholder.
-- ⏸️ Semantics for Function generic bounds (`<T is SomeType>`) — **deferred**.
-  Giving them meaning while `type_ref` cannot parse two of the three
-  constructs `Value.g4`'s type production defines (`#UnionType`,
-  `#PlainTypePrecedence`) would build on the broken part. See
-  [Type grammar gaps](#type-grammar-gaps) below.
+- ✅ Semantics for Function generic bounds (`<T is SomeType>`) — **shipped in
+  v0.15.0**, once v0.14.0 had closed the [type grammar
+  gaps](#type-grammar-gaps) this was waiting on. See [v0.15.0](#v0150--function-declaration-validation--shipped) below.
 - ✅ Spellchecking, restricted to the two prose positions the grammar defines:
   the string of a `description_clause`, and the *last* string of a
   `payload_message` (`Error "code" : "message"` puts the code first). Rule
@@ -284,6 +282,58 @@ Work:
   `RainbowColorSettingsPage` checkbox rather than a bespoke setting; since the
   platform treats "unset" as off, unset counts as on here so the feature is
   not invisible on install.
+
+## v0.15.0 — Function declaration validation ✅ (shipped)
+
+The engine validates a `Function` declaration in `FunctionValidator` and
+`FunctionSignatureValidator`, together 24 `kvf` codes. RuleScribe now mirrors
+the subset that is decidable from the source alone, as four inspections:
+
+- duplicate generic bound, and a bound that is itself generic
+  (`kvf004`/`kvf005`, or `kvf017`/`kvf018` without a body);
+- a type mixing a union with a generic — `<T> | String` — in return or
+  parameter position (`kvf007`/`kvf010`, or `kvf020`/`kvf021`);
+- two parameters of the same name (`kvf008`);
+- a KEL-implemented function shadowing one of the engine's natives (`kvf003`).
+
+**The body chooses the code.** The DSL writes a `Function` the same way whether
+it has a body or not, but the engine makes two objects of it — `Function` and
+`FunctionSignature` — validated by two classes with different codes. Ignoring
+that would print a code in the IDE that the build log never contains, which is
+worse than printing none.
+
+**What is deliberately left out, and why.** The engine also reports an unknown
+type (`kvf006`, `kvf009`) and a body whose type does not match the declared
+return (`kvf011`). Those fire on an *absence* — a name missing from an
+inventory — and an absence only concludes anything if the inventory is
+complete. That is exactly what sank function discovery in v0.10.1–v0.10.3. The
+four checks above fire on a *presence* instead (a `|` and a `<T>` in one type,
+two bounds of one name, a redeclared parameter, a name found in the bundled
+native catalogue), which stays sound on partial knowledge of the project.
+
+`kvf001` (two functions of the same name) is a third case, held back for a
+different reason: duplicate detection is symmetric while `visibleFiles()` is
+directional. If A includes B and both declare `F`, A sees a duplicate and B does
+not — deciding which file gets underlined is a real design question, not a
+ride-along.
+
+**The corpus proves little here, and says so.** All 16 `Function` declarations
+in the official kraken-rules corpus are flagged by nothing, but not one of them
+declares a generic bound or a union — the same blind spot that hid the union
+type gap for the whole life of the project. The fixtures in
+`KrakenFunctionDeclInspectionTest`, several lifted from the engine's own
+`FunctionValidatorTest`, are the real evidence.
+
+**One engine bug reproduced.** `kvf022` is declared but never emitted:
+`FunctionSignatureValidator.validateParameters` raises `kvf021` — the
+*unknown type* code — in its union/generic branch. RuleScribe prints `kvf021`,
+since that is what the build log shows, with the mixing wording rather than
+"does not exist".
+
+**A generic is still not substituted.** A call is not verified against a bound,
+and a bound that is itself a union is not propagated into the parameter type —
+the engine resolves the bound environment for that, and no engine test pins the
+result, so RuleScribe abstains rather than risk condemning valid code.
 
 ## v1.0.0 — Stabilization (partly shipped in 0.13.0)
 
@@ -457,6 +507,9 @@ that ordering it would have split into two `PIPE`. `binary_op` accepts `PIPE`
 so `a | b` keeps parsing as an expression.
 
 ### Function validation (removed)
+
+This concerns function **calls**. Function *declarations* are validated —
+see [v0.15.0](#v0150--function-declaration-validation--shipped).
 
 v0.10.1 through v0.10.3 tried to make the "unknown function" inspection aware
 of a project's own `@Native` Java functions and of functions declared in a

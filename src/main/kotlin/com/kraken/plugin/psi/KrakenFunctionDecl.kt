@@ -55,6 +55,58 @@ class KrakenFunctionDecl(node: ASTNode) : ASTWrapperPsiElement(node), PsiNameIde
             ?.text
             ?.trim()
 
+    /** Une borne `T is Number` de la liste `Function <…> Nom(…)`. */
+    data class GenericBound(
+        val generic: String,
+        val bound: String?,
+        val nameElement: PsiElement,
+        val boundElement: PsiElement?,
+    )
+
+    /** Un paramètre `Coverage[] coverages`, dont le nom est facultatif au parsing. */
+    data class Parameter(
+        val type: String?,
+        val name: String?,
+        val typeElement: PsiElement?,
+        val nameElement: PsiElement?,
+    )
+
+    /**
+     * Bornes génériques déclarées, dans l'ordre d'écriture.
+     *
+     * `generic_bound ::= id IS_KW type_ref` : `id` est une règle privée du BNF,
+     * donc le nom du générique est la première feuille du nœud, et sa borne le
+     * seul `TYPE_REF` qu'il contient.
+     */
+    val genericBounds: List<GenericBound>
+        get() = node.findChildByType(KrakenTypes.GENERIC_BOUNDS)
+            ?.getChildren(null)
+            ?.filter { it.elementType == KrakenTypes.GENERIC_BOUND }
+            ?.mapNotNull { bound ->
+                val name = firstMeaningfulLeaf(bound) ?: return@mapNotNull null
+                val type = bound.findChildByType(KrakenTypes.TYPE_REF)
+                GenericBound(name.text.trim(), type?.text?.trim(), name.psi, type?.psi)
+            }
+            .orEmpty()
+
+    /** Paramètres déclarés, type et nom séparés. */
+    val parameterList: List<Parameter>
+        get() = node.findChildByType(KrakenTypes.FUNCTION_PARAMS)
+            ?.getChildren(null)
+            ?.filter { it.elementType == KrakenTypes.FUNCTION_PARAM }
+            ?.map { param ->
+                val type = param.findChildByType(KrakenTypes.TYPE_REF)
+                val name = type?.let { firstMeaningfulLeaf(param, after = it) }
+                Parameter(type?.text?.trim(), name?.text?.trim(), type?.psi, name?.psi)
+            }
+            .orEmpty()
+
+    /** Le `TYPE_REF` de la clause `: Type`, pour ancrer un diagnostic dessus. */
+    val returnTypeElement: PsiElement?
+        get() = node.findChildByType(KrakenTypes.RETURN_TYPE)
+            ?.findChildByType(KrakenTypes.TYPE_REF)
+            ?.psi
+
     /** Faux pour une signature nue, qui délègue son implémentation à Java. */
     fun hasBody(): Boolean = node.findChildByType(KrakenTypes.FUNCTION_BODY) != null
 
@@ -87,5 +139,22 @@ class KrakenFunctionDecl(node: ASTNode) : ASTWrapperPsiElement(node), PsiNameIde
             candidate = candidate.treePrev
         }
         return candidate?.takeIf { it.elementType != KrakenTypes.GENERIC_BOUNDS }
+    }
+
+    /**
+     * Première feuille signifiante d'un nœud, éventuellement après l'un de ses
+     * enfants. Les sous-règles de type sont privées dans le BNF : `id` n'a pas de
+     * nœud propre, et un nom se lit donc au niveau des feuilles.
+     */
+    private fun firstMeaningfulLeaf(parent: ASTNode, after: ASTNode? = null): ASTNode? {
+        var child = after?.treeNext ?: parent.firstChildNode
+        while (child != null) {
+            if (child.psi !is com.intellij.psi.PsiWhiteSpace &&
+                child.psi !is com.intellij.psi.PsiComment &&
+                child.textLength > 0
+            ) return child
+            child = child.treeNext
+        }
+        return null
     }
 }

@@ -609,5 +609,41 @@
                 enabledByDefault="true"
                 level="ERROR"
                 implementationClass="com.kraken.plugin.inspection.KrakenImportAmbiguousInspection"/>
+
+        <localInspection
+                language="Kraken"
+                shortName="KrakenFunctionGenericBound"
+                displayName="Invalid generic type bound on a function"
+                groupName="Kraken"
+                enabledByDefault="true"
+                level="ERROR"
+                implementationClass="com.kraken.plugin.inspection.KrakenFunctionGenericBoundInspection"/>
+
+        <localInspection
+                language="Kraken"
+                shortName="KrakenFunctionTypeUnionGenericMix"
+                displayName="Function type mixes a union with a generic"
+                groupName="Kraken"
+                enabledByDefault="true"
+                level="ERROR"
+                implementationClass="com.kraken.plugin.inspection.KrakenFunctionTypeUnionGenericMixInspection"/>
+
+        <localInspection
+                language="Kraken"
+                shortName="KrakenFunctionParameterDuplicate"
+                displayName="Duplicate function parameter name"
+                groupName="Kraken"
+                enabledByDefault="true"
+                level="ERROR"
+                implementationClass="com.kraken.plugin.inspection.KrakenFunctionParameterDuplicateInspection"/>
+
+        <localInspection
+                language="Kraken"
+                shortName="KrakenFunctionNativeDuplicate"
+                displayName="Function shadows a native KEL function"
+                groupName="Kraken"
+                enabledByDefault="true"
+                level="ERROR"
+                implementationClass="com.kraken.plugin.inspection.KrakenFunctionNativeDuplicateInspection"/>
     </extensions>
 </idea-plugin>
