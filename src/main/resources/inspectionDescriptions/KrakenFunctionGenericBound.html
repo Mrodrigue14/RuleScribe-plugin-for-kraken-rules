@@ -1,0 +1,12 @@
+<html>
+<body>
+Reports a <code>Function</code> whose generic type bounds are invalid: either two bounds
+declared for the same generic name (<code>&lt;T is Number, T is String&gt;</code>), or a bound
+that is itself a generic type (<code>&lt;T is &lt;G&gt;&gt;</code>).
+<p>
+Mirrors the engine's <code>kvf004</code> and <code>kvf005</code>. A declaration without a body
+is a function <em>signature</em> for the engine, validated separately, and carries
+<code>kvf017</code>/<code>kvf018</code> instead.
+</p>
+</body>
+</html>

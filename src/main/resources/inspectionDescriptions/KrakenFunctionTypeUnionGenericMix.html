@@ -1,0 +1,12 @@
+<html>
+<body>
+Reports a <code>Function</code> parameter or return type that mixes a union with a generic,
+such as <code>&lt;T&gt; | String</code>. The engine does not support that combination.
+<p>
+Mirrors <code>kvf007</code> and <code>kvf010</code> (<code>kvf020</code>/<code>kvf021</code>
+for a declaration without a body). A plain union (<code>Date | DateTime</code>) and a plain
+generic (<code>&lt;T&gt;[]</code>) are both valid and are not reported. Neither is
+<code>Foo&lt;Bar&gt;</code>, which names a type rather than a generic.
+</p>
+</body>
+</html>
