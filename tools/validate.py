@@ -87,7 +87,22 @@ if missing:
     errors.append(f"Tokens du BNF jamais produits par le lexer: {sorted(missing)}")
 print(f"[4] Lexer: produit {len(lexer_tokens)} types de tokens")
 
-# ---------- 5. Braces équilibrées dans les .kt ----------
+# ---------- 5. Chaque inspection a sa description HTML ----------
+# Sans le fichier, l'IDE affiche l'inspection sans un mot d'explication et ne
+# se plaint de rien : la panne est entièrement silencieuse. Le nom du fichier
+# doit reprendre le shortName au caractère près.
+descriptions = os.path.join(ROOT, "src/main/resources/inspectionDescriptions")
+short_names = [
+    el.get("shortName")
+    for el in tree.iter("localInspection")
+    if el.get("shortName")
+]
+for short in sorted(short_names):
+    if not os.path.exists(os.path.join(descriptions, short + ".html")):
+        errors.append(f"inspection sans description: inspectionDescriptions/{short}.html")
+print(f"[5] Inspections: {len(short_names)} déclarées, descriptions vérifiées")
+
+# ---------- 6. Braces équilibrées dans les .kt ----------
 for f in kt_files:
     src = open(f, encoding="utf-8").read()
     src2 = re.sub(r'"""', '@@@', src)
@@ -98,7 +113,7 @@ for f in kt_files:
     src2 = re.sub(r'/\*.*?\*/', '', src2, flags=re.S)
     if src2.count('{') != src2.count('}'):
         errors.append(f"Accolades déséquilibrées: {f} ({src2.count('{')} vs {src2.count('}')})")
-print(f"[5] Braces: {len(kt_files)} fichiers Kotlin vérifiés")
+print(f"[6] Braces: {len(kt_files)} fichiers Kotlin vérifiés")
 
 print()
 for w in warnings:
