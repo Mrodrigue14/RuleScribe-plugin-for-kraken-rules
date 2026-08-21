@@ -88,6 +88,16 @@ class KrakenOperatorLexingTest : BasePlatformTestCase() {
         assertEquals(listOf("BAD" to "&"), operators("a & b"))
     }
 
+    /**
+     * `>>` reste deux `GT`. Une borne générique se referme deux fois d'affilée
+     * (`Function <T is <G>>`), et l'inspection `kvf005` en dépend : un jour où
+     * `>>` deviendrait un opérateur, elle cesserait de voir ce cas.
+     */
+    fun testDoubleAngleClosesTwice() {
+        assertEquals(listOf(">" to ">", ">" to ">"), tokens("<T is <G>>").takeLast(2))
+        assertEquals(emptyList<Pair<String, String>>(), operators("a >> b"))
+    }
+
     /** Les bornes génériques et les dates ne doivent rien perdre au change. */
     fun testAngleBracketsAndDatesAreUnaffected() {
         assertEquals(emptyList<Pair<String, String>>(), operators("a < b"))

@@ -83,7 +83,7 @@ class KrakenFunctionDecl(node: ASTNode) : ASTWrapperPsiElement(node), PsiNameIde
             ?.getChildren(null)
             ?.filter { it.elementType == KrakenTypes.GENERIC_BOUND }
             ?.mapNotNull { bound ->
-                val name = firstMeaningfulLeaf(bound) ?: return@mapNotNull null
+                val name = firstMeaningfulChild(bound) ?: return@mapNotNull null
                 val type = bound.findChildByType(KrakenTypes.TYPE_REF)
                 GenericBound(name.text.trim(), type?.text?.trim(), name.psi, type?.psi)
             }
@@ -96,7 +96,7 @@ class KrakenFunctionDecl(node: ASTNode) : ASTWrapperPsiElement(node), PsiNameIde
             ?.filter { it.elementType == KrakenTypes.FUNCTION_PARAM }
             ?.map { param ->
                 val type = param.findChildByType(KrakenTypes.TYPE_REF)
-                val name = type?.let { firstMeaningfulLeaf(param, after = it) }
+                val name = type?.let { firstMeaningfulChild(param, after = it) }
                 Parameter(type?.text?.trim(), name?.text?.trim(), type?.psi, name?.psi)
             }
             .orEmpty()
@@ -142,11 +142,13 @@ class KrakenFunctionDecl(node: ASTNode) : ASTWrapperPsiElement(node), PsiNameIde
     }
 
     /**
-     * Première feuille signifiante d'un nœud, éventuellement après l'un de ses
-     * enfants. Les sous-règles de type sont privées dans le BNF : `id` n'a pas de
-     * nœud propre, et un nom se lit donc au niveau des feuilles.
+     * Premier enfant signifiant d'un nœud, éventuellement après l'un d'eux.
+     *
+     * Les sous-règles de type sont privées dans le BNF : `id` ne produit pas de
+     * nœud, si bien que le nom cherché est un token frère du `TYPE_REF` plutôt
+     * qu'un sous-arbre. Les deux appelants s'appuient sur cette forme.
      */
-    private fun firstMeaningfulLeaf(parent: ASTNode, after: ASTNode? = null): ASTNode? {
+    private fun firstMeaningfulChild(parent: ASTNode, after: ASTNode? = null): ASTNode? {
         var child = after?.treeNext ?: parent.firstChildNode
         while (child != null) {
             if (child.psi !is com.intellij.psi.PsiWhiteSpace &&

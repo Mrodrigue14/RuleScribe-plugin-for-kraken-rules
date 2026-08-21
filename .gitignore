@@ -14,3 +14,6 @@ __pycache__/
 *.crt
 *.p12
 *.key
+
+# Index local CodeGraph : propre à la machine, jamais partagé
+.codegraph/
