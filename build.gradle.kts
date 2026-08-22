@@ -218,9 +218,6 @@ tasks {
     // Reste ce que le plugin ne fait pas : sauter la signature quand les
     // secrets sont absents (build local, fork) plutôt que casser le build.
     // `verifyPluginSignature` suit, sinon elle relirait une archive non signée.
-    signPlugin {
-        onlyIf { !System.getenv("CERTIFICATE_CHAIN").isNullOrBlank() && !System.getenv("PRIVATE_KEY").isNullOrBlank() }
-    }
     // Matérialise le certificat que l'extension déclare, et le fait avant que
     // la vérification n'évalue ses entrées.
     val certificateChainFilePath = layout.buildDirectory.file("signing/certificate-chain.crt")
@@ -234,6 +231,12 @@ tasks {
                 writeText(chain.orEmpty())
             }
         }
+    }
+    signPlugin {
+        onlyIf { !System.getenv("CERTIFICATE_CHAIN").isNullOrBlank() && !System.getenv("PRIVATE_KEY").isNullOrBlank() }
+        // Le certificat déclaré sur l'extension vaut pour les DEUX tâches :
+        // celle-ci le lit aussi, et Gradle 9 exige que ça se dise.
+        dependsOn(writeCertificateChain)
     }
     verifyPluginSignature {
         onlyIf { !System.getenv("CERTIFICATE_CHAIN").isNullOrBlank() }
