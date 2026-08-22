@@ -53,6 +53,11 @@ kotlin {
     jvmToolchain(17)
 }
 
+// Chemin du certificat matérialisé pour la signature. Déclaré une fois :
+// l'extension le lit, `writeCertificateChain` l'écrit, et deux littéraux qui
+// divergeraient produiraient un fichier écrit ailleurs que là où on le lit.
+val signingCertificate = layout.buildDirectory.file("signing/certificate-chain.crt")
+
 intellijPlatform {
     // Les options recherchables sont une page de réglages indexée au build.
     // Le plugin n'en déclare aucune : les générer coûte un démarrage d'IDE
@@ -77,7 +82,7 @@ intellijPlatform {
     // fichier déclaré ici. Un certificat est du matériel public — seule la clé
     // privée est sensible — donc rien de secret ne touche le disque.
     signing {
-        certificateChainFile = layout.buildDirectory.file("signing/certificate-chain.crt")
+        certificateChainFile = signingCertificate
     }
 
     // Publication sur le JetBrains Marketplace. Le token est fourni par la
@@ -219,14 +224,13 @@ tasks {
     // secrets sont absents (build local, fork) plutôt que casser le build.
     // `verifyPluginSignature` suit, sinon elle relirait une archive non signée.
     // Matérialise le certificat que l'extension déclare, et le fait avant que
-    // la vérification n'évalue ses entrées.
-    val certificateChainFilePath = layout.buildDirectory.file("signing/certificate-chain.crt")
+    // signature et vérification n'évaluent leurs entrées.
     val writeCertificateChain = register("writeCertificateChain") {
         val chain = System.getenv("CERTIFICATE_CHAIN")
         onlyIf { !chain.isNullOrBlank() }
-        outputs.file(certificateChainFilePath)
+        outputs.file(signingCertificate)
         doLast {
-            certificateChainFilePath.get().asFile.apply {
+            signingCertificate.get().asFile.apply {
                 parentFile.mkdirs()
                 writeText(chain.orEmpty())
             }
