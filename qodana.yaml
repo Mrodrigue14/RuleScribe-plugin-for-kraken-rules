@@ -34,10 +34,18 @@ profile:
 # `auto-download=false` fait échouer proprement si ce chemin est faux, au lieu
 # de retomber sur le resolver et son erreur IBM_SEMERU, illisible pour qui
 # n'en connaît pas l'histoire.
+# DIAGNOSTIC TEMPORAIRE — le JDK est bien copié (Temurin 17.0.20) et le mount
+# est bien /data/project, donc ce qui reste en cause est la façon de désigner
+# le chemin à Gradle. On regarde les deux formes plutôt que d'en retenter une.
 bootstrap: >-
-  ./gradlew classes
-  -Porg.gradle.java.installations.paths=/data/project/.qodana-jdk
-  -Porg.gradle.java.installations.auto-download=false
+  echo "=== contenu ===" && (ls -l /data/project/.qodana-jdk/bin/java || echo ABSENT)
+  && echo "=== avec -P ===" && ./gradlew -q javaToolchains
+  -Porg.gradle.java.installations.paths=/data/project/.qodana-jdk || true
+  && echo "=== avec -D ===" && ./gradlew -q javaToolchains
+  -Dorg.gradle.java.installations.paths=/data/project/.qodana-jdk || true
+  && ./gradlew classes
+  -Dorg.gradle.java.installations.paths=/data/project/.qodana-jdk
+  -Dorg.gradle.java.installations.auto-download=false
 
 # Le parseur de src/main/gen est généré par Grammar-Kit depuis le BNF : ses
 # avertissements ne sont pas actionnables, on ne corrige pas du code généré.
