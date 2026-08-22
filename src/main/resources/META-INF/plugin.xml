@@ -28,6 +28,22 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.15.0</b>
+        <ul>
+            <li>Function declarations are now validated the way the engine
+            validates them. Two bounds for the same generic, a bound that is
+            itself generic, a parameter or return type mixing a union with a
+            generic, two parameters of the same name, and a KEL function
+            carrying the name of a native are each reported with the code that
+            appears in the build log. A declaration without a body is a
+            function signature for the engine, validated by a different class,
+            so it gets that class's codes instead.</li>
+            <li>Unknown types and mismatched body return types stay unchecked.
+            Those fire when a name is missing from an inventory, and the plugin
+            cannot see a project's full type model, so it would report valid
+            code as broken.</li>
+        </ul>
+
         <b>0.14.0</b>
         <ul>
             <li>A rule can be moved to another file with F6, and the plugin
