@@ -67,6 +67,19 @@ intellijPlatform {
         }
     }
 
+    // Signature : `signPlugin` lit CERTIFICATE_CHAIN, PRIVATE_KEY et
+    // PRIVATE_KEY_PASSWORD tout seul et fonctionne ainsi. `verifyPluginSignature`
+    // veut en revanche un CHEMIN de certificat, et reçoit la chaîne brute en
+    // argument, à quoi le signeur répond « Invalid argument » et sort en 64.
+    // Trois `set()` posés sur la tâche n'y ont rien changé : elle continuait
+    // d'annoncer son chemin par défaut, signe que ce n'est pas elle qui bâtit
+    // la ligne de commande. C'est cette extension qui la gouverne, d'où le
+    // fichier déclaré ici. Un certificat est du matériel public — seule la clé
+    // privée est sensible — donc rien de secret ne touche le disque.
+    signing {
+        certificateChainFile = layout.buildDirectory.file("signing/certificate-chain.crt")
+    }
+
     // Publication sur le JetBrains Marketplace. Le token est fourni par la
     // variable d'environnement PUBLISH_TOKEN (secret CI), jamais en clair.
     publishing {
@@ -208,13 +221,8 @@ tasks {
     signPlugin {
         onlyIf { !System.getenv("CERTIFICATE_CHAIN").isNullOrBlank() && !System.getenv("PRIVATE_KEY").isNullOrBlank() }
     }
-    // `verifyPluginSignature` attend un FICHIER de certificat : passé la chaîne
-    // brute, le signeur répond « Invalid argument » et sort en 64. La 2.x lit
-    // pourtant CERTIFICATE_CHAIN toute seule et alimente `certificateChain`,
-    // la forme chaîne — d'où cette tâche productrice, qui matérialise le
-    // certificat sur disque pour que Gradle l'ait écrit avant que la
-    // vérification n'évalue ses entrées. Un certificat est du matériel public
-    // (seule la clé privée est sensible) : rien de secret ne touche le disque.
+    // Matérialise le certificat que l'extension déclare, et le fait avant que
+    // la vérification n'évalue ses entrées.
     val certificateChainFilePath = layout.buildDirectory.file("signing/certificate-chain.crt")
     val writeCertificateChain = register("writeCertificateChain") {
         val chain = System.getenv("CERTIFICATE_CHAIN")
@@ -237,12 +245,6 @@ tasks {
         // secrets. Sans eux les deux tâches sont sautées, ne produisent rien,
         // et la dépendance manquante reste invisible.
         dependsOn(signPlugin, writeCertificateChain)
-        // `certificateChain` PRIME sur `certificateChainFile`, et 2.x la
-        // remplit depuis CERTIFICATE_CHAIN sans qu'on demande rien : tant
-        // qu'elle porte une valeur, le fichier ci-dessous n'est jamais lu. On
-        // la vide donc ici, et ici seulement — `signPlugin` s'en sert et
-        // fonctionne très bien avec.
-        certificateChain.set(null as String?)
-        certificateChainFile.set(certificateChainFilePath)
+
     }
 }
