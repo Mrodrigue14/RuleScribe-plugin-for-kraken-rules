@@ -231,6 +231,9 @@ attack surface:
 Every change is checked automatically in CI:
 
 - **CodeQL** — static analysis (SAST) of the Kotlin/Java code.
+- **Qodana** (JetBrains) — static analysis that knows the IntelliJ Platform
+  APIs, so it catches misuse specific to plugin development that a
+  general-purpose analyser does not.
 - **poutine** (BoostSecurity) — SAST of the CI/CD pipelines themselves
   (injection, unsafe triggers, supply-chain).
 - **Dependabot** — dependency vulnerability alerts + dependency/action updates.

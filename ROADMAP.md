@@ -389,11 +389,44 @@ result, so RuleScribe abstains rather than risk condemning valid code.
   reads the jar, which is a better subject than loose class files: it is the
   archive that ships.
 
-- ⏸️ **Qodana** was parked behind the migration and is now unblocked. It was
-  removed because its container ships a JDK that Gradle 8.14.5 cannot run
-  under, which silently broke project resolution and produced 92% false
-  positives. Gradle 9.7.1 removes that incompatibility. It did earn its keep
-  once — it found four dead functions before being removed.
+- ✅ **Qodana runs again**, without the bootstrap it was thought to need.
+
+  Gradle 9.7.1 runs fine under the container's JDK 25, so the
+  `* What went wrong: 25.0.3` that got Qodana deleted is fixed by the
+  migration. The `bootstrap: ./gradlew classes` it relied on, however, cannot
+  exist. The image holds one JVM, `/opt/idea/jbr`, a JetBrains **JRE** 25
+  (`Is JDK: false`), so it compiles nothing. And the way out through the
+  project directory is closed too: **Qodana copies `/data/project` rather than
+  mounting it, and skips what `.gitignore` excludes.** `src/main/gen` is
+  gitignored, so the generated parser sources never cross, wherever they are
+  produced, and the container would have to generate them itself.
+
+  Rather than build around that, the number justifying the bootstrap was
+  remeasured. It had been taken in July 2026 under Gradle 8 and plugin 1.x and
+  was being treated as a constant. Without a bootstrap the run reports 102
+  findings, 76 of them `KotlinUnreachableCode` — the same count as July.
+
+  The useful part is where they sit. All 76 are in one 46-line file,
+  `KrakenAddOnClauseIntention.kt`, which imports
+  `com.kraken.plugin.parser.KrakenTypes`, generated into the `src/main/gen`
+  the container never receives. Forty-six lines do not hold seventy-six
+  unreachable statements: the analysis loses the symbol and calls the rest of
+  the body dead. So the rule is excluded, with that written down, and the
+  remaining **26 findings** are the real ones: three `UnusedSymbol`, five
+  unused imports, three redundant `if`s, a `KotlinConstantConditions`, the
+  unstable Code Vision APIs the Plugin Verifier already flags, and some style.
+  Bring the rule back if a bootstrap ever becomes possible.
+
+  Two things had to be fixed to measure at all. `pr-mode` is on by default on
+  a pull request and scans only the diff, so the first green run reported zero
+  findings on 113 Kotlin files, which is the shape of a silent no-op rather
+  than a clean bill. And the linter is pinned instead of `:latest`, since a
+  JDK appearing inside a floating image is what broke this the first time.
+
+  **It paid for itself twice.** It turned up that toolchain auto-provisioning
+  has been broken since the Gradle 9 migration, invisible on CI because the
+  runners install Temurin 17 themselves, and README now says what actually
+  happens. And the 26 findings are a to-do list nobody had.
 - ✅ **Move rule to another file**, on F6. The obstacle was never the
   plumbing, it was the semantics: rule references are **by name and soft**, so
   a move changes no reference text at all — only whether those references

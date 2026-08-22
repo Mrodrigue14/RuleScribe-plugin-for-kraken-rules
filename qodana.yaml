@@ -1,0 +1,55 @@
+version: "1.0"
+
+# Qodana Community for JVM : l'analyseur statique de JetBrains. Complémentaire
+# de CodeQL plutôt que redondant — CodeQL analyse du Java/Kotlin générique,
+# Qodana connaît les API de l'IntelliJ Platform et signale les usages
+# incorrects propres au développement de plugins.
+#
+# Version épinglée, pas `:latest`. C'est un JDK 25 apparu dans l'image qui a
+# fait sauter cette analyse la première fois : une étiquette flottante remet
+# exactement ce risque en place, et l'action prévient à chaque run.
+linter: jetbrains/qodana-jvm-community:2026.2
+
+profile:
+  name: qodana.recommended
+
+# Résout les dépendances (dont le SDK IntelliJ) AVANT l'analyse. Sans cela,
+# Qodana ouvre le projet sans pouvoir typer les API de la plateforme et déclare
+# inatteignables des corps de méthode qui ne le sont pas : le premier run avait
+# produit 76 faux positifs « KotlinUnreachableCode », soit 92 % du bruit total.
+#
+# MESURE EN COURS : ce bootstrap n'est PAS là. La chaîne qui le rendait
+# possible est fermée. Le conteneur ne contient qu'une JRE JetBrains 25
+# (`Is JDK: false`), il ne peut donc rien compiler ; foojay ne sait pas
+# télécharger de JDK sous Gradle 9 (0.10.0 comme 1.0.0 nomment
+# `JvmVendorSpec.IBM_SEMERU`, supprimé en 9) ; et surtout Qodana **recopie**
+# /data/project en sautant ce que .gitignore exclut, or `src/main/gen` en fait
+# partie — les sources générées ne traversent donc jamais, où qu'on les
+# produise. Le conteneur devrait les générer lui-même, ce qu'il ne peut pas.
+#
+# Le chiffre qui justifiait ce bootstrap (76 faux positifs sur 82, tous des
+# `KotlinUnreachableCode`) date de juillet 2026, sous Gradle 8 et le plugin
+# 1.x, avant que la migration ne change la façon dont le modèle de projet est
+# exposé. On le remesure au lieu de le supposer encore vrai.
+
+# Le parseur de src/main/gen est généré par Grammar-Kit depuis le BNF : ses
+# avertissements ne sont pas actionnables, on ne corrige pas du code généré.
+# Même exclusion que pour la couverture Kover et le SARIF CodeQL.
+exclude:
+  - name: All
+    paths:
+      - src/main/gen
+
+  # `KotlinUnreachableCode` est écarté, et c'est le prix de l'absence de
+  # bootstrap. Sur 102 findings, 76 portaient ce nom et tenaient dans UN
+  # fichier de 46 lignes, `KrakenAddOnClauseIntention.kt` : quarante-six lignes
+  # ne contiennent pas soixante-seize instructions inatteignables. Ce fichier
+  # importe `com.kraken.plugin.parser.KrakenTypes`, une classe générée dans
+  # `src/main/gen`, que le conteneur n'a pas — Qodana recopie /data/project en
+  # sautant ce que .gitignore exclut. Faute de résoudre le symbole, l'analyse
+  # déclare le reste du corps inatteignable.
+  #
+  # Écarter la règle entière plutôt que le fichier : la cause est générale (pas
+  # de modèle compilé), ce fichier n'en est que l'endroit le plus visible. À
+  # réactiver si un bootstrap redevient possible un jour.
+  - name: KotlinUnreachableCode
