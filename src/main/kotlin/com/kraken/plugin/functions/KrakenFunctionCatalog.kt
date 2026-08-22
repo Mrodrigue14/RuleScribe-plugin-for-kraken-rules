@@ -46,6 +46,17 @@ object KrakenFunctionCatalog {
     private class Catalog(val libraries: List<KelLibrary>, val functions: List<KelFunction>)
 }
 
+/**
+ * Une bibliothèque du moteur (Math, String, Date…).
+ *
+ * Seul son nombre est lu, par le test qui épingle « 55 fonctions natives
+ * réparties en 9 bibliothèques » : c'est le garde-fou du catalogue généré par
+ * `tools/gen_functions.py`, qui signale un générateur cassé. Les champs
+ * eux-mêmes reproduisent la forme du JSON plutôt que ce que le plugin affiche,
+ * et Gson les remplit sans que rien ne les consulte — d'où le `@Suppress`,
+ * qui vaut mieux qu'un modèle amputé de ce que la donnée contient.
+ */
+@Suppress("unused")
 class KelLibrary(
     val name: String,
     val description: String?,

@@ -44,6 +44,32 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
             .filter { it.startsWith("[kvr049] Reference ") }
     }
 
+    /**
+     * Le nom appelé n'est pas une référence à résoudre.
+     *
+     * `isCallHead` est ce qui l'écarte, et rien ne le vérifiait : Qodana a
+     * signalé la condition comme « toujours fausse », ce qui rendrait la
+     * protection inopérante et ferait signaler `Round` comme introuvable. Le
+     * diagnostic vient d'un modèle où `KrakenTypes` n'est pas résolu, mais
+     * l'affirmation méritait d'être fixée plutôt que discutée.
+     */
+    fun testNativeCallHeadIsNotReported() {
+        assertEquals(emptyList<String>(), problems("Assert Round(Policy.policyCd) > 0"))
+    }
+
+    /** Même chose pour un nom que rien ne déclare : les appels ne sont pas vérifiés. */
+    fun testUnknownCallHeadIsNotReported() {
+        assertEquals(emptyList<String>(), problems("Assert Inconnue(Policy.policyCd) > 0"))
+    }
+
+    /** Le garde ne doit pas déborder : un argument introuvable reste signalé. */
+    fun testArgumentOfACallIsStillChecked() {
+        assertEquals(
+            listOf("[kvr049] Reference 'absent' not found."),
+            problems("Assert Round(absent) > 0")
+        )
+    }
+
     // ------------------------------------------------------------------
     // Ce qui doit être signalé
     // ------------------------------------------------------------------

@@ -1,7 +1,6 @@
 package com.kraken.plugin.types
 
 import com.intellij.psi.PsiElement
-import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.functions.KrakenFunctionCatalog
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenFunctionCall
@@ -109,10 +108,10 @@ object KrakenTypeInference {
      */
     private fun projectsOverACollection(chain: PsiElement, last: KrakenPathSegment): Boolean {
         val head = significantChildren(chain).firstOrNull()
-        if (head != null && head !is KrakenPathSegment && typeOf(head) is KrakenType.Array) return true
-        return directSegments(chain)
-            .takeWhile { it !== last }
-            .any { !it.isCall && typeOfDeclaration(it.reference?.resolve()) is KrakenType.Array }
+        return (head != null && head !is KrakenPathSegment && typeOf(head) is KrakenType.Array) ||
+            directSegments(chain)
+                .takeWhile { it !== last }
+                .any { !it.isCall && typeOfDeclaration(it.reference?.resolve()) is KrakenType.Array }
     }
 
     /** Segments d'accès appartenant à cette chaîne, sans descendre dans les appels. */
