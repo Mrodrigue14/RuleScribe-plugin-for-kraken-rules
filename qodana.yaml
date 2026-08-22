@@ -38,11 +38,7 @@ profile:
 # est bien /data/project, donc ce qui reste en cause est la façon de désigner
 # le chemin à Gradle. On regarde les deux formes plutôt que d'en retenter une.
 bootstrap: >-
-  echo "=== contenu ===" && (ls -l /data/project/.qodana-jdk/bin/java || echo ABSENT)
-  && echo "=== avec -P ===" && ./gradlew -q javaToolchains
-  -Porg.gradle.java.installations.paths=/data/project/.qodana-jdk || true
-  && echo "=== avec -D ===" && ./gradlew -q javaToolchains
-  -Dorg.gradle.java.installations.paths=/data/project/.qodana-jdk || true
+  echo "=== /data/project ===" && ls -a /data/project
   && ./gradlew classes
   -Dorg.gradle.java.installations.paths=/data/project/.qodana-jdk
   -Dorg.gradle.java.installations.auto-download=false
