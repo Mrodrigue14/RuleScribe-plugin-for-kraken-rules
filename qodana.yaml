@@ -18,32 +18,21 @@ profile:
 # inatteignables des corps de méthode qui ne le sont pas : le premier run avait
 # produit 76 faux positifs « KotlinUnreachableCode », soit 92 % du bruit total.
 #
-# C'est aussi cette ligne qui avait condamné Qodana : le conteneur embarque un
-# JDK 25, que Gradle 8.14.5 ne savait pas lire (le build s'arrêtait sur un
-# « * What went wrong: 25.0.3 »). Gradle 9.7.1 accepte Java 25, ce qui lève
-# cette contradiction-là.
+# C'est cette ligne qui avait condamné Qodana en juillet 2026 : le conteneur
+# embarquait un JDK 25 que Gradle 8.14.5 ne savait pas lire (« * What went
+# wrong: 25.0.3 »). Gradle 9.7.1 accepte Java 25 et ce mur-là est tombé.
 #
-# Restait la toolchain. L'image ne contient qu'un seul JVM, `/opt/idea/jbr`,
-# une JRE JetBrains 25 — pas un JDK, et pas la version demandée. Elle ne peut
-# donc ni satisfaire `jvmToolchain(17)` ni compiler, et foojay-resolver ne sait
-# pas en télécharger un sous Gradle 9 : 0.10.0 comme 1.0.0 nomment
-# `JvmVendorSpec.IBM_SEMERU`, que Gradle 9 a supprimé. Le JDK 17 vient donc du
-# runner, copié dans le répertoire de travail que Qodana monte sur
-# /data/project (voir l'étape « JDK 17 pour le conteneur » du workflow).
+# Un second l'a remplacé, et il ne se contourne pas depuis ce fichier. L'image
+# ne contient qu'un seul JVM, `/opt/idea/jbr` : une JRE JetBrains 25, donc pas
+# un JDK du tout (`Is JDK: false`). Elle ne peut compiler à aucune version, et
+# `jvmToolchain(17)` réclame en plus un JDK 17. foojay-resolver ne sait pas en
+# télécharger un sous Gradle 9 — 0.10.0 comme 1.0.0 nomment
+# `JvmVendorSpec.IBM_SEMERU`, supprimé en 9 — et faire passer un JDK par le
+# répertoire de projet ne marche pas : Qodana le recopie dans le conteneur, et
+# une arborescence de 300 Mo n'y survit pas.
 #
-# `auto-download=false` fait échouer proprement si ce chemin est faux, au lieu
-# de retomber sur le resolver et son erreur IBM_SEMERU, illisible pour qui
-# n'en connaît pas l'histoire.
-# DIAGNOSTIC TEMPORAIRE — le JDK est bien copié (Temurin 17.0.20) et le mount
-# est bien /data/project, donc ce qui reste en cause est la façon de désigner
-# le chemin à Gradle. On regarde les deux formes plutôt que d'en retenter une.
-bootstrap: >-
-  echo "=== bin/java ===" && (ls -l /data/project/.qodana-jdk/bin/java || echo ABSENT)
-  && echo "=== exécutable ? ===" && (/data/project/.qodana-jdk/bin/java -version 2>&1 | head -3 || echo "NON EXECUTABLE")
-  && echo "=== release ===" && (head -3 /data/project/.qodana-jdk/release || echo "pas de fichier release")
-  && ./gradlew classes
-  -Dorg.gradle.java.installations.paths=/data/project/.qodana-jdk
-  -Dorg.gradle.java.installations.auto-download=false
+# Voir ROADMAP.md pour ce qui reste ouvert.
+bootstrap: ./gradlew classes
 
 # Le parseur de src/main/gen est généré par Grammar-Kit depuis le BNF : ses
 # avertissements ne sont pas actionnables, on ne corrige pas du code généré.
@@ -52,5 +41,3 @@ exclude:
   - name: All
     paths:
       - src/main/gen
-      # JDK copié depuis le runner pour la toolchain, pas du code du projet.
-      - .qodana-jdk

@@ -388,81 +388,43 @@ result, so RuleScribe abstains rather than risk condemning valid code.
   reads the jar, which is a better subject than loose class files: it is the
   archive that ships.
 
-- ✅ **Qodana**, unparked once the Gradle migration removed what blocked it.
+- ⏸️ **Qodana: the July blocker is gone, a different one took its place.**
 
-  The precise blocker, from the run that got it deleted: `bootstrap:
-  ./gradlew classes` resolves the project inside the Qodana container so the
-  analysis can type IntelliJ Platform APIs, without which 76 of 82 findings
-  were bogus `KotlinUnreachableCode`. The container ships a JDK 25, and Gradle
-  8.14.5 stops at Java 24, so the bootstrap died on `* What went wrong:
-  25.0.3`. Gradle 9.7.1 accepts Java 25.
+  Gradle 9.7.1 runs fine under the container's JDK 25, so the `* What went
+  wrong: 25.0.3` that got Qodana deleted is genuinely fixed by the migration.
+  That much is verified.
 
-  Worth stating plainly: that bootstrap had **never once succeeded** in CI. The
-  two green runs of July 2026 predate it and are the ones with the false
-  positives; both runs after it failed. So this was not a working config with
-  one blocker lifted, and it was proved on a pull request before merging rather
-  than after.
+  What stops it now is that the Qodana JVM community image is not a build
+  environment. It holds exactly one JVM, `/opt/idea/jbr`, a JetBrains **JRE**
+  25: `Is JDK: false`, no `/usr/lib/jvm`, nothing under `/opt` or `/root/.jdks`.
+  It cannot compile at any version, and `jvmToolchain(17)` asks for a JDK 17 on
+  top of that. `src/main/gen` is gitignored, so the container has to run
+  `generateKrakenParser` and cannot avoid executing a JVM task.
 
-  Two defects came along for the ride. The action was passed
-  `fail-threshold: ""`, which it rejects outright (`Unexpected input(s)`), so
-  the non-blocking behaviour the comment described was never configured and
-  only held because `qodana.yaml` sets no `failThreshold`. And the linter was
-  `:latest`, which is how a JDK bump inside the image broke this in the first
-  place; it is pinned now.
+  Three ways out were tried and all failed, each in a different place, which is
+  what says the shape is wrong rather than the details:
 
-  `projectJDK: "17"` was tried in July and is deliberately not back. It governs
-  the JDK Qodana analyses with, not the one the bootstrap runs under, which is
-  why it did not help then and would only obscure what this run proves.
+  - **Let foojay provision one.** It cannot under Gradle 9. `DistributionsKt`
+    names `JvmVendorSpec.IBM_SEMERU` in 0.10.0 *and* 1.0.0, and 9.7.1 declares
+    only ADOPTIUM, AMAZON, APPLE, AZUL, BELLSOFT, GRAAL_VM, IBM, ORACLE, SAP.
+    No released version fixes it.
+  - **Copy the runner's Temurin 17 into the project directory** and point
+    `org.gradle.java.installations.paths` at it. Qodana populates
+    `/data/project` by copying rather than mounting, and it skips gitignored
+    paths, so the directory was simply absent. Un-ignoring it got the entry to
+    appear once, then not at all: a 300 MB tree does not survive that copy.
+  - **Compile with what the container has.** Impossible: a JRE has no compiler.
 
-  **It found a latent bug the migration had left behind.** With Gradle 9.7.1
-  the bootstrap got past the JDK 25 wall and hit a different one:
-  `JvmVendorSpec does not have member field 'IBM_SEMERU'`. The
-  foojay-resolver-convention plugin, pinned at 0.10.0, names a constant Gradle
-  9 removed, and it fails at the one moment it is useful, when a JDK 17 has to
-  be downloaded. CI runners install Temurin 17 themselves, so the resolver is
-  never asked and the breakage stays invisible there; the Qodana container has
-  only a JDK 25 and surfaced it. README promises that JDK 17 is
-  auto-provisioned if missing, and between the migration and this change that
-  promise did not hold on a machine without one. Bumped to 1.0.0.
-- ✅ **Move rule to another file**, on F6. The obstacle was never the
-  plumbing, it was the semantics: rule references are **by name and soft**, so
-  a move changes no reference text at all — only whether those references
-  still resolve. `KrakenMoveConflicts` computes, before anything is written,
-  which references would stop resolving, counting `Import Rule` as its own
-  axis: an import naming the destination namespace keeps working, one naming
-  the old namespace does not. The user is warned with that count and can
-  cancel; nothing is written until they accept.
+  Every remaining option means doing the JVM work outside the container and
+  passing the result in, which depends on exactly the transfer that proved
+  unreliable. Parked again, but on a precise blocker this time rather than a
+  vague one.
 
-  Built on `MoveHandlerDelegate.tryToMove` rather than `doMove`, since the
-  platform has no natural destination container to offer for a rule — the
-  handler runs the whole flow and picks the target with a `TreeFileChooser`
-  restricted to `.rules`. `WriteCommandAction`, not `WriteAction`: the
-  platform refuses document edits outside a command, and the command is what
-  makes the move undoable. Insertion precedes deletion, so a failure leaves
-  the rule duplicated — which an inspection already reports — rather than
-  nowhere.
-
-  Tests assert **resolution** after the move, never text, including the case
-  where a reference keeps its exact wording and stops resolving.
-
-- ⏸️ *Extract rule* stays deferred because it is still underspecified, not
-  because it is hard. The phrase covers two different features: pulling an
-  inline rule out of a `Rules { }` block into a top-level declaration (mostly
-  formatting), or lifting a repeated KEL expression into a `Function` (real
-  value, and the grammar already supports `Function f(params) : T { expr }`) —
-  but that one is Extract **function**. Pick one deliberately before writing
-  code.
-
-- ⏸️ *Move EntryPoint* follows the same shape as Move rule and is a small
-  step from it, once the rule case has been used in anger.
-- ✅ `publish.yml` uses `actions/attest` instead of the deprecated
-  `actions/attest-sbom`. The generic action makes the predicate type explicit
-  where the old one implied it; its value is fixed by contract, since the
-  release notes publish it in the verification command and every attestation
-  already emitted carries it. Verified against the published v0.12.0 artifact
-  before changing anything: `gh attestation verify … --predicate-type
-  https://cyclonedx.org/bom` passes. The step runs before `publishPlugin`, so
-  a mistake here aborts a release rather than shipping a broken one.
+  **It paid for itself anyway.** It found that toolchain auto-provisioning has
+  been broken since the Gradle 9 migration: CI runners install Temurin 17
+  through `setup-java` so the resolver is never asked, and the breakage is
+  invisible there. README promised a JDK 17 would be downloaded when missing;
+  it now says what actually happens.
 
 ## Future / exploratory
 
