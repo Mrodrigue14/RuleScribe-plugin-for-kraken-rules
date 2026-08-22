@@ -53,3 +53,18 @@ exclude:
   # de modèle compilé), ce fichier n'en est que l'endroit le plus visible. À
   # réactiver si un bootstrap redevient possible un jour.
   - name: KotlinUnreachableCode
+
+  # Deux suggestions de style que ce code décline, écartées ici plutôt qu'en
+  # `@Suppress` répétés — la décision vaut pour le dépôt, pas pour sept
+  # endroits.
+  #
+  # `DestructuringDeclaration` propose `for ((a, b, c, d) in …)` sur des
+  # `data class` de quatre champs dont chaque boucle n'en lit que deux ou
+  # trois. La déstructuration est positionnelle : elle rend la lecture plus
+  # obscure et transforme un réordonnancement de champs en panne silencieuse.
+  #
+  # `IfThenToElvis` vise `if (type is Array) type else Array(type)`. La forme
+  # `as? ?:` est plus courte et dit moins bien ce que fait la fonction, qui est
+  # d'emballer ce qui ne l'est pas encore.
+  - name: DestructuringDeclaration
+  - name: IfThenToElvis

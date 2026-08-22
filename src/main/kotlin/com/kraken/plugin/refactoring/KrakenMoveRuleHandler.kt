@@ -73,8 +73,7 @@ class KrakenMoveRuleHandler : MoveHandlerDelegate() {
             "Move Rule to File",
             source,
             KrakenFileType,
-            { it is KrakenFile && it != source },
-        )
+        ) { it is KrakenFile && it != source }
         chooser.showDialog()
         return chooser.selectedFile as? KrakenFile
     }

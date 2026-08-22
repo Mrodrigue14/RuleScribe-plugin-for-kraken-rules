@@ -219,18 +219,13 @@ object KrakenPsiUtil {
     }
 
     /** Vrai si le namespace de [ref] importe explicitement [name] depuis [declNs]. */
-    private fun refImportsRule(ref: PsiElement, name: String, declNs: String?): Boolean {
-        if (declNs == null) return false
-        return ruleImportsForNamespaceOf(ref.containingFile)
+    private fun refImportsRule(ref: PsiElement, name: String, declNs: String?): Boolean =
+        declNs != null && ruleImportsForNamespaceOf(ref.containingFile)
             .any { it.ruleName == name && it.sourceNamespace == declNs }
-    }
 
     // ------------------------------------------------------------------
     // Règles
     // ------------------------------------------------------------------
-
-    fun findRules(project: Project): List<KrakenRuleDecl> =
-        krakenFiles(project).flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenRuleDecl::class.java) }
 
     fun findRulesVisible(from: PsiElement): List<KrakenRuleDecl> {
         val direct = visibleFiles(from.containingFile)
@@ -314,10 +309,9 @@ object KrakenPsiUtil {
     }
 
     /** Vrai si le fichier de [refElement] peut voir [declarationFile] (namespaces). */
-    private fun refSees(refElement: PsiElement, declarationFile: PsiFile?): Boolean {
-        if (declarationFile == null) return false
-        return visibleFiles(refElement.containingFile).any { it.isEquivalentTo(declarationFile) }
-    }
+    private fun refSees(refElement: PsiElement, declarationFile: PsiFile?): Boolean =
+        declarationFile != null &&
+            visibleFiles(refElement.containingFile).any { it.isEquivalentTo(declarationFile) }
 
     /**
      * Références de règles qui peuvent effectivement voir [declaration] :

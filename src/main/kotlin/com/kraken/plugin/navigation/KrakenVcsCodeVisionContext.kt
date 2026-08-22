@@ -21,7 +21,16 @@ import java.awt.event.MouseEvent
  * [VcsCodeVisionCurlyBracketLanguageContext] calcule déjà l'étendue d'un bloc
  * délimité par des accolades ; les déclarations Kraken en sont, il suffit donc
  * de lui apprendre à reconnaître l'accolade fermante.
+ *
+ * **API expérimentale, en connaissance de cause.** Cette classe de base et les
+ * deux méthodes redéfinies sont marquées instables : JetBrains peut les changer
+ * d'une version à l'autre. C'est le prix de l'inlay, qu'aucune API stable
+ * n'expose, et le risque est surveillé plutôt que subi — le Plugin Verifier les
+ * signale à chaque exécution hebdomadaire, contre toutes les majeures depuis
+ * 2024.1, et aucune n'a bougé jusqu'ici. Le `@Suppress` évite que Qodana
+ * répète chaque semaine ce que le Verifier dit déjà.
  */
+@Suppress("UnstableApiUsage")
 class KrakenVcsCodeVisionContext : VcsCodeVisionCurlyBracketLanguageContext() {
 
     /**
