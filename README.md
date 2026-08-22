@@ -70,7 +70,10 @@
 
 - Internet access (the first build downloads Gradle, the IntelliJ Platform ~1 GB,
   and Grammar-Kit)
-- JDK 17 — auto-provisioned by Gradle (toolchain + foojay resolver) if missing
+- JDK 17. Gradle is set up to download one through the foojay resolver when it
+  is missing, but that path is broken under Gradle 9: every released resolver
+  version names a vendor constant Gradle 9 removed. Install a JDK 17 yourself
+  until it is fixed; the build finds it on its own.
 
 ## Build
 
