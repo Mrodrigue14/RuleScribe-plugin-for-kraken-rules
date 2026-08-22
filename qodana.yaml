@@ -39,3 +39,17 @@ exclude:
   - name: All
     paths:
       - src/main/gen
+
+  # `KotlinUnreachableCode` est écarté, et c'est le prix de l'absence de
+  # bootstrap. Sur 102 findings, 76 portaient ce nom et tenaient dans UN
+  # fichier de 46 lignes, `KrakenAddOnClauseIntention.kt` : quarante-six lignes
+  # ne contiennent pas soixante-seize instructions inatteignables. Ce fichier
+  # importe `com.kraken.plugin.parser.KrakenTypes`, une classe générée dans
+  # `src/main/gen`, que le conteneur n'a pas — Qodana recopie /data/project en
+  # sautant ce que .gitignore exclut. Faute de résoudre le symbole, l'analyse
+  # déclare le reste du corps inatteignable.
+  #
+  # Écarter la règle entière plutôt que le fichier : la cause est générale (pas
+  # de modèle compilé), ce fichier n'en est que l'endroit le plus visible. À
+  # réactiver si un bootstrap redevient possible un jour.
+  - name: KotlinUnreachableCode
