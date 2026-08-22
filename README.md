@@ -196,7 +196,7 @@ plugin on **Ubuntu** (ubuntu-latest, JDK 17 Temurin, Gradle cache):
 - on every **pull request** targeting `main`;
 - **manually**: *Actions* tab → *Build* workflow → *Run workflow* button.
 
-Steps: `test` → `buildPlugin` → `verifyPluginConfiguration` → upload of the
+Steps: `test` → `buildPlugin` → `verifyPluginProjectConfiguration` → upload of the
 zip as a build artifact (and of the test report on failure).
 
 ### Grabbing a build from GitHub Actions

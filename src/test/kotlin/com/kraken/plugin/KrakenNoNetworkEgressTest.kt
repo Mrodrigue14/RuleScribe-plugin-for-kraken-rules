@@ -78,25 +78,42 @@ class KrakenNoNetworkEgressTest {
      * Racines du classpath contenant nos classes. Le chargement de ressource
      * (getResources) fonctionne sous n'importe quel classloader — y compris
      * celui du framework de test IntelliJ, où `codeSource.location` est null.
-     * Kotlin (kotlin/main) et parseur généré (java/main) vivent dans des
-     * racines distinctes : on les récupère toutes.
+     *
+     * Deux formes de racine coexistent. Un répertoire, pour les classes
+     * compilées d'un source-set. Et le **jar du sandbox**
+     * (`jar:file:/…/rulescribe-X.Y.Z.jar!/com/kraken/plugin`), qui est
+     * l'archive réellement livrée : c'est sous cette forme que le plugin
+     * Gradle 2.x présente le code de production au classpath de test. Ne
+     * garder que `file:` reviendrait à ne rien scanner du tout.
+     *
+     * On ne scanne QUE le code livré. Les sources de TEST apparaissent dans
+     * plusieurs racines (`.../test`, et aussi le `.../instrumentTestCode`
+     * produit par le plugin IntelliJ), et contiennent ce test lui-même : les
+     * littéraux de [forbidden] y seraient un faux positif. Le filtre porte sur
+     * le dernier segment, donc sur le nom du source-set ou du jar, ce qui
+     * laisse passer un chemin dont un dossier parent contient « test » — le
+     * jar vit sous `plugins-test/`, et un utilisateur peut s'appeler
+     * « tester ».
      */
     private fun pluginClassRoots(): List<File> {
         val pkg = "com/kraken/plugin"
         return KrakenFileType::class.java.classLoader.getResources(pkg).toList()
-            .filter { it.protocol == "file" }
-            // <racine>/com/kraken/plugin → remonter de 3 niveaux vers <racine>.
-            .map { File(it.toURI()).parentFile.parentFile.parentFile }
-            // On ne scanne QUE le code livré. Les sources de TEST apparaissent
-            // dans plusieurs racines (`.../test`, mais aussi le
-            // `.../instrumentTestCode` produit par le plugin IntelliJ), et
-            // contiennent ce test lui-même : ses littéraux de `forbidden`
-            // seraient un faux positif. On filtre sur le dernier segment (le nom
-            // du source-set) pour rester robuste si un dossier parent contient
-            // « test » (p. ex. un utilisateur nommé « tester »).
+            .mapNotNull { url ->
+                when (url.protocol) {
+                    // <racine>/com/kraken/plugin → remonter de 3 niveaux.
+                    "file" -> File(url.toURI()).parentFile.parentFile.parentFile
+                    "jar" -> jarOf(url)
+                    else -> null
+                }
+            }
             .filterNot { it.name.lowercase().contains("test") }
             .distinct()
     }
+
+    /** `jar:file:/…/x.jar!/com/kraken/plugin` → le fichier `x.jar`. */
+    private fun jarOf(url: java.net.URL): File? = runCatching {
+        File(java.net.URI(url.path.substringBefore("!/")))
+    }.getOrNull()
 
     /** Nos classes uniquement (com/kraken/plugin), depuis un répertoire ou un jar. */
     private fun collectClassBytes(root: File): List<Pair<String, ByteArray>> {
