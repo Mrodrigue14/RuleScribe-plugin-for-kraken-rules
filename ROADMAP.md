@@ -413,6 +413,17 @@ result, so RuleScribe abstains rather than risk condemning valid code.
   `projectJDK: "17"` was tried in July and is deliberately not back. It governs
   the JDK Qodana analyses with, not the one the bootstrap runs under, which is
   why it did not help then and would only obscure what this run proves.
+
+  **It found a latent bug the migration had left behind.** With Gradle 9.7.1
+  the bootstrap got past the JDK 25 wall and hit a different one:
+  `JvmVendorSpec does not have member field 'IBM_SEMERU'`. The
+  foojay-resolver-convention plugin, pinned at 0.10.0, names a constant Gradle
+  9 removed, and it fails at the one moment it is useful, when a JDK 17 has to
+  be downloaded. CI runners install Temurin 17 themselves, so the resolver is
+  never asked and the breakage stays invisible there; the Qodana container has
+  only a JDK 25 and surfaced it. README promises that JDK 17 is
+  auto-provisioned if missing, and between the migration and this change that
+  promise did not hold on a machine without one. Bumped to 1.0.0.
 - ✅ **Move rule to another file**, on F6. The obstacle was never the
   plumbing, it was the semantics: rule references are **by name and soft**, so
   a move changes no reference text at all — only whether those references
