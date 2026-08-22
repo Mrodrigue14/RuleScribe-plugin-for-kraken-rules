@@ -53,6 +53,11 @@ kotlin {
     jvmToolchain(17)
 }
 
+// Chemin du certificat matérialisé pour la signature. Déclaré une fois :
+// l'extension le lit, `writeCertificateChain` l'écrit, et deux littéraux qui
+// divergeraient produiraient un fichier écrit ailleurs que là où on le lit.
+val signingCertificate = layout.buildDirectory.file("signing/certificate-chain.crt")
+
 intellijPlatform {
     // Les options recherchables sont une page de réglages indexée au build.
     // Le plugin n'en déclare aucune : les générer coûte un démarrage d'IDE
@@ -65,6 +70,19 @@ intellijPlatform {
             // Pas de borne supérieure : compatible avec les builds futurs (2026.1+)
             untilBuild = provider { null }
         }
+    }
+
+    // Signature : `signPlugin` lit CERTIFICATE_CHAIN, PRIVATE_KEY et
+    // PRIVATE_KEY_PASSWORD tout seul et fonctionne ainsi. `verifyPluginSignature`
+    // veut en revanche un CHEMIN de certificat, et reçoit la chaîne brute en
+    // argument, à quoi le signeur répond « Invalid argument » et sort en 64.
+    // Trois `set()` posés sur la tâche n'y ont rien changé : elle continuait
+    // d'annoncer son chemin par défaut, signe que ce n'est pas elle qui bâtit
+    // la ligne de commande. C'est cette extension qui la gouverne, d'où le
+    // fichier déclaré ici. Un certificat est du matériel public — seule la clé
+    // privée est sensible — donc rien de secret ne touche le disque.
+    signing {
+        certificateChainFile = signingCertificate
     }
 
     // Publication sur le JetBrains Marketplace. Le token est fourni par la
@@ -205,10 +223,35 @@ tasks {
     // Reste ce que le plugin ne fait pas : sauter la signature quand les
     // secrets sont absents (build local, fork) plutôt que casser le build.
     // `verifyPluginSignature` suit, sinon elle relirait une archive non signée.
+    // Matérialise le certificat que l'extension déclare, et le fait avant que
+    // signature et vérification n'évaluent leurs entrées.
+    val writeCertificateChain = register("writeCertificateChain") {
+        val chain = System.getenv("CERTIFICATE_CHAIN")
+        onlyIf { !chain.isNullOrBlank() }
+        outputs.file(signingCertificate)
+        doLast {
+            signingCertificate.get().asFile.apply {
+                parentFile.mkdirs()
+                writeText(chain.orEmpty())
+            }
+        }
+    }
     signPlugin {
         onlyIf { !System.getenv("CERTIFICATE_CHAIN").isNullOrBlank() && !System.getenv("PRIVATE_KEY").isNullOrBlank() }
+        // Le certificat déclaré sur l'extension vaut pour les DEUX tâches :
+        // celle-ci le lit aussi, et Gradle 9 exige que ça se dise.
+        dependsOn(writeCertificateChain)
     }
     verifyPluginSignature {
         onlyIf { !System.getenv("CERTIFICATE_CHAIN").isNullOrBlank() }
+        // La tâche relit l'archive signée sans que le plugin ne déclare d'où
+        // elle vient : `gradlew buildPlugin signPlugin verifyPluginSignature`
+        // ne marchait que parce que l'ordre de la ligne de commande tombait
+        // juste. Gradle 9 en fait une erreur dure, et seulement quand la
+        // signature a réellement lieu — donc uniquement sur un tag, avec les
+        // secrets. Sans eux les deux tâches sont sautées, ne produisent rien,
+        // et la dépendance manquante reste invisible.
+        dependsOn(signPlugin, writeCertificateChain)
+
     }
 }
