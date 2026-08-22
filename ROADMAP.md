@@ -349,23 +349,50 @@ result, so RuleScribe abstains rather than risk condemning valid code.
   only `com.intellij.modules.platform`, depends on no Kotlin plugin, and uses
   no Kotlin PSI or analysis API. Being *written* in Kotlin is a compile-time
   fact with no bearing on it. Adding a "K2 run" would be theatre.
-- ⏸️ **Migration to the IntelliJ Platform Gradle Plugin 2.x — deferred.**
-  1.x works on Gradle 8.14.5, which is what CI runs, so nothing is broken
-  today. What makes it worth waiting for a release of its own: 2.x renames the
-  plugin id, restructures `intellij {}` into `intellijPlatform {}`, and changes
-  how `runIde`, `buildPlugin`, `signPlugin`, `publishPlugin`,
-  `runPluginVerifier` and `patchPluginXml` are configured — a large share of
-  the ~200 commented lines in `build.gradle.kts`. And the publish pipeline has
-  no dry run: the workflow fires on a tag, and a manual dispatch would publish
-  to the Marketplace, so the only full rehearsal is a real release. When it
-  happens it ships alone, with each task checked individually rather than as
-  one green `gradlew` invocation.
+- ✅ **Migration to the IntelliJ Platform Gradle Plugin 2.x.** Shipped alone,
+  with each task checked individually rather than as one green `gradlew`
+  invocation, exactly as this entry planned.
 
-  **Qodana stays parked behind it.** It was removed because its container
-  ships a JDK that Gradle 8.14.5 cannot run under, which silently broke project
-  resolution and produced 92% false positives. A Gradle 9 toolchain removes
-  that incompatibility. It did earn its keep once — it found four dead
-  functions before being removed.
+  It was never only a plugin swap. 2.18.1 requires **Gradle 9.0.0**, and 1.17.4
+  cannot even be applied under Gradle 9 (`DefaultArtifactPublicationSet not
+  present`), so the wrapper bump and the plugin swap are one indivisible change
+  rather than two steps. The wrapper moved 8.14.5 → 9.7.1. Kotlin 1.9.25,
+  Grammar-Kit, Kover, CycloneDX and OWASP Dependency-Check all apply unchanged
+  on Gradle 9.
+
+  Two tasks were renamed and had to be chased through the workflows:
+  `verifyPluginConfiguration` → `verifyPluginProjectConfiguration` (`build.yml`,
+  and `publish.yml` where it gates the release) and `runPluginVerifier` →
+  `verifyPlugin` (`plugin-verifier.yml`). Every other task kept its name, and
+  `buildPlugin`, `signPlugin` and `verifyPlugin` kept their exact output paths,
+  so no workflow glob changed.
+
+  Two pieces of the old build simply went away. `writeCertificateChain` existed
+  only to materialise a secret string into a file for `verifyPluginSignature`;
+  2.x's `signing` block reads `CERTIFICATE_CHAIN`, `PRIVATE_KEY` and
+  `PRIVATE_KEY_PASSWORD` on its own and accepts either form. What stayed is the
+  `onlyIf` that skips signing when the secrets are absent, since that is ours
+  and not the plugin's.
+
+  **The publish path could not be rehearsed, and was not.** `publishPlugin`
+  runs only on a tag and a tag publishes, so the evidence is
+  `./gradlew publishPlugin --dry-run` resolving the full graph
+  (`generateKrakenParser` → `compileKotlin` → `instrumentedJar` →
+  `prepareSandbox` → `buildPlugin` → `signPlugin` → `publishPlugin`) plus the
+  probed output paths. That is less than a rehearsal and is stated as such.
+
+  **One test caught a real change.** Under 2.x the shipped code reaches the
+  test classpath only as the sandbox jar, so `KrakenNoNetworkEgressTest`, which
+  kept only `file:` classpath roots, found nothing to scan. It failed loudly
+  rather than passing vacuously, which is what it was written to do. It now
+  reads the jar, which is a better subject than loose class files: it is the
+  archive that ships.
+
+- ⏸️ **Qodana** was parked behind the migration and is now unblocked. It was
+  removed because its container ships a JDK that Gradle 8.14.5 cannot run
+  under, which silently broke project resolution and produced 92% false
+  positives. Gradle 9.7.1 removes that incompatibility. It did earn its keep
+  once — it found four dead functions before being removed.
 - ✅ **Move rule to another file**, on F6. The obstacle was never the
   plumbing, it was the semantics: rule references are **by name and soft**, so
   a move changes no reference text at all — only whether those references

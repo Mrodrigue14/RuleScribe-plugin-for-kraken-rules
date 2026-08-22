@@ -1,10 +1,12 @@
 import org.jetbrains.grammarkit.tasks.GenerateParserTask
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "1.9.25"
-    id("org.jetbrains.intellij") version "1.17.4"
+    id("org.jetbrains.intellij.platform") version "2.18.1"
     id("org.jetbrains.grammarkit") version "2022.3.2.2"
     id("org.owasp.dependencycheck") version "12.2.2"
     id("org.jetbrains.kotlinx.kover") version "0.9.9"
@@ -16,20 +18,81 @@ version = "0.15.0"
 
 repositories {
     mavenCentral()
+
+    // Dépôts d'où sortent la plateforme elle-même et son outillage (Plugin
+    // Verifier, ZIP Signer). En 1.x le plugin les déclarait en douce ; 2.x
+    // demande qu'ils soient écrits, ce qui rend visible d'où vient le SDK.
+    intellijPlatform {
+        defaultRepositories()
+    }
 }
 
 dependencies {
     testImplementation("junit:junit:4.13.2")
-}
 
-// Plateforme IntelliJ cible (IntelliJ IDEA Community 2024.1)
-intellij {
-    version.set("2024.1.7")
-    type.set("IC")
+    // Plateforme IntelliJ cible (IntelliJ IDEA Community 2024.1). C'était le
+    // bloc `intellij { version; type }` en 1.x : une dépendance déclarée
+    // plutôt qu'une extension, donc résolue comme n'importe quelle autre.
+    intellijPlatform {
+        intellijIdeaCommunity("2024.1.7")
+
+        // Outils tirés à la demande, au lieu d'être embarqués dans le plugin
+        // Gradle comme en 1.x. Sans eux, `verifyPlugin` et `signPlugin`
+        // échouent en réclamant leur binaire.
+        pluginVerifier()
+        zipSigner()
+
+        // `BasePlatformTestCase` et les fixtures dont dépend toute la suite.
+        // La 1.x les mettait au classpath de test d'office ; 2.x veut la
+        // dépendance écrite, sinon le code de test ne compile plus.
+        testFramework(TestFrameworkType.Platform)
+    }
 }
 
 kotlin {
     jvmToolchain(17)
+}
+
+intellijPlatform {
+    // Les options recherchables sont une page de réglages indexée au build.
+    // Le plugin n'en déclare aucune : les générer coûte un démarrage d'IDE
+    // complet pour produire un index vide.
+    buildSearchableOptions = false
+
+    pluginConfiguration {
+        ideaVersion {
+            sinceBuild = "241"
+            // Pas de borne supérieure : compatible avec les builds futurs (2026.1+)
+            untilBuild = provider { null }
+        }
+    }
+
+    // Publication sur le JetBrains Marketplace. Le token est fourni par la
+    // variable d'environnement PUBLISH_TOKEN (secret CI), jamais en clair.
+    publishing {
+        token = providers.environmentVariable("PUBLISH_TOKEN")
+    }
+
+    // Vérifie la compatibilité binaire du plugin contre plusieurs versions
+    // d'IntelliJ (API supprimées/dépréciées) via le Plugin Verifier officiel.
+    // La liste des versions est fournie via -PpluginVerifierIdeVersions="IC-x,IC-y".
+    // Le workflow CI l'alimente dynamiquement depuis l'API JetBrains (dernière
+    // release de chaque majeure) pour rester à jour automatiquement ; par
+    // défaut, la version cible actuelle.
+    pluginVerification {
+        ides {
+            val requested = (project.findProperty("pluginVerifierIdeVersions") as String?)
+                ?.split(",")?.map(String::trim)?.filter(String::isNotEmpty)
+                .orEmpty()
+                .ifEmpty { listOf("IC-2024.1.7") }
+            // `IC-2024.1.7` : le type précède la version, comme dans la liste
+            // publiée par JetBrains que le workflow lit.
+            requested.forEach { notation ->
+                val (type, ideVersion) = notation.split("-", limit = 2)
+                create(IntelliJPlatformType.fromCode(type), ideVersion)
+            }
+        }
+    }
 }
 
 // SBOM CycloneDX de l'artefact LIVRÉ. Même périmètre que le scan OWASP :
@@ -76,11 +139,11 @@ kover {
 //
 // On ne scanne que `runtimeClasspath` — c'est-à-dire ce que le plugin embarque
 // dans son zip. La plateforme IntelliJ (netty, commons-lang3, httpcore… tirés
-// par le plugin org.jetbrains.intellij) n'est PAS livrée : elle est fournie par
-// l'IDE hôte à l'exécution et corrigée par JetBrains via les mises à jour de
-// l'IDE. La scanner ferait échouer chaque build sur des CVE hors de notre
-// contrôle. Scoper à runtimeClasspath garde la porte CVSS>=7 pertinente pour
-// toute vraie dépendance embarquée qu'on ajouterait à l'avenir.
+// par le plugin org.jetbrains.intellij.platform) n'est PAS livrée : elle est
+// fournie par l'IDE hôte à l'exécution et corrigée par JetBrains via les mises
+// à jour de l'IDE. La scanner ferait échouer chaque build sur des CVE hors de
+// notre contrôle. Scoper à runtimeClasspath garde la porte CVSS>=7 pertinente
+// pour toute vraie dépendance embarquée qu'on ajouterait à l'avenir.
 dependencyCheck {
     failBuildOnCVSS = 7.0f
     formats = listOf("HTML", "JUNIT")
@@ -129,72 +192,23 @@ tasks {
     compileJava {
         dependsOn(generateKrakenParser)
     }
-    patchPluginXml {
-        sinceBuild.set("241")
-        // Pas de borne supérieure : compatible avec les builds futurs (2026.1+)
-        untilBuild.set(provider { null })
-    }
-    buildSearchableOptions {
-        enabled = false
-    }
-    // Vérifie la compatibilité binaire du plugin contre plusieurs versions
-    // d'IntelliJ (API supprimées/dépréciées) via le Plugin Verifier officiel.
-    // La liste des versions est fournie via -PpluginVerifierIdeVersions="IC-x,IC-y".
-    // Le workflow CI l'alimente dynamiquement depuis l'API JetBrains (dernière
-    // release + EAP) pour rester à jour automatiquement ; par défaut, la
-    // version cible actuelle.
-    runPluginVerifier {
-        val versions = (project.findProperty("pluginVerifierIdeVersions") as String?)
-            ?.split(",")?.map(String::trim)?.filter(String::isNotEmpty)
-            .orEmpty()
-            .ifEmpty { listOf("IC-2024.1.7") }
-        ideVersions.set(versions)
-    }
     // Signature cryptographique du plugin : l'IDE peut vérifier que l'artefact
     // vient bien de nous et n'a pas été altéré. Complète l'attestation SLSA
     // (qui prouve « buildé par la pipeline ») côté distribution.
     //
-    // Les trois éléments viennent de secrets CI, jamais du dépôt. Si aucun
-    // n'est fourni (build local, fork), la tâche est simplement sautée et la
-    // publication se fait sans signature — on ne casse pas le build.
+    // Les trois éléments viennent de secrets CI, jamais du dépôt. 2.x lit
+    // CERTIFICATE_CHAIN, PRIVATE_KEY et PRIVATE_KEY_PASSWORD tout seul, ce qui
+    // remplace le câblage explicite de la 1.x — et aussi la tâche
+    // `writeCertificateChain`, qui n'existait que pour matérialiser le
+    // certificat en fichier parce que `verifyPluginSignature` en voulait un.
+    //
+    // Reste ce que le plugin ne fait pas : sauter la signature quand les
+    // secrets sont absents (build local, fork) plutôt que casser le build.
+    // `verifyPluginSignature` suit, sinon elle relirait une archive non signée.
     signPlugin {
-        val chain = System.getenv("CERTIFICATE_CHAIN")
-        val key = System.getenv("PRIVATE_KEY")
-        val pwd = System.getenv("PRIVATE_KEY_PASSWORD")
-        onlyIf { !chain.isNullOrBlank() && !key.isNullOrBlank() }
-        if (!chain.isNullOrBlank()) certificateChain.set(chain)
-        if (!key.isNullOrBlank()) privateKey.set(key)
-        if (!pwd.isNullOrBlank()) password.set(pwd)
-    }
-    // Contre-vérification : relit l'archive signée et valide la signature
-    // contre le certificat. Exécutée avant la publication, elle transforme une
-    // clé mal formée ou un certificat dépareillé en échec net plutôt qu'en
-    // artefact publié dont la signature ne vaut rien.
-    // verifyPluginSignature attend un FICHIER de certificat : on le matérialise
-    // via une vraie tâche productrice, pour que Gradle l'ait écrit avant de
-    // valider les entrées de la vérification. Un certificat est du matériel
-    // public (seule la clé privée est sensible) : rien de secret sur disque.
-    val certificateChainFilePath = layout.buildDirectory.file("signing/certificate-chain.crt")
-    val writeCertificateChain = register("writeCertificateChain") {
-        val chain = System.getenv("CERTIFICATE_CHAIN")
-        onlyIf { !chain.isNullOrBlank() }
-        outputs.file(certificateChainFilePath)
-        doLast {
-            certificateChainFilePath.get().asFile.apply {
-                parentFile.mkdirs()
-                writeText(chain.orEmpty())
-            }
-        }
+        onlyIf { !System.getenv("CERTIFICATE_CHAIN").isNullOrBlank() && !System.getenv("PRIVATE_KEY").isNullOrBlank() }
     }
     verifyPluginSignature {
-        val chain = System.getenv("CERTIFICATE_CHAIN")
-        onlyIf { !chain.isNullOrBlank() }
-        dependsOn(writeCertificateChain)
-        certificateChainFile.set(certificateChainFilePath)
-    }
-    // Publication sur le JetBrains Marketplace. Le token est fourni par la
-    // variable d'environnement PUBLISH_TOKEN (secret CI), jamais en clair.
-    publishPlugin {
-        token.set(System.getenv("PUBLISH_TOKEN"))
+        onlyIf { !System.getenv("CERTIFICATE_CHAIN").isNullOrBlank() }
     }
 }

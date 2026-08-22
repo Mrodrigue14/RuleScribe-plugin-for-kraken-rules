@@ -85,7 +85,7 @@ jobs:
           IDE_VERSIONS: ${{ steps.versions.outputs.ide_versions }}
         run: |
           set -o pipefail
-          ./gradlew runPluginVerifier -PpluginVerifierIdeVersions="$IDE_VERSIONS" 2>&1 | tee verifier-output.txt
+          ./gradlew verifyPlugin -PpluginVerifierIdeVersions="$IDE_VERSIONS" 2>&1 | tee verifier-output.txt
 
       - name: Publier le rapport du verifier
         if: always()

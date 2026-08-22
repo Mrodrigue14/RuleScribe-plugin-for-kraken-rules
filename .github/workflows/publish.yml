@@ -57,7 +57,7 @@ jobs:
           fi
 
       - name: Tests + vérification (ne publie pas si ça casse)
-        run: ./gradlew test verifyPluginConfiguration
+        run: ./gradlew test verifyPluginProjectConfiguration
 
       # Build PUIS signature, dans cet ordre et AVANT l'attestation : c'est
       # l'artefact signé qui part sur le Marketplace, donc c'est lui qui doit
