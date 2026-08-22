@@ -28,6 +28,20 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.16.0</b>
+        <ul>
+            <li>A build-side release. The plugin is now produced by the
+            IntelliJ Platform Gradle Plugin 2.x on Gradle 9, which changes how
+            the artifact is assembled, signed and verified. Nothing changes in
+            the editor, and compatibility is unchanged: still verified against
+            the latest patch of every IntelliJ major since 2024.1, each
+            reporting the plugin compatible.</li>
+            <li>The build no longer claims it can download a JDK 17 for you
+            when your machine has none. Every released foojay resolver names a
+            vendor constant Gradle 9 removed, so that path throws at the one
+            moment it is useful. Install a JDK 17 and the build finds it.</li>
+        </ul>
+
         <b>0.15.0</b>
         <ul>
             <li>Function declarations are now validated the way the engine

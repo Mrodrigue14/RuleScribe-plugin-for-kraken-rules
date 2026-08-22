@@ -1,6 +1,6 @@
 # Roadmap — RuleScribe for Kraken Rules
 
-## Current — v0.15.0
+## Current — v0.16.0
 
 Shipped: full KEL expression grammar, stub-based Rule index, strict
 namespace-aware resolution (Namespace/Include/Import Rule) with a cached
@@ -15,7 +15,8 @@ engine's own codes, wording and severity, quick-fixes, spellchecking of prose,
 semantic colouring of references, depth-coloured brackets, the engine's full
 type production including unions, a Move refactoring that reports what it
 would break before writing, and validation of `Function` declarations against
-the engine's own `kvf` catalogue. Published on the
+the engine's own `kvf` catalogue. Built with the IntelliJ Platform Gradle
+Plugin 2.x on Gradle 9. Published on the
 JetBrains Marketplace, signed and shipped with SLSA build provenance and a
 CycloneDX SBOM, and verified against every IntelliJ major since the target.
 See plugin.xml change notes for the detailed history.
