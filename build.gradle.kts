@@ -208,7 +208,35 @@ tasks {
     signPlugin {
         onlyIf { !System.getenv("CERTIFICATE_CHAIN").isNullOrBlank() && !System.getenv("PRIVATE_KEY").isNullOrBlank() }
     }
+    // `verifyPluginSignature` attend un FICHIER de certificat : passé la chaîne
+    // brute, le signeur répond « Invalid argument » et sort en 64. La 2.x lit
+    // pourtant CERTIFICATE_CHAIN toute seule et alimente `certificateChain`,
+    // la forme chaîne — d'où cette tâche productrice, qui matérialise le
+    // certificat sur disque pour que Gradle l'ait écrit avant que la
+    // vérification n'évalue ses entrées. Un certificat est du matériel public
+    // (seule la clé privée est sensible) : rien de secret ne touche le disque.
+    val certificateChainFilePath = layout.buildDirectory.file("signing/certificate-chain.crt")
+    val writeCertificateChain = register("writeCertificateChain") {
+        val chain = System.getenv("CERTIFICATE_CHAIN")
+        onlyIf { !chain.isNullOrBlank() }
+        outputs.file(certificateChainFilePath)
+        doLast {
+            certificateChainFilePath.get().asFile.apply {
+                parentFile.mkdirs()
+                writeText(chain.orEmpty())
+            }
+        }
+    }
     verifyPluginSignature {
         onlyIf { !System.getenv("CERTIFICATE_CHAIN").isNullOrBlank() }
+        // La tâche relit l'archive signée sans que le plugin ne déclare d'où
+        // elle vient : `gradlew buildPlugin signPlugin verifyPluginSignature`
+        // ne marchait que parce que l'ordre de la ligne de commande tombait
+        // juste. Gradle 9 en fait une erreur dure, et seulement quand la
+        // signature a réellement lieu — donc uniquement sur un tag, avec les
+        // secrets. Sans eux les deux tâches sont sautées, ne produisent rien,
+        // et la dépendance manquante reste invisible.
+        dependsOn(signPlugin, writeCertificateChain)
+        certificateChainFile.set(certificateChainFilePath)
     }
 }
