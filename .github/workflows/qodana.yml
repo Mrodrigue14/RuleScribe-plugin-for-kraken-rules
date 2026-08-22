@@ -1,0 +1,77 @@
+name: Qodana
+
+# Analyse statique JetBrains (Qodana Community for JVM). Complémentaire de
+# CodeQL : celui-ci analyse du Java/Kotlin générique, Qodana connaît les API de
+# l'IntelliJ Platform et remonte les mauvais usages propres aux plugins.
+# Les résultats partent dans GitHub code scanning, aux côtés de CodeQL et
+# poutine — aucun compte Qodana Cloud n'est requis.
+#
+# Déclencheurs : `main` et hebdomadaire, PAS sur chaque PR. Les PRs sont déjà
+# gardées par CodeQL et les tests (checks requis) ; ce qui compte ici est de
+# tenir à jour l'état de la branche par défaut dans l'onglet Security, sans
+# rallonger le délai de chaque PR avec une seconde analyse lourde.
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**/*.md'
+      - 'LICENSE'
+      - 'NOTICE'
+      - 'third_party/**'
+      - '.gitignore'
+  # TEMPORAIRE, retiré avant le merge de cette PR. Le `bootstrap` de
+  # qodana.yaml n'a jamais réussi une seule fois en CI : les deux runs verts de
+  # juillet 2026 le précèdent, les deux suivants ont échoué. Merger sur la foi
+  # que Gradle 9 suffit reviendrait à publier une configuration jamais vue
+  # fonctionner, alors qu'un déclencheur de PR donne la preuve pour rien.
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qodana:
+    name: Qodana (JVM)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        # fetch-depth: 0 — Qodana rattache ses résultats à l'historique.
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # Rend `gradlew` exécutable : le conteneur Qodana lance `./gradlew classes`
+      # (le `bootstrap` de qodana.yaml) sur le répertoire monté.
+      - name: Setup Java + Gradle
+        uses: ./.github/actions/setup-java-gradle
+
+      # Qodana n'échoue pas le workflow sur des findings : il informe, il ne
+      # garde pas la porte. Ce comportement vient de l'absence de
+      # `failThreshold` dans qodana.yaml, et non d'une entrée de l'action —
+      # la version précédente passait un `fail-threshold: ""` que l'action
+      # refusait (« Unexpected input(s) 'fail-threshold' ») et qui ne réglait
+      # donc rien. La porte bloquante reste CodeQL et les tests, exigés par la
+      # protection de branche ; les résultats restent visibles dans Security.
+      - name: Qodana Scan
+        uses: JetBrains/qodana-action@v2026.2.0
+        with:
+          upload-result: true
+          post-pr-comment: false
+          use-caches: true
+
+      - name: Upload du SARIF Qodana
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: ${{ runner.temp }}/qodana/results/qodana.sarif.json
+          category: qodana

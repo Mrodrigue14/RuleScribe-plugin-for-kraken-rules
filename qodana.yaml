@@ -1,0 +1,33 @@
+version: "1.0"
+
+# Qodana Community for JVM : l'analyseur statique de JetBrains. Complémentaire
+# de CodeQL plutôt que redondant — CodeQL analyse du Java/Kotlin générique,
+# Qodana connaît les API de l'IntelliJ Platform et signale les usages
+# incorrects propres au développement de plugins.
+#
+# Version épinglée, pas `:latest`. C'est un JDK 25 apparu dans l'image qui a
+# fait sauter cette analyse la première fois : une étiquette flottante remet
+# exactement ce risque en place, et l'action prévient à chaque run.
+linter: jetbrains/qodana-jvm-community:2026.2
+
+profile:
+  name: qodana.recommended
+
+# Résout les dépendances (dont le SDK IntelliJ) AVANT l'analyse. Sans cela,
+# Qodana ouvre le projet sans pouvoir typer les API de la plateforme et déclare
+# inatteignables des corps de méthode qui ne le sont pas : le premier run avait
+# produit 76 faux positifs « KotlinUnreachableCode », soit 92 % du bruit total.
+#
+# C'est aussi cette ligne qui avait condamné Qodana : le conteneur embarque un
+# JDK 25, que Gradle 8.14.5 ne savait pas lire (le build s'arrêtait sur un
+# « * What went wrong: 25.0.3 »). Gradle 9.7.1 accepte Java 25, ce qui lève la
+# contradiction sans rien imposer au conteneur.
+bootstrap: ./gradlew classes
+
+# Le parseur de src/main/gen est généré par Grammar-Kit depuis le BNF : ses
+# avertissements ne sont pas actionnables, on ne corrige pas du code généré.
+# Même exclusion que pour la couverture Kover et le SARIF CodeQL.
+exclude:
+  - name: All
+    paths:
+      - src/main/gen

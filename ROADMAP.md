@@ -388,11 +388,31 @@ result, so RuleScribe abstains rather than risk condemning valid code.
   reads the jar, which is a better subject than loose class files: it is the
   archive that ships.
 
-- ⏸️ **Qodana** was parked behind the migration and is now unblocked. It was
-  removed because its container ships a JDK that Gradle 8.14.5 cannot run
-  under, which silently broke project resolution and produced 92% false
-  positives. Gradle 9.7.1 removes that incompatibility. It did earn its keep
-  once — it found four dead functions before being removed.
+- ✅ **Qodana**, unparked once the Gradle migration removed what blocked it.
+
+  The precise blocker, from the run that got it deleted: `bootstrap:
+  ./gradlew classes` resolves the project inside the Qodana container so the
+  analysis can type IntelliJ Platform APIs, without which 76 of 82 findings
+  were bogus `KotlinUnreachableCode`. The container ships a JDK 25, and Gradle
+  8.14.5 stops at Java 24, so the bootstrap died on `* What went wrong:
+  25.0.3`. Gradle 9.7.1 accepts Java 25.
+
+  Worth stating plainly: that bootstrap had **never once succeeded** in CI. The
+  two green runs of July 2026 predate it and are the ones with the false
+  positives; both runs after it failed. So this was not a working config with
+  one blocker lifted, and it was proved on a pull request before merging rather
+  than after.
+
+  Two defects came along for the ride. The action was passed
+  `fail-threshold: ""`, which it rejects outright (`Unexpected input(s)`), so
+  the non-blocking behaviour the comment described was never configured and
+  only held because `qodana.yaml` sets no `failThreshold`. And the linter was
+  `:latest`, which is how a JDK bump inside the image broke this in the first
+  place; it is pinned now.
+
+  `projectJDK: "17"` was tried in July and is deliberately not back. It governs
+  the JDK Qodana analyses with, not the one the bootstrap runs under, which is
+  why it did not help then and would only obscure what this run proves.
 - ✅ **Move rule to another file**, on F6. The obstacle was never the
   plumbing, it was the semantics: rule references are **by name and soft**, so
   a move changes no reference text at all — only whether those references
