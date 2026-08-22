@@ -237,6 +237,12 @@ tasks {
         // secrets. Sans eux les deux tâches sont sautées, ne produisent rien,
         // et la dépendance manquante reste invisible.
         dependsOn(signPlugin, writeCertificateChain)
+        // `certificateChain` PRIME sur `certificateChainFile`, et 2.x la
+        // remplit depuis CERTIFICATE_CHAIN sans qu'on demande rien : tant
+        // qu'elle porte une valeur, le fichier ci-dessous n'est jamais lu. On
+        // la vide donc ici, et ici seulement — `signPlugin` s'en sert et
+        // fonctionne très bien avec.
+        certificateChain.set(null as String?)
         certificateChainFile.set(certificateChainFilePath)
     }
 }
