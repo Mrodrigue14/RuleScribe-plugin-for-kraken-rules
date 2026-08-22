@@ -17,3 +17,6 @@ __pycache__/
 
 # Index local CodeGraph : propre à la machine, jamais partagé
 .codegraph/
+
+# JDK copié pour le conteneur Qodana en CI
+.qodana-jdk/

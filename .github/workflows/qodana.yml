@@ -56,6 +56,15 @@ jobs:
       - name: Setup Java + Gradle
         uses: ./.github/actions/setup-java-gradle
 
+      # Le conteneur Qodana n'a qu'une JRE JetBrains 25 : ni un JDK, ni la
+      # version que réclame `jvmToolchain(17)`. On lui passe celui du runner
+      # par le seul canal partagé, le répertoire de travail, que Qodana monte
+      # sur /data/project. `cp -r` plutôt qu'un lien : le conteneur ne voit pas
+      # /opt/hostedtoolcache.
+      - name: JDK 17 pour le conteneur
+        shell: bash
+        run: cp -r "$JAVA_HOME" "$GITHUB_WORKSPACE/.qodana-jdk"
+
       # Qodana n'échoue pas le workflow sur des findings : il informe, il ne
       # garde pas la porte. Ce comportement vient de l'absence de
       # `failThreshold` dans qodana.yaml, et non d'une entrée de l'action —

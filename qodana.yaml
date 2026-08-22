@@ -20,19 +20,24 @@ profile:
 #
 # C'est aussi cette ligne qui avait condamné Qodana : le conteneur embarque un
 # JDK 25, que Gradle 8.14.5 ne savait pas lire (le build s'arrêtait sur un
-# « * What went wrong: 25.0.3 »). Gradle 9.7.1 accepte Java 25, ce qui lève la
-# contradiction sans rien imposer au conteneur.
-# DIAGNOSTIC TEMPORAIRE — retiré avant le merge. Gradle 9.7.1 tourne bien sous
-# le JDK 25 du conteneur, mais la toolchain du projet réclame un JDK 17 et
-# foojay-resolver ne sait pas le télécharger sous Gradle 9 (0.10.0 comme 1.0.0
-# nomment JvmVendorSpec.IBM_SEMERU, supprimé en 9). Reste à savoir si l'image
-# embarque déjà un JDK 17 : si oui, il suffit de le désigner.
+# « * What went wrong: 25.0.3 »). Gradle 9.7.1 accepte Java 25, ce qui lève
+# cette contradiction-là.
+#
+# Restait la toolchain. L'image ne contient qu'un seul JVM, `/opt/idea/jbr`,
+# une JRE JetBrains 25 — pas un JDK, et pas la version demandée. Elle ne peut
+# donc ni satisfaire `jvmToolchain(17)` ni compiler, et foojay-resolver ne sait
+# pas en télécharger un sous Gradle 9 : 0.10.0 comme 1.0.0 nomment
+# `JvmVendorSpec.IBM_SEMERU`, que Gradle 9 a supprimé. Le JDK 17 vient donc du
+# runner, copié dans le répertoire de travail que Qodana monte sur
+# /data/project (voir l'étape « JDK 17 pour le conteneur » du workflow).
+#
+# `auto-download=false` fait échouer proprement si ce chemin est faux, au lieu
+# de retomber sur le resolver et son erreur IBM_SEMERU, illisible pour qui
+# n'en connaît pas l'histoire.
 bootstrap: >-
-  echo "=== /usr/lib/jvm ===" && (ls -1 /usr/lib/jvm 2>/dev/null || echo absent)
-  && echo "=== JAVA_HOME=$JAVA_HOME ==="
-  && echo "=== autres JDK ===" && (ls -d /opt/*jdk* /opt/java* /root/.jdks/* 2>/dev/null || echo aucun)
-  && echo "=== toolchains vues par Gradle ===" && ./gradlew -q javaToolchains
-  && ./gradlew classes
+  ./gradlew classes
+  -Porg.gradle.java.installations.paths=/data/project/.qodana-jdk
+  -Porg.gradle.java.installations.auto-download=false
 
 # Le parseur de src/main/gen est généré par Grammar-Kit depuis le BNF : ses
 # avertissements ne sont pas actionnables, on ne corrige pas du code généré.
@@ -41,3 +46,5 @@ exclude:
   - name: All
     paths:
       - src/main/gen
+      # JDK copié depuis le runner pour la toolchain, pas du code du projet.
+      - .qodana-jdk
