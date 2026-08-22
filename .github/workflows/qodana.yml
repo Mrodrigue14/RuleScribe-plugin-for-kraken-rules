@@ -19,13 +19,6 @@ on:
       - 'NOTICE'
       - 'third_party/**'
       - '.gitignore'
-  # TEMPORAIRE, retiré avant le merge de cette PR. Le `bootstrap` de
-  # qodana.yaml n'a jamais réussi une seule fois en CI : les deux runs verts de
-  # juillet 2026 le précèdent, les deux suivants ont échoué. Merger sur la foi
-  # que Gradle 9 suffit reviendrait à publier une configuration jamais vue
-  # fonctionner, alors qu'un déclencheur de PR donne la preuve pour rien.
-  pull_request:
-    branches: [ main ]
   schedule:
     - cron: '0 4 * * 1'
   workflow_dispatch:

@@ -64,13 +64,14 @@ Every change is checked automatically in GitHub Actions:
 | Tool | What it checks | When |
 | ---- | -------------- | ---- |
 | **CodeQL** | Static analysis (SAST) of the Kotlin/Java code, `security-and-quality` suite | push, PR, weekly |
+| **Qodana** | JetBrains static analysis, aware of the IntelliJ Platform APIs | push to `main`, weekly |
 | **poutine** (BoostSecurity) | CI/CD pipeline misconfigurations — injection, unsafe triggers, supply-chain | push, PR, weekly |
 | **Dependabot** | Vulnerable dependencies (alerts) + dependency/action updates | continuous / weekly |
 | **Dependency Review** | **Blocks a PR** that introduces a dependency with a high-severity CVE or a denied (copyleft) license | every PR |
 | **OWASP Dependency-Check** | Known CVEs in shipped dependencies; **fails the build on CVSS ≥ 7.0** | weekly, on demand |
 | **IntelliJ Plugin Verifier** | Binary compatibility across IntelliJ versions; opens an issue on breakage | weekly, on demand |
 
-Findings from CodeQL and poutine are published to GitHub **code scanning**
+Findings from CodeQL, Qodana and poutine are published to GitHub **code scanning**
 (Security tab). The OWASP scan is scoped to the shipped runtime classpath;
 build- and test-time dependencies (JUnit, the IntelliJ Platform SDK) are not
 distributed and are out of scope — platform libraries are patched by JetBrains
