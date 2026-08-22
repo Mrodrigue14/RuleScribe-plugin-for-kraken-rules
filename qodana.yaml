@@ -22,7 +22,17 @@ profile:
 # JDK 25, que Gradle 8.14.5 ne savait pas lire (le build s'arrêtait sur un
 # « * What went wrong: 25.0.3 »). Gradle 9.7.1 accepte Java 25, ce qui lève la
 # contradiction sans rien imposer au conteneur.
-bootstrap: ./gradlew classes
+# DIAGNOSTIC TEMPORAIRE — retiré avant le merge. Gradle 9.7.1 tourne bien sous
+# le JDK 25 du conteneur, mais la toolchain du projet réclame un JDK 17 et
+# foojay-resolver ne sait pas le télécharger sous Gradle 9 (0.10.0 comme 1.0.0
+# nomment JvmVendorSpec.IBM_SEMERU, supprimé en 9). Reste à savoir si l'image
+# embarque déjà un JDK 17 : si oui, il suffit de le désigner.
+bootstrap: >-
+  echo "=== /usr/lib/jvm ===" && (ls -1 /usr/lib/jvm 2>/dev/null || echo absent)
+  && echo "=== JAVA_HOME=$JAVA_HOME ==="
+  && echo "=== autres JDK ===" && (ls -d /opt/*jdk* /opt/java* /root/.jdks/* 2>/dev/null || echo aucun)
+  && echo "=== toolchains vues par Gradle ===" && ./gradlew -q javaToolchains
+  && ./gradlew classes
 
 # Le parseur de src/main/gen est généré par Grammar-Kit depuis le BNF : ses
 # avertissements ne sont pas actionnables, on ne corrige pas du code généré.
