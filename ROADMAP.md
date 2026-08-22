@@ -389,11 +389,42 @@ result, so RuleScribe abstains rather than risk condemning valid code.
   reads the jar, which is a better subject than loose class files: it is the
   archive that ships.
 
-- ⏸️ **Qodana** was parked behind the migration and is now unblocked. It was
-  removed because its container ships a JDK that Gradle 8.14.5 cannot run
-  under, which silently broke project resolution and produced 92% false
-  positives. Gradle 9.7.1 removes that incompatibility. It did earn its keep
-  once — it found four dead functions before being removed.
+- ⏸️ **Qodana: the July blocker is gone, a different one took its place.**
+
+  Gradle 9.7.1 runs fine under the container's JDK 25, so the
+  `* What went wrong: 25.0.3` that got Qodana deleted is genuinely fixed by the
+  migration. That much is verified.
+
+  What stops the `bootstrap: ./gradlew classes` it relied on is a closed loop.
+  The image holds one JVM, `/opt/idea/jbr`, a JetBrains **JRE** 25
+  (`Is JDK: false`), so it cannot compile at any version, and `jvmToolchain(17)`
+  wants a JDK 17 besides. foojay cannot download one under Gradle 9: 0.10.0 and
+  1.0.0 both name `JvmVendorSpec.IBM_SEMERU`, and 9.7.1 declares only ADOPTIUM,
+  AMAZON, APPLE, AZUL, BELLSOFT, GRAAL_VM, IBM, ORACLE, SAP.
+
+  Producing anything outside and passing it in does not work either, and that
+  is the fact that closes the loop: **Qodana copies `/data/project` rather than
+  mounting it, and skips what `.gitignore` excludes.** `src/main/gen` is
+  gitignored, so the generated parser sources never cross no matter where they
+  are made. The container would have to generate them itself, which is the one
+  thing it cannot do.
+
+  **Being remeasured rather than assumed.** The number that justified the
+  bootstrap, 76 bogus `KotlinUnreachableCode` out of 82 findings, was taken in
+  July 2026 under Gradle 8 and plugin 1.x, before the migration changed how the
+  project model is exposed. Treating it as a fixed constraint is what sent the
+  first attempts building workarounds. Qodana now runs without a bootstrap so
+  the findings can be counted by rule. If resolution artefacts no longer
+  dominate, it ships as is and the toolchain problem stops mattering. If they
+  do, the only shape left is a linter image carrying a JDK 17, where the first
+  thing to settle is whether `qodana-action` accepts a locally built tag or
+  always pulls.
+
+  **It paid for itself regardless.** It turned up that toolchain
+  auto-provisioning has been broken since the Gradle 9 migration: CI runners
+  install Temurin 17 through `setup-java`, so the resolver is never asked and
+  the breakage stays invisible there. README promised a JDK 17 would be
+  downloaded when missing and now says what actually happens.
 - ✅ **Move rule to another file**, on F6. The obstacle was never the
   plumbing, it was the semantics: rule references are **by name and soft**, so
   a move changes no reference text at all — only whether those references
