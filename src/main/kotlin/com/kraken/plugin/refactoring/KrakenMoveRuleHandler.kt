@@ -60,7 +60,7 @@ class KrakenMoveRuleHandler : MoveHandlerDelegate() {
         // commande est refusé par la plateforme, et c'est la commande qui
         // rend le déplacement annulable — indispensable pour un refactoring.
         WriteCommandAction.runWriteCommandAction(project, "Move Rule", null, {
-            KrakenRuleMover.move(project, rule, target)
+            KrakenDeclarationMover.move(project, rule, target)
         })
         return true
     }

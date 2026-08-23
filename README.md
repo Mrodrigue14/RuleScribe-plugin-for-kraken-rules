@@ -29,12 +29,15 @@
   gutter icons on referenced rules and entry points.
 - **Rename refactoring**: renaming a `Rule` or an `EntryPoint` (Shift+F6) updates
   all of its references.
-- **Move refactoring** (F6): moves a `Rule` to another `.rules` file, and reports
-  first what the move would break. Kraken references name a rule, not a file, so
-  moving one changes no reference text at all — only whether those references
-  still resolve. A rule sent where a referring file cannot see it breaks every
-  entry point entry that names it, so the count is shown before anything is
-  written. `Import Rule` is weighed separately from `Include`.
+- **Move refactoring** (F6): moves a `Rule` or an `EntryPoint` to another
+  `.rules` file, and reports first what the move would break. Kraken references
+  name a declaration, not a file, so moving one changes no reference text at
+  all — only whether those references still resolve. A rule sent where a
+  referring file cannot see it breaks every entry point entry that names it, so
+  the count is shown before anything is written, and `Import Rule` is weighed
+  separately from `Include`. An `EntryPoint` is counted in both directions,
+  since it also references: the entry points that name it, and its own items,
+  which a move can leave behind without a line changing inside it.
 - **Namespace-aware resolution**: `Namespace`/`Include` bound visibility in both
   directions — a reference living in a namespace that cannot see the declaration
   does not count for navigation, Find Usages, or the unused-rule inspection

@@ -471,6 +471,14 @@
         <refactoring.moveHandler
                 implementation="com.kraken.plugin.refactoring.KrakenMoveRuleHandler"/>
 
+        <!-- Idem pour un EntryPoint. Handler distinct plutôt qu'un seul qui
+             traite les deux : un EntryPoint casse dans les deux sens, il
+             référence autant qu'il est référencé, et le dialogue ne dit pas la
+             même chose. `canMove` les sépare, une Rule imbriquée dans un bloc
+             Rules restant au handler de règles. -->
+        <refactoring.moveHandler
+                implementation="com.kraken.plugin.refactoring.KrakenMoveEntryPointHandler"/>
+
         <annotator
                 language="Kraken"
                 implementationClass="com.kraken.plugin.highlighter.KrakenFunctionAnnotator"/>
