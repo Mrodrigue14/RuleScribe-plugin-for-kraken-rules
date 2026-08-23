@@ -77,7 +77,22 @@ class KrakenUnresolvedIdentifierInspection : LocalInspectionTool() {
         return KrakenPsiUtil.findContextDecl(element.containingFile, target) != null
     }
 
-    /** `Round(x)` : `Round` est une tête d'appel, pas une référence à résoudre. */
+    /**
+     * `Round(x)` : `Round` est une tête d'appel, pas une référence à résoudre.
+     *
+     * Qodana annonce cette expression « toujours fausse », ce qui voudrait dire
+     * que toute tête d'appel est signalée introuvable. Elle ne l'est pas :
+     * `KrakenTypes` est générée dans `src/main/gen`, que le conteneur Qodana ne
+     * reçoit jamais — il recopie le projet en sautant ce que `.gitignore`
+     * exclut — et un symbole non résolu suffit à lui faire tirer cette
+     * conclusion, comme pour les `KotlinUnreachableCode` écartés dans
+     * `qodana.yaml`. Trois tests de `KrakenUnresolvedIdentifierTest` fixent le
+     * comportement réel.
+     *
+     * Suppression posée ici plutôt que sur la règle : ailleurs, une condition
+     * constante reste un défaut qu'on veut voir.
+     */
+    @Suppress("KotlinConstantConditions")
     private fun isCallHead(element: KrakenRefExpr): Boolean =
         PsiTreeUtil.getParentOfType(element, KrakenFunctionCall::class.java, false)
             ?.node?.findChildByType(KrakenTypes.CALL_ARGS)
