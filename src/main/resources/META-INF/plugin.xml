@@ -28,6 +28,19 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.17.0</b>
+        <ul>
+            <li>An <code>EntryPoint</code> can be moved to another file with
+            F6, like a rule. It is counted in both directions, because an entry
+            point references as well as being referenced: the entry points that
+            name it, and its own items, which a move can leave behind. Sending
+            one where its rules are not visible empties it without a line
+            changing inside it, so both counts are shown before anything is
+            written and you can cancel.</li>
+            <li>An <code>Import Rule</code> declared where the entry point is
+            going counts too: an item it rescues is not reported as broken.</li>
+        </ul>
+
         <b>0.16.0</b>
         <ul>
             <li>A build-side release. The plugin is now produced by the
