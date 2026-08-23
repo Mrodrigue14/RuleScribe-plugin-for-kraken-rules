@@ -7,7 +7,7 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.lang.KrakenFile
 import com.kraken.plugin.psi.KrakenRuleDecl
 import com.kraken.plugin.psi.KrakenRuleRef
-import com.kraken.plugin.refactoring.KrakenRuleMover
+import com.kraken.plugin.refactoring.KrakenDeclarationMover
 
 /**
  * Le déplacement de règle bout en bout.
@@ -43,7 +43,7 @@ class KrakenRuleMoveTest : BasePlatformTestCase() {
         """.trimIndent())
         val b = file("b.rules", "Namespace Policy")
 
-        WriteCommandAction.runWriteCommandAction(project) { KrakenRuleMover.move(project, ruleIn(a, "Moved"), b) }
+        WriteCommandAction.runWriteCommandAction(project) { KrakenDeclarationMover.move(project, ruleIn(a, "Moved"), b) }
 
         assertTrue("la règle doit être dans la destination", b.text.contains("""Rule "Moved""""))
         assertFalse("et avoir quitté la source", a.text.contains("""Rule "Moved""""))
@@ -63,7 +63,7 @@ class KrakenRuleMoveTest : BasePlatformTestCase() {
         """.trimIndent())
 
         assertNotNull("résout avant", refIn(ep, "Moved").reference.resolve())
-        WriteCommandAction.runWriteCommandAction(project) { KrakenRuleMover.move(project, ruleIn(a, "Moved"), b) }
+        WriteCommandAction.runWriteCommandAction(project) { KrakenDeclarationMover.move(project, ruleIn(a, "Moved"), b) }
         assertNotNull("doit résoudre après", refIn(ep, "Moved").reference.resolve())
         assertParses(a, b, ep)
     }
@@ -85,7 +85,7 @@ class KrakenRuleMoveTest : BasePlatformTestCase() {
         """.trimIndent())
 
         assertNotNull("résout avant", refIn(ep, "Moved").reference.resolve())
-        WriteCommandAction.runWriteCommandAction(project) { KrakenRuleMover.move(project, ruleIn(a, "Moved"), far) }
+        WriteCommandAction.runWriteCommandAction(project) { KrakenDeclarationMover.move(project, ruleIn(a, "Moved"), far) }
         assertEquals("le texte de la référence est inchangé", "Moved", refIn(ep, "Moved").ruleName)
         assertNull("mais elle ne résout plus", refIn(ep, "Moved").reference.resolve())
     }
@@ -98,7 +98,7 @@ class KrakenRuleMoveTest : BasePlatformTestCase() {
         """.trimIndent())
         val b = file("b.rules", "Namespace Policy")
 
-        WriteCommandAction.runWriteCommandAction(project) { KrakenRuleMover.move(project, ruleIn(a, "Moved"), b) }
+        WriteCommandAction.runWriteCommandAction(project) { KrakenDeclarationMover.move(project, ruleIn(a, "Moved"), b) }
 
         val found = com.kraken.plugin.psi.KrakenPsiUtil.findRulesVisible(b, "Moved")
         assertEquals("une seule déclaration, dans la destination", 1, found.size)
@@ -112,7 +112,7 @@ class KrakenRuleMoveTest : BasePlatformTestCase() {
             Rule "Stay" On Policy.state { Assert true }
         """.trimIndent())
         val before = a.text
-        WriteCommandAction.runWriteCommandAction(project) { KrakenRuleMover.move(project, ruleIn(a, "Stay"), a) }
+        WriteCommandAction.runWriteCommandAction(project) { KrakenDeclarationMover.move(project, ruleIn(a, "Stay"), a) }
         assertEquals(before, a.text)
     }
 }

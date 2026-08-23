@@ -456,8 +456,36 @@ result, so RuleScribe abstains rather than risk condemning valid code.
   but that one is Extract **function**. Pick one deliberately before writing
   code.
 
-- ⏸️ *Move EntryPoint* follows the same shape as Move rule and is a small
-  step from it, once the rule case has been used in anger.
+- ✅ **Move EntryPoint**, on F6. It follows the shape of Move rule, and the
+  place it does not is the whole reason it is not a copy of it.
+
+  A rule has one direction: who references it. An EntryPoint has two, because
+  it references as well. Sending one where its own items cannot be seen empties
+  it without a line changing inside it, which is the same silent damage the
+  rule case was built to prevent, pointed the other way.
+  `KrakenMoveConflicts.EntryPointMove` keeps the two counts apart, because
+  accepting to break three references elsewhere and accepting to empty the
+  entry point you are moving are not the same decision, and one number would
+  hide which one you were agreeing to.
+
+  The incoming direction has no import axis, unlike rules. `KrakenDSL.g4` reads
+  `anImport : namespaceImport | ruleImport`: the DSL imports namespaces and
+  rules, never entry points, so nothing rescues an entry point that has gone
+  out of sight. The outgoing direction does have one, and it points at the
+  *destination*: a rule item survives if the target namespace imports that rule
+  from where it is declared. A check that only asked "is the rule in
+  `visibleFiles(target)`" would warn about items that resolve perfectly well,
+  and there is a test for that branch.
+
+  `KrakenRuleMover` became `KrakenDeclarationMover` rather than being copied.
+  It only ever read its argument's text range and file, so an EntryPoint takes
+  the same path; what differs between the two is what the move breaks, and that
+  lives in the conflict analysis.
+
+  Tests assert **resolution** after the move, never text, including both
+  directions of the case where a reference keeps its exact wording and stops
+  resolving. The file chooser and the confirmation dialog are not exercised:
+  neither is reachable headless.
 - ✅ `publish.yml` uses `actions/attest` instead of the deprecated
   `actions/attest-sbom`. The generic action makes the predicate type explicit
   where the old one implied it; its value is fixed by contract, since the
