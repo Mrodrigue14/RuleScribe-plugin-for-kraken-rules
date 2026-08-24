@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.kraken.plugin"
-version = "0.17.0"
+version = "1.0.0"
 
 repositories {
     mavenCentral()

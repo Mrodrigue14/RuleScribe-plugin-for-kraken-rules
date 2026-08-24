@@ -1,6 +1,6 @@
 # Roadmap — RuleScribe for Kraken Rules
 
-## Current — v0.17.0
+## Current — v1.0.0
 
 Shipped: full KEL expression grammar, stub-based Rule index, strict
 namespace-aware resolution (Namespace/Include/Import Rule) with a cached
@@ -20,6 +20,13 @@ Plugin 2.x on Gradle 9. Published on the
 JetBrains Marketplace, signed and shipped with SLSA build provenance and a
 CycloneDX SBOM, and verified against every IntelliJ major since the target.
 See plugin.xml change notes for the detailed history.
+
+**What 1.0.0 asserts.** Not that the plugin is finished, but that it has
+stopped needing to be proven. Compatibility is checked against every IntelliJ
+major since the target rather than the two endpoints; every release is signed
+and carries provenance and an SBOM that verify against the published artifact;
+the no-network claim is enforced by reading the shipped jar, not asserted; and
+the roadmap has no item left waiting on a decision.
 See [Type grammar gaps](#type-grammar-gaps) and [Function validation
 (removed)](#function-validation-removed) below.
 
@@ -337,7 +344,7 @@ and a bound that is itself a union is not propagated into the parameter type —
 the engine resolves the bound environment for that, and no engine test pins the
 result, so RuleScribe abstains rather than risk condemning valid code.
 
-## v1.0.0 — Stabilization (partly shipped in 0.13.0)
+## v1.0.0 — Stabilization ✅ (shipped)
 
 - ✅ Compatibility testing now covers the latest patch of **every** major
   since the target, not just the two endpoints: 2024.1, 2024.2, 2024.3, 2025.1
@@ -448,13 +455,16 @@ result, so RuleScribe abstains rather than risk condemning valid code.
   Tests assert **resolution** after the move, never text, including the case
   where a reference keeps its exact wording and stops resolving.
 
-- ⏸️ *Extract rule* stays deferred because it is still underspecified, not
-  because it is hard. The phrase covers two different features: pulling an
-  inline rule out of a `Rules { }` block into a top-level declaration (mostly
-  formatting), or lifting a repeated KEL expression into a `Function` (real
-  value, and the grammar already supports `Function f(params) : T { expr }`) —
-  but that one is Extract **function**. Pick one deliberately before writing
-  code.
+- ❌ *Extract rule* and *Extract function* are **dropped**, not deferred. The
+  entry asked that one of the two be picked deliberately, and Extract function
+  was picked and designed: type from the enclosing clause rather than from the
+  expression (`Assert` and `When` fix it to Boolean whatever the expression
+  contains, which is 42 of the 51 rule-body expressions in the corpus, against 2
+  for inferring it), one parameter per referenced context named after the
+  context so prefixed accesses need no rewriting. The design held up; it was
+  dropped anyway, because naming one expression is not worth a refactoring's
+  weight next to what the plugin already does. Nothing here is waiting on a
+  decision any more.
 
 - ✅ **Move EntryPoint**, on F6. It follows the shape of Move rule, and the
   place it does not is the whole reason it is not a copy of it.
