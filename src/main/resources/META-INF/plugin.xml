@@ -28,6 +28,24 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>1.0.0</b>
+        <ul>
+            <li>No new feature. 1.0.0 says the plugin is done being proven,
+            not that it grew: the code is the same as 0.17.0.</li>
+            <li>What it rests on. Binary compatibility is checked weekly
+            against the latest patch of every IntelliJ major since 2024.1,
+            all reporting the plugin compatible. Every release is signed and
+            ships with SLSA build provenance and a CycloneDX SBOM, verifiable
+            against the published artifact. The plugin makes no network call
+            and executes nothing, which a test enforces by reading the shipped
+            jar rather than by asserting it. CodeQL, Qodana, poutine,
+            Dependabot and an OWASP scan run on every change, with no open
+            alert.</li>
+            <li>The roadmap no longer has an item waiting on a decision.
+            Extract rule and Extract function are dropped rather than deferred,
+            with the reasoning recorded.</li>
+        </ul>
+
         <b>0.17.0</b>
         <ul>
             <li>An <code>EntryPoint</code> can be moved to another file with
