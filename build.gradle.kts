@@ -11,6 +11,7 @@ plugins {
     id("org.owasp.dependencycheck") version "12.2.2"
     id("org.jetbrains.kotlinx.kover") version "0.9.9"
     id("org.cyclonedx.bom") version "3.4.1"
+    id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
 }
 
 group = "com.kraken.plugin"
@@ -111,6 +112,21 @@ intellijPlatform {
             }
         }
     }
+}
+
+// Style Kotlin. Le style lui-même vit dans `.editorconfig`, que ktlint et
+// IntelliJ lisent tous les deux — un seul endroit pour une seule règle.
+//
+// Rien à exclure ici, contrairement à Kover, CodeQL et Qodana qui écartent tous
+// `src/main/gen` : Grammar-Kit y génère du **Java**, pas du Kotlin, donc ktlint
+// ne le voit jamais. Un filtre décoratif donnerait l'impression d'une
+// protection inexistante.
+//
+// La porte est bloquante, et elle peut se le permettre : la base est à zéro
+// violation. Un linter qu'on laisse rougir est un linter que plus personne ne
+// lit.
+ktlint {
+    version.set("1.8.0")
 }
 
 // SBOM CycloneDX de l'artefact LIVRÉ. Même périmètre que le scan OWASP :
@@ -252,6 +268,5 @@ tasks {
         // secrets. Sans eux les deux tâches sont sautées, ne produisent rien,
         // et la dépendance manquante reste invisible.
         dependsOn(signPlugin, writeCertificateChain)
-
     }
 }

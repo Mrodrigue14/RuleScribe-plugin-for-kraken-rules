@@ -233,6 +233,9 @@ attack surface:
 
 Every change is checked automatically in CI:
 
+- **ktlint** — Kotlin style, enforced rather than suggested: the build fails on
+  a deviation. The style itself lives in `.editorconfig`, which IntelliJ reads
+  too, so the editor and the gate cannot disagree.
 - **CodeQL** — static analysis (SAST) of the Kotlin/Java code.
 - **Qodana** (JetBrains) — static analysis that knows the IntelliJ Platform
   APIs, so it catches misuse specific to plugin development that a

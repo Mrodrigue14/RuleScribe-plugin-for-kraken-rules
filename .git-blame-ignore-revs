@@ -1,0 +1,10 @@
+# Commits purement mécaniques, à sauter dans `git blame`.
+#
+# GitHub lit ce fichier tout seul. En local :
+#     git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# N'y mettre qu'un commit dont aucune ligne ne porte de décision : sinon on
+# cache la réponse à « pourquoi cette ligne est-elle ainsi ».
+
+# Reformatage Kotlin au style IntelliJ, 88 fichiers, sortie de ktlint --format.
+a697894b7b4185f7371da977b5ccb8e44dd524b9
