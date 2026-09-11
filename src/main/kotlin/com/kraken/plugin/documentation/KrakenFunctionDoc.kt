@@ -94,23 +94,29 @@ internal object KrakenFunctionDoc {
             when {
                 trimmed.startsWith("@since") ->
                     since = trimmed.removePrefix("@since").trim().ifBlank { null }
+
                 trimmed.startsWith("@parameter") -> {
                     val rest = trimmed.removePrefix("@parameter").trim()
                     val (name, describes) = rest.split("-", limit = 2)
                         .let { it[0].trim() to it.getOrElse(1) { "" }.trim() }
                     if (name.isNotEmpty()) parameters += name to describes
                 }
+
                 trimmed.startsWith("@example") || trimmed.startsWith("@invalidExample") -> {
                     val rest = trimmed.substringAfter(" ", "").trim()
                     if (rest.isNotEmpty()) examples += rest to null
                 }
+
                 trimmed.startsWith("@result") -> {
                     val result = trimmed.removePrefix("@result").trim()
                     if (examples.isNotEmpty() && result.isNotEmpty()) {
                         examples[examples.lastIndex] = examples.last().first to result
                     }
                 }
-                trimmed.startsWith("@") -> Unit // balise non reconnue : ignorée
+
+                trimmed.startsWith("@") -> Unit
+
+                // balise non reconnue : ignorée
                 else -> if (trimmed.isNotEmpty()) description.append(trimmed).append(' ')
             }
         }

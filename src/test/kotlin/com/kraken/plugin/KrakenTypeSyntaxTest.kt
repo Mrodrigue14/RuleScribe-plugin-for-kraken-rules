@@ -26,36 +26,27 @@ class KrakenTypeSyntaxTest : BasePlatformTestCase() {
             .map { it.errorDescription }
     }
 
-    private fun assertParses(source: String) =
-        assertEquals("devrait parser : $source", emptyList<String>(), errors(source))
+    private fun assertParses(source: String) = assertEquals("devrait parser : $source", emptyList<String>(), errors(source))
 
-    fun testUnionParameter() =
-        assertParses("""Function GetDay(Date | DateTime d) : Number { 1 }""")
+    fun testUnionParameter() = assertParses("""Function GetDay(Date | DateTime d) : Number { 1 }""")
 
-    fun testUnionReturnType() =
-        assertParses("""Function Ret(Date d) : Number | String { 1 }""")
+    fun testUnionReturnType() = assertParses("""Function Ret(Date d) : Number | String { 1 }""")
 
     /** Une signature nue, sans corps : la forme qui redéclare une native. */
-    fun testUnionInABareSignature() =
-        assertParses("""Function Sig(Date | DateTime) : Number""")
+    fun testUnionInABareSignature() = assertParses("""Function Sig(Date | DateTime) : Number""")
 
-    fun testUnionOfMoreThanTwoMembers() =
-        assertParses("""Function T(Date | DateTime | String d) : Number { 1 }""")
+    fun testUnionOfMoreThanTwoMembers() = assertParses("""Function T(Date | DateTime | String d) : Number { 1 }""")
 
     /** `[]` lie plus fort que `|`, comme dans la grammaire officielle. */
-    fun testUnionOfArrays() =
-        assertParses("""Function Arr(Number[] | String[] xs) : Number { 1 }""")
+    fun testUnionOfArrays() = assertParses("""Function Arr(Number[] | String[] xs) : Number { 1 }""")
 
     /** Les parenthèses permettent de forcer l'autre lecture. */
-    fun testParenthesisedType() =
-        assertParses("""Function P((Date | DateTime) d) : Number { 1 }""")
+    fun testParenthesisedType() = assertParses("""Function P((Date | DateTime) d) : Number { 1 }""")
 
-    fun testGenericTypeReference() =
-        assertParses("""Function G(<T> x) : Number { 1 }""")
+    fun testGenericTypeReference() = assertParses("""Function G(<T> x) : Number { 1 }""")
 
     /** Les bornes génériques précèdent le nom, comme dans KrakenDSL.g4. */
-    fun testGenericBoundsStillParse() =
-        assertParses("""Function <T is Number> B(T x) : T { x }""")
+    fun testGenericBoundsStillParse() = assertParses("""Function <T is Number> B(T x) : T { x }""")
 
     /** Ce qui marchait avant doit continuer. */
     fun testPlainAndArrayTypesAreUnaffected() {
@@ -64,12 +55,11 @@ class KrakenTypeSyntaxTest : BasePlatformTestCase() {
     }
 
     /** `|` reste utilisable comme opérateur dans une expression. */
-    fun testBarStillWorksAsAnExpressionOperator() =
-        assertParses(
-            """
+    fun testBarStillWorksAsAnExpressionOperator() = assertParses(
+        """
             Rule "R" On Policy.state {
                 Assert a | b
             }
-            """.trimIndent()
-        )
+        """.trimIndent(),
+    )
 }

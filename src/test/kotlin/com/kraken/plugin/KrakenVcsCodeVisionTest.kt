@@ -1,6 +1,5 @@
 package com.kraken.plugin
 
-import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.navigation.KrakenVcsCodeVisionContext
@@ -38,7 +37,7 @@ class KrakenVcsCodeVisionTest : BasePlatformTestCase() {
         EntryPoint "Validation" {
             "Limit is positive"
         }
-        """.trimIndent()
+        """.trimIndent(),
     )
 
     private fun accepted(): List<String> {
@@ -54,7 +53,7 @@ class KrakenVcsCodeVisionTest : BasePlatformTestCase() {
         configure()
         assertEquals(
             listOf("CONTEXT_DECL", "ENTRY_POINT_DECL", "FUNCTION_DECL", "RULE_DECL"),
-            accepted()
+            accepted(),
         )
     }
 
@@ -62,14 +61,16 @@ class KrakenVcsCodeVisionTest : BasePlatformTestCase() {
     fun testNonDeclarationsAreRejected() {
         configure()
         val rejected = listOf(
-            KrakenTypes.RULE_REF, KrakenTypes.RULE_BODY,
-            KrakenTypes.FUNCTION_CALL, KrakenTypes.DIMENSION_DECL
+            KrakenTypes.RULE_REF,
+            KrakenTypes.RULE_BODY,
+            KrakenTypes.FUNCTION_CALL,
+            KrakenTypes.DIMENSION_DECL,
         )
         PsiTreeUtil.processElements(myFixture.file) { element ->
             if (element.node.elementType in rejected) {
                 assertFalse(
                     "${element.node.elementType} must not carry an author inlay",
-                    context.isAccepted(element)
+                    context.isAccepted(element),
                 )
             }
             true
@@ -98,7 +99,7 @@ class KrakenVcsCodeVisionTest : BasePlatformTestCase() {
         assertTrue("L'étendue reste dans la règle", rule.textRange.contains(range))
         assertTrue(
             "L'étendue doit contenir tout le corps de la règle",
-            file.text.substring(range.startOffset, range.endOffset).contains("Assert limitAmount > 0")
+            file.text.substring(range.startOffset, range.endOffset).contains("Assert limitAmount > 0"),
         )
     }
 }

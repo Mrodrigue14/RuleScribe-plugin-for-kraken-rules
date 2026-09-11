@@ -29,8 +29,10 @@ class KrakenParseErrorMessageTest : BasePlatformTestCase() {
     /** Le nom de la classe n'a rien à faire dans un message d'erreur. */
     fun testTokenNamesCarryNoClassPrefix() {
         val message = errors(brokenExpression).first()
-        assertFalse("« KrakenTokenType. » ne doit plus apparaître : $message",
-            message.contains("KrakenTokenType"))
+        assertFalse(
+            "« KrakenTokenType. » ne doit plus apparaître : $message",
+            message.contains("KrakenTokenType"),
+        )
     }
 
     /**
@@ -41,8 +43,10 @@ class KrakenParseErrorMessageTest : BasePlatformTestCase() {
         val message = errors(brokenExpression).first()
         assertTrue("les opérateurs doivent être groupés : $message", message.contains("<operator>"))
         for (operator in listOf("instanceof", "satisfies", "Matches")) {
-            assertFalse("'$operator' ne doit plus être listé séparément : $message",
-                message.contains(operator))
+            assertFalse(
+                "'$operator' ne doit plus être listé séparément : $message",
+                message.contains(operator),
+            )
         }
     }
 

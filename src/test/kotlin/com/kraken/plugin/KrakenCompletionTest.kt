@@ -12,7 +12,7 @@ class KrakenCompletionTest : BasePlatformTestCase() {
             Rule "r" On Policy.state {
                 <caret>
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.complete(CompletionType.BASIC)
         val strings = myFixture.lookupElementStrings.orEmpty()
@@ -44,7 +44,7 @@ class KrakenCompletionTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 <caret>
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.complete(CompletionType.BASIC)
         val strings = myFixture.lookupElementStrings.orEmpty()
@@ -62,7 +62,7 @@ class KrakenCompletionTest : BasePlatformTestCase() {
             Rule "r" On Policy.state {
                 Assert true
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.complete(CompletionType.BASIC)
         val strings = myFixture.lookupElementStrings.orEmpty()

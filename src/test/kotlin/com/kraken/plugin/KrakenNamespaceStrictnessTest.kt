@@ -19,7 +19,7 @@ class KrakenNamespaceStrictnessTest : BasePlatformTestCase() {
             EntryPoint "Broken" {
                 "Hidden elsewhere"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.enableInspections(KrakenUnusedRuleInspection())
         myFixture.configureByText(
@@ -30,13 +30,13 @@ class KrakenNamespaceStrictnessTest : BasePlatformTestCase() {
             Rule "Hidden elsewhere" On Widget.name {
                 Set Hidden
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val highlights = myFixture.doHighlighting()
         assertTrue(
             "Rule referenced only from a blind namespace must be unused, got: " +
-                    highlights.map { it.description },
-            highlights.any { it.description?.startsWith("Rule 'Hidden elsewhere' is not referenced") == true }
+                highlights.map { it.description },
+            highlights.any { it.description?.startsWith("Rule 'Hidden elsewhere' is not referenced") == true },
         )
     }
 
@@ -49,7 +49,7 @@ class KrakenNamespaceStrictnessTest : BasePlatformTestCase() {
             EntryPoint "Broken" {
                 "Hidden elsewhere"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.configureByText(
             "other.rules",
@@ -59,7 +59,7 @@ class KrakenNamespaceStrictnessTest : BasePlatformTestCase() {
             Rule "Hidden<caret> elsewhere" On Widget.name {
                 Set Hidden
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val leaf = myFixture.file.findElementAt(myFixture.caretOffset)
         val targets = KrakenGotoDeclarationHandler()
@@ -78,7 +78,7 @@ class KrakenNamespaceStrictnessTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 "Base rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.enableInspections(KrakenUnusedRuleInspection())
         myFixture.configureByText(
@@ -89,12 +89,12 @@ class KrakenNamespaceStrictnessTest : BasePlatformTestCase() {
             Rule "Base rule" On Entity.id {
                 Set Mandatory
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val highlights = myFixture.doHighlighting()
         assertFalse(
             "Rule referenced from an including namespace must NOT be unused",
-            highlights.any { it.description?.startsWith("Rule 'Base rule' is not referenced") == true }
+            highlights.any { it.description?.startsWith("Rule 'Base rule' is not referenced") == true },
         )
     }
 }

@@ -39,8 +39,7 @@ class KrakenSpellcheckingStrategy : SpellcheckingStrategy() {
         else -> false
     }
 
-    private fun lastString(parent: PsiElement): PsiElement? =
-        parent.node.getChildren(null).lastOrNull { it.elementType == KrakenTypes.STRING }?.psi
+    private fun lastString(parent: PsiElement): PsiElement? = parent.node.getChildren(null).lastOrNull { it.elementType == KrakenTypes.STRING }?.psi
 
     private companion object {
         val COMMENTS = setOf(
@@ -55,9 +54,12 @@ class KrakenSpellcheckingStrategy : SpellcheckingStrategy() {
                 val text = element.text
                 if (text.length < 3) return
                 consumer.consumeToken(
-                    element, text, false, 0,
+                    element,
+                    text,
+                    false,
+                    0,
                     TextRange(1, text.length - 1),
-                    PlainTextSplitter.getInstance()
+                    PlainTextSplitter.getInstance(),
                 )
             }
         }

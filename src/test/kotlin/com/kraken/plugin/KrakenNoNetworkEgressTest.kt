@@ -102,7 +102,9 @@ class KrakenNoNetworkEgressTest {
                 when (url.protocol) {
                     // <racine>/com/kraken/plugin → remonter de 3 niveaux.
                     "file" -> File(url.toURI()).parentFile.parentFile.parentFile
+
                     "jar" -> jarOf(url)
+
                     else -> null
                 }
             }

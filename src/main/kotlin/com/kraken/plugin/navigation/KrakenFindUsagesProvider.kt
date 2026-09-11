@@ -18,7 +18,7 @@ class KrakenFindUsagesProvider : FindUsagesProvider {
         KrakenLexer(),
         TokenSet.create(KrakenTypes.IDENTIFIER),
         TokenSet.create(KrakenTypes.LINE_COMMENT, KrakenTypes.BLOCK_COMMENT, KrakenTypes.DOC_COMMENT),
-        TokenSet.create(KrakenTypes.STRING, KrakenTypes.NUMBER_LIT)
+        TokenSet.create(KrakenTypes.STRING, KrakenTypes.NUMBER_LIT),
     )
 
     override fun canFindUsagesFor(psiElement: PsiElement): Boolean = psiElement is PsiNamedElement
@@ -32,9 +32,7 @@ class KrakenFindUsagesProvider : FindUsagesProvider {
         else -> "Kraken element"
     }
 
-    override fun getDescriptiveName(element: PsiElement): String =
-        (element as? PsiNamedElement)?.name ?: element.text
+    override fun getDescriptiveName(element: PsiElement): String = (element as? PsiNamedElement)?.name ?: element.text
 
-    override fun getNodeText(element: PsiElement, useFullName: Boolean): String =
-        getDescriptiveName(element)
+    override fun getNodeText(element: PsiElement, useFullName: Boolean): String = getDescriptiveName(element)
 }

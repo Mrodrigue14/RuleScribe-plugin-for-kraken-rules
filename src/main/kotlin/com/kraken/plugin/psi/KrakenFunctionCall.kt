@@ -43,9 +43,8 @@ class KrakenFunctionCall(node: ASTNode) : ASTWrapperPsiElement(node) {
     }
 
     /** Vrai si l'appel correspond à une fonction native ou déclarée et visible. */
-    fun isResolvable(): Boolean =
-        KrakenFunctionCatalog.find(functionName, argumentCount) != null ||
-            KrakenPsiUtil.findFunctionVisible(this, functionName, argumentCount) != null
+    fun isResolvable(): Boolean = KrakenFunctionCatalog.find(functionName, argumentCount) != null ||
+        KrakenPsiUtil.findFunctionVisible(this, functionName, argumentCount) != null
 
     /** Étendue du nom appelé, relative à l'élément. */
     private fun headRange(): TextRange? {
@@ -59,17 +58,14 @@ class KrakenFunctionCall(node: ASTNode) : ASTWrapperPsiElement(node) {
  * donc une résolution nulle est un cas normal, pas une erreur — voir
  * [KrakenFunctionCall.isResolvable] pour la même logique côté vérification.
  */
-class KrakenFunctionReference(element: KrakenFunctionCall, range: TextRange) :
-    PsiReferenceBase<KrakenFunctionCall>(element, range, true) {
+class KrakenFunctionReference(element: KrakenFunctionCall, range: TextRange) : PsiReferenceBase<KrakenFunctionCall>(element, range, true) {
 
-    override fun resolve(): PsiElement? =
-        KrakenPsiUtil.findFunctionVisible(element, element.functionName, element.argumentCount)
+    override fun resolve(): PsiElement? = KrakenPsiUtil.findFunctionVisible(element, element.functionName, element.argumentCount)
 
-    override fun getVariants(): Array<Any> =
-        KrakenPsiUtil.findFunctionsVisible(element)
-            .mapNotNull { it.name }
-            .distinct()
-            .toTypedArray()
+    override fun getVariants(): Array<Any> = KrakenPsiUtil.findFunctionsVisible(element)
+        .mapNotNull { it.name }
+        .distinct()
+        .toTypedArray()
 }
 
 /**
@@ -82,13 +78,12 @@ class KrakenFunctionCallManipulator : AbstractElementManipulator<KrakenFunctionC
     override fun handleContentChange(
         element: KrakenFunctionCall,
         range: TextRange,
-        newContent: String
+        newContent: String,
     ): KrakenFunctionCall {
         val head = element.node.firstChildNode
         if (head is LeafElement) head.replaceWithText(newContent)
         return element
     }
 
-    override fun getRangeInElement(element: KrakenFunctionCall): TextRange =
-        element.reference?.rangeInElement ?: TextRange(0, element.textLength)
+    override fun getRangeInElement(element: KrakenFunctionCall): TextRange = element.reference?.rangeInElement ?: TextRange(0, element.textLength)
 }

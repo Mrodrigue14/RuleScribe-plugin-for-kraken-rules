@@ -23,7 +23,7 @@ class KrakenFormattingModelBuilder : FormattingModelBuilder {
         return FormattingModelProvider.createFormattingModelForPsiFile(
             formattingContext.containingFile,
             rootBlock,
-            formattingContext.codeStyleSettings
+            formattingContext.codeStyleSettings,
         )
     }
 }
@@ -32,7 +32,7 @@ class KrakenBlock(
     node: ASTNode,
     wrap: Wrap?,
     alignment: Alignment?,
-    private val indent: Indent
+    private val indent: Indent,
 ) : AbstractBlock(node, wrap, alignment) {
 
     override fun getIndent(): Indent = indent
@@ -69,15 +69,13 @@ class KrakenBlock(
 
     override fun getSpacing(child1: Block?, child2: Block): Spacing? = null
 
-    override fun isLeaf(): Boolean =
-        myNode.firstChildNode == null || myNode.elementType == KrakenTypes.EXPRESSION
+    override fun isLeaf(): Boolean = myNode.firstChildNode == null || myNode.elementType == KrakenTypes.EXPRESSION
 
-    override fun getChildAttributes(newChildIndex: Int): ChildAttributes =
-        if (myNode.elementType in BRACE_OWNERS) {
-            ChildAttributes(Indent.getNormalIndent(), null)
-        } else {
-            ChildAttributes(Indent.getNoneIndent(), null)
-        }
+    override fun getChildAttributes(newChildIndex: Int): ChildAttributes = if (myNode.elementType in BRACE_OWNERS) {
+        ChildAttributes(Indent.getNormalIndent(), null)
+    } else {
+        ChildAttributes(Indent.getNoneIndent(), null)
+    }
 
     companion object {
         private val BRACE_OWNERS = TokenSet.create(
@@ -89,7 +87,7 @@ class KrakenBlock(
             KrakenTypes.ENTRY_POINTS_BLOCK,
             KrakenTypes.EXTERNAL_CONTEXT_DECL,
             KrakenTypes.EXTERNAL_ENTITY_DECL,
-            KrakenTypes.FUNCTION_BODY
+            KrakenTypes.FUNCTION_BODY,
         )
     }
 }

@@ -25,10 +25,13 @@ class KrakenOperatorLexingTest : BasePlatformTestCase() {
             if (type != TokenType.WHITE_SPACE) {
                 val name = when (type) {
                     KrakenTypes.OP -> "OP"
+
                     // `|` a son propre token depuis qu'il sert aussi à séparer
                     // les membres d'un type union.
                     KrakenTypes.PIPE -> "PIPE"
+
                     TokenType.BAD_CHARACTER -> "BAD"
+
                     else -> type.toString()
                 }
                 out += name to lexer.tokenText
@@ -38,8 +41,7 @@ class KrakenOperatorLexingTest : BasePlatformTestCase() {
         return out
     }
 
-    private fun operators(source: String): List<Pair<String, String>> =
-        tokens(source).filter { it.first in setOf("OP", "PIPE", "BAD") }
+    private fun operators(source: String): List<Pair<String, String>> = tokens(source).filter { it.first in setOf("OP", "PIPE", "BAD") }
 
     fun testWideComparisonsAreSingleTokens() {
         assertEquals(listOf("OP" to ">="), operators("a >= b"))
@@ -74,7 +76,7 @@ class KrakenOperatorLexingTest : BasePlatformTestCase() {
     fun testGarbageOperatorRunIsRejectedPerCharacter() {
         assertEquals(
             listOf("BAD" to "&", "PIPE" to "|", "BAD" to "&", "BAD" to "~"),
-            operators("a &|&~ b")
+            operators("a &|&~ b"),
         )
     }
 

@@ -30,8 +30,7 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
             .sorted()
     }
 
-    private fun assertCodes(expected: List<String>, source: String) =
-        assertEquals(expected.sorted(), codesFor(source))
+    private fun assertCodes(expected: List<String>, source: String) = assertEquals(expected.sorted(), codesFor(source))
 
     // ------------------------------------------------------------------
     // Bornes génériques
@@ -43,13 +42,13 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
         Function <T is Number, T is String> Dup(<T> p) : Number {
             1
         }
-        """
+        """,
     )
 
     /** Même défaut sans corps : c'est une signature, donc un autre code. */
     fun testDuplicateGenericBoundInSignatureUsesSignatureCode() = assertCodes(
         listOf("kvf017"),
-        "Function <T is Number, T is String> Dup(<T> p) : Number"
+        "Function <T is Number, T is String> Dup(<T> p) : Number",
     )
 
     fun testGenericBoundThatIsItselfGenericIsReported() = assertCodes(
@@ -58,12 +57,12 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
         Function <T is <G>> Itself(<T> p) : Number {
             1
         }
-        """
+        """,
     )
 
     fun testGenericBoundThatIsItselfGenericInSignatureUsesSignatureCode() = assertCodes(
         listOf("kvf018"),
-        "Function <T is <G>> Itself(<T> p) : Number"
+        "Function <T is <G>> Itself(<T> p) : Number",
     )
 
     /** Une borne générique se cache aussi derrière un suffixe de tableau. */
@@ -73,7 +72,7 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
         Function <T is <G>[]> Itself(<T> p) : Number {
             1
         }
-        """
+        """,
     )
 
     // ------------------------------------------------------------------
@@ -87,12 +86,12 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
         Function <T is Number> First(<T>[] | String p) : <T> | String {
             1
         }
-        """
+        """,
     )
 
     fun testUnionGenericMixInSignatureUsesSignatureCodes() = assertCodes(
         listOf("kvf020", "kvf021"),
-        "Function <T is Number> First(<T>[] | String p) : <T> | String"
+        "Function <T is Number> First(<T>[] | String p) : <T> | String",
     )
 
     /** Une union sans générique est parfaitement valide. */
@@ -102,7 +101,7 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
         Function DayOfWeek(Date | DateTime d) : Number {
             1
         }
-        """
+        """,
     )
 
     /**
@@ -115,7 +114,7 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
         Function Mix(Date | Foo<Bar> d) : Number {
             1
         }
-        """
+        """,
     )
 
     /**
@@ -129,7 +128,7 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
         Function <T is Date | DateTime, N is Number> First(<T>[] dates, <N> index) : <T> {
             dates[0]
         }
-        """
+        """,
     )
 
     // ------------------------------------------------------------------
@@ -142,7 +141,7 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
         Function Twice(Number a, Number a) : Number {
             a
         }
-        """
+        """,
     )
 
     fun testDistinctParameterNamesAreNotReported() = assertCodes(
@@ -151,7 +150,7 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
         Function Total(Number a, Number b) : Number {
             a + b
         }
-        """
+        """,
     )
 
     fun testFunctionShadowingANativeIsReported() = assertCodes(
@@ -160,7 +159,7 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
         Function Count(Number[] items) : Number {
             1
         }
-        """
+        """,
     )
 
     /**
@@ -169,7 +168,7 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
      */
     fun testSignatureNamedAfterANativeIsNotReported() = assertCodes(
         emptyList(),
-        "Function Count(Number[] items) : Number"
+        "Function Count(Number[] items) : Number",
     )
 
     fun testOrdinaryFunctionIsNotReported() = assertCodes(
@@ -178,7 +177,7 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
         Function Premium(Coverage[] coverages) : Number {
             coverages[0].limit
         }
-        """
+        """,
     )
 
     private companion object {

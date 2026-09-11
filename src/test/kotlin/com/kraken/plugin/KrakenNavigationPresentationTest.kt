@@ -22,8 +22,7 @@ import com.kraken.plugin.psi.KrakenRuleDecl
  */
 class KrakenNavigationPresentationTest : BasePlatformTestCase() {
 
-    private fun presentationOf(element: PsiElement) =
-        (element as NavigationItem).presentation
+    private fun presentationOf(element: PsiElement) = (element as NavigationItem).presentation
 
     /** Usages de la déclaration sous le curseur, tels que la gouttière les cible. */
     private fun usagesAtCaret(): List<PsiElement> {
@@ -46,7 +45,7 @@ class KrakenNavigationPresentationTest : BasePlatformTestCase() {
             EntryPoint "Billing" {
                 "Shared rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.configureByText(
             "rules.rules",
@@ -58,7 +57,7 @@ class KrakenNavigationPresentationTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 "Shared rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val targets = usagesAtCaret()
@@ -75,7 +74,7 @@ class KrakenNavigationPresentationTest : BasePlatformTestCase() {
                 "EntryPoint \"Billing\" @ billing.rules",
                 "EntryPoint \"Validation\" @ rules.rules",
             ),
-            labels
+            labels,
         )
         assertEquals("Labels must be distinct", 2, labels.toSet().size)
     }
@@ -93,14 +92,14 @@ class KrakenNavigationPresentationTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 "Namespaced rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val presentation = presentationOf(usagesAtCaret().single())
         assertEquals(
             "Namespace disambiguates same-named files across modules",
             "policy.rules · Policy",
-            presentation?.locationString
+            presentation?.locationString,
         )
     }
 
@@ -111,7 +110,7 @@ class KrakenNavigationPresentationTest : BasePlatformTestCase() {
             EntryPoint "Composed" {
                 EntryPoint "Reused"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.configureByText(
             "base.rules",
@@ -119,7 +118,7 @@ class KrakenNavigationPresentationTest : BasePlatformTestCase() {
             EntryPoint "Reu<caret>sed" {
                 "Some rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val presentation = presentationOf(usagesAtCaret().single())
@@ -140,7 +139,7 @@ class KrakenNavigationPresentationTest : BasePlatformTestCase() {
             EntryPoint "An entry point" {
                 "A rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val rule = com.intellij.psi.util.PsiTreeUtil

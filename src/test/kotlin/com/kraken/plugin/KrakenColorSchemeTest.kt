@@ -53,14 +53,14 @@ class KrakenColorSchemeTest : TestCase() {
             val value = colors[key] ?: fail("$key n'a pas de couleur dans $resource").let { return }
             assertFalse(
                 "$resource : le rouge est réservé aux orphelines, $key vaut $value",
-                isRed(value)
+                isRed(value),
             )
         }
         val unmatched = colors["KRAKEN_UNMATCHED_BRACKET"]
             ?: fail("KRAKEN_UNMATCHED_BRACKET n'a pas de couleur dans $resource").let { return }
         assertTrue(
             "$resource : une accolade orpheline doit être rouge, pas $unmatched",
-            isRed(unmatched)
+            isRed(unmatched),
         )
     }
 

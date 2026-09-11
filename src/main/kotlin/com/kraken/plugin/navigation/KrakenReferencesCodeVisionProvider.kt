@@ -27,8 +27,7 @@ class KrakenReferencesCodeVisionProvider : ReferencesCodeVisionProvider() {
 
     override fun acceptsFile(file: PsiFile): Boolean = file is KrakenFile
 
-    override fun acceptsElement(element: PsiElement): Boolean =
-        element is KrakenRuleDecl || element is KrakenEntryPointDecl || element is KrakenFunctionDecl
+    override fun acceptsElement(element: PsiElement): Boolean = element is KrakenRuleDecl || element is KrakenEntryPointDecl || element is KrakenFunctionDecl
 
     override fun getHint(element: PsiElement, file: PsiFile): String? {
         val usages = when (element) {

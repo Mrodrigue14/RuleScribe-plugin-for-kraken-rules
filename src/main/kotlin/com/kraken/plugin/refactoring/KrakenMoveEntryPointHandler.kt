@@ -35,8 +35,7 @@ class KrakenMoveEntryPointHandler : MoveHandlerDelegate() {
 
     override fun supportsLanguage(language: Language): Boolean = language == KrakenLanguage
 
-    override fun canMove(elements: Array<out PsiElement>, targetContainer: PsiElement?): Boolean =
-        elements.size == 1 && entryPointOf(elements[0]) != null
+    override fun canMove(elements: Array<out PsiElement>, targetContainer: PsiElement?): Boolean = elements.size == 1 && entryPointOf(elements[0]) != null
 
     override fun getActionName(elements: Array<out PsiElement>): String = "Move EntryPoint…"
 

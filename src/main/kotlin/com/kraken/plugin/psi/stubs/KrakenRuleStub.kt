@@ -16,5 +16,6 @@ interface KrakenRuleStub : StubElement<KrakenRuleDecl> {
 class KrakenRuleStubImpl(
     parent: StubElement<*>?,
     elementType: IStubElementType<*, *>,
-    override val name: String?
-) : StubBase<KrakenRuleDecl>(parent, elementType), KrakenRuleStub
+    override val name: String?,
+) : StubBase<KrakenRuleDecl>(parent, elementType),
+    KrakenRuleStub

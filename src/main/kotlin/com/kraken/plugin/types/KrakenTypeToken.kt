@@ -86,12 +86,18 @@ sealed class KrakenTypeToken {
                 val c = raw[i]
                 when {
                     c.isWhitespace() -> i++
-                    c in PUNCTUATION -> { tokens += c.toString(); i++ }
+
+                    c in PUNCTUATION -> {
+                        tokens += c.toString()
+                        i++
+                    }
+
                     c.isLetter() || c == '_' -> {
                         val start = i
                         while (i < raw.length && (raw[i].isLetterOrDigit() || raw[i] == '_')) i++
                         tokens += raw.substring(start, i)
                     }
+
                     else -> return null
                 }
             }
@@ -108,8 +114,7 @@ sealed class KrakenTypeToken {
             val atEnd: Boolean get() = pos >= tokens.size
 
             private fun peek(): String? = tokens.getOrNull(pos)
-            private fun accept(token: String): Boolean =
-                (peek() == token).also { if (it) pos++ }
+            private fun accept(token: String): Boolean = (peek() == token).also { if (it) pos++ }
 
             fun union(): KrakenTypeToken? {
                 var left = array() ?: return null
@@ -132,7 +137,9 @@ sealed class KrakenTypeToken {
 
             private fun atom(): KrakenTypeToken? = when {
                 accept("(") -> union()?.takeIf { accept(")") }
+
                 accept("<") -> identifier()?.let { Generic(it) }?.takeIf { accept(">") }
+
                 else -> identifier()?.let { name ->
                     if (accept("<")) typeArguments()?.let { Plain(name) } else Plain(name)
                 }
@@ -146,8 +153,7 @@ sealed class KrakenTypeToken {
                 return if (accept(">")) Unit else null
             }
 
-            private fun identifier(): String? =
-                peek()?.takeIf { it.first().isLetter() || it.first() == '_' }?.also { pos++ }
+            private fun identifier(): String? = peek()?.takeIf { it.first().isLetter() || it.first() == '_' }?.also { pos++ }
         }
     }
 }

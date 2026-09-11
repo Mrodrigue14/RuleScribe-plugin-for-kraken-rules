@@ -25,7 +25,7 @@ class KrakenRuleImportTest : BasePlatformTestCase() {
             Rule "Base rule" On Entity.id {
                 Set Mandatory
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
     }
 
@@ -42,13 +42,13 @@ class KrakenRuleImportTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 "Base rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val highlights = myFixture.doHighlighting()
         assertFalse(
             "Imported rule must resolve without Include, got: " +
                 highlights.map { it.description },
-            highlights.any { it.description?.startsWith("[kve005]") == true }
+            highlights.any { it.description?.startsWith("[kve005]") == true },
         )
     }
 
@@ -63,12 +63,12 @@ class KrakenRuleImportTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 "Base rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val highlights = myFixture.doHighlighting()
         assertTrue(
             "Without import nor Include the rule must stay unresolved",
-            highlights.any { it.description?.startsWith("[kve005]") == true }
+            highlights.any { it.description?.startsWith("[kve005]") == true },
         )
     }
 
@@ -83,7 +83,7 @@ class KrakenRuleImportTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 "Base rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.enableInspections(KrakenUnusedRuleInspection())
         myFixture.configureByText(
@@ -94,13 +94,13 @@ class KrakenRuleImportTest : BasePlatformTestCase() {
             Rule "Base rule" On Entity.id {
                 Set Mandatory
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val highlights = myFixture.doHighlighting()
         assertFalse(
             "A rule referenced through an import must not be flagged unused, got: " +
                 highlights.map { it.description },
-            highlights.any { it.description?.startsWith("Rule 'Base rule' is not referenced") == true }
+            highlights.any { it.description?.startsWith("Rule 'Base rule' is not referenced") == true },
         )
     }
 
@@ -116,13 +116,13 @@ class KrakenRuleImportTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 <caret>
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.complete(CompletionType.BASIC)
         val strings = myFixture.lookupElementStrings.orEmpty()
         assertTrue(
             "Imported rule expected in completion, got: $strings",
-            strings.any { it.contains("Base rule") }
+            strings.any { it.contains("Base rule") },
         )
     }
 
@@ -134,13 +134,13 @@ class KrakenRuleImportTest : BasePlatformTestCase() {
             Namespace Policy
 
             Import Rule "Ghost" From Nowhere
-            """.trimIndent()
+            """.trimIndent(),
         )
         val highlights = myFixture.doHighlighting()
         assertTrue(
             "Unknown source namespace must be flagged, got: " +
                 highlights.map { it.description },
-            highlights.any { it.description == "[kbs026] Cannot import rule 'Ghost' from namespace 'Nowhere' to 'Policy', because namespace does not exist." }
+            highlights.any { it.description == "[kbs026] Cannot import rule 'Ghost' from namespace 'Nowhere' to 'Policy', because namespace does not exist." },
         )
     }
 
@@ -153,7 +153,7 @@ class KrakenRuleImportTest : BasePlatformTestCase() {
             Namespace Policy
 
             Import Rule "Ghost" From Base
-            """.trimIndent()
+            """.trimIndent(),
         )
         val highlights = myFixture.doHighlighting()
         assertTrue(
@@ -161,7 +161,7 @@ class KrakenRuleImportTest : BasePlatformTestCase() {
                 highlights.map { it.description },
             highlights.any {
                 it.description == "[kbs025] Cannot import rule 'Ghost' from namespace 'Base' to 'Policy', because rule does not exist."
-            }
+            },
         )
     }
 
@@ -178,7 +178,7 @@ class KrakenRuleImportTest : BasePlatformTestCase() {
             Rule "Base rule" On Entity.id {
                 Set Mandatory
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val highlights = myFixture.doHighlighting()
         assertTrue(
@@ -188,7 +188,7 @@ class KrakenRuleImportTest : BasePlatformTestCase() {
                 it.description ==
                     "[kbs027] Cannot import rule 'Base rule' from namespace 'Base' to 'Policy', " +
                     "because rule is already defined."
-            }
+            },
         )
     }
 
@@ -202,7 +202,7 @@ class KrakenRuleImportTest : BasePlatformTestCase() {
             Rule "Base rule" On Entity.id {
                 Set Mandatory
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.enableInspections(KrakenImportAmbiguousInspection())
         myFixture.configureByText(
@@ -212,13 +212,13 @@ class KrakenRuleImportTest : BasePlatformTestCase() {
 
             Import Rule "Base rule" From Base
             Import Rule "Base rule" From Other
-            """.trimIndent()
+            """.trimIndent(),
         )
         val highlights = myFixture.doHighlighting()
         assertTrue(
             "A rule imported twice must be flagged as ambiguous, got: " +
                 highlights.map { it.description },
-            highlights.any { it.description?.startsWith("[kbs027] Cannot import rule 'Base rule' to") == true }
+            highlights.any { it.description?.startsWith("[kbs027] Cannot import rule 'Base rule' to") == true },
         )
     }
 }

@@ -32,12 +32,12 @@ class KrakenParameterInfoHandler : ParameterInfoHandler<KrakenFunctionCall, Stri
     }
 
     override fun findElementForUpdatingParameterInfo(
-        context: UpdateParameterInfoContext
+        context: UpdateParameterInfoContext,
     ): KrakenFunctionCall? = callAt(context.file, context.offset)
 
     override fun updateParameterInfo(
         parameterOwner: KrakenFunctionCall,
-        context: UpdateParameterInfoContext
+        context: UpdateParameterInfoContext,
     ) {
         context.setCurrentParameter(0)
     }
@@ -50,8 +50,7 @@ class KrakenParameterInfoHandler : ParameterInfoHandler<KrakenFunctionCall, Stri
         context.setupUIComponentPresentation(p, 0, 0, false, false, false, context.defaultParameterColor)
     }
 
-    private fun callAt(file: com.intellij.psi.PsiFile, offset: Int): KrakenFunctionCall? =
-        PsiTreeUtil.getParentOfType(file.findElementAt(offset), KrakenFunctionCall::class.java, false)
+    private fun callAt(file: com.intellij.psi.PsiFile, offset: Int): KrakenFunctionCall? = PsiTreeUtil.getParentOfType(file.findElementAt(offset), KrakenFunctionCall::class.java, false)
 
     /** Signatures connues pour ce nom : natives d'abord, puis celles du projet. */
     private fun signaturesFor(call: KrakenFunctionCall): List<String> {

@@ -32,13 +32,11 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             .toList()
     }
 
-    private fun labelsOf(targets: List<PsiElement>): List<String> =
-        targets.map { (it as NavigationItem).presentation }
-            .map { "${it?.presentableText} @ ${it?.locationString}" }
-            .sorted()
+    private fun labelsOf(targets: List<PsiElement>): List<String> = targets.map { (it as NavigationItem).presentation }
+        .map { "${it?.presentableText} @ ${it?.locationString}" }
+        .sorted()
 
-    private inline fun <reified T : PsiElement> allOf(file: PsiElement): List<T> =
-        PsiTreeUtil.findChildrenOfType(file, T::class.java).toList()
+    private inline fun <reified T : PsiElement> allOf(file: PsiElement): List<T> = PsiTreeUtil.findChildrenOfType(file, T::class.java).toList()
 
     // ------------------------------------------------------------------
     // Sens 1 : item d'EntryPoint -> implémentation
@@ -64,7 +62,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 "Check limit", "Check state", "Check term"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val declarations = allOf<KrakenRuleDecl>(file).associateBy { it.name }
@@ -76,7 +74,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             assertSame(
                 "\"${reference.ruleName}\" must land on its own declaration",
                 declarations[reference.ruleName],
-                target
+                target,
             )
         }
     }
@@ -98,7 +96,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             EntryPoint "Other validation" {
                 "Shared rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val base = myFixture.configureByText(
             "base.rules",
@@ -112,7 +110,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             EntryPoint "Base validation" {
                 "Shared rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         listOf(base, other).forEach { file ->
@@ -120,7 +118,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             assertEquals(
                 "Reference must resolve inside its own namespace",
                 file.name,
-                target.containingFile.name
+                target.containingFile.name,
             )
         }
     }
@@ -147,7 +145,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 "Coverage limit"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val targets = targetsFor(allOf<KrakenRuleRef>(file).single())
@@ -160,7 +158,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
                 "\"Coverage limit\" @Dimension(\"plan\", \"GOLD\") @ dimensioned.rules",
                 "\"Coverage limit\" @Dimension(\"plan\", \"SILVER\") @ dimensioned.rules",
             ),
-            labelsOf(targets)
+            labelsOf(targets),
         )
     }
 
@@ -174,7 +172,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             Rule "Imported rule" On Policy.state {
                 Assert true
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val consumer = myFixture.configureByText(
             "consumer.rules",
@@ -185,7 +183,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 "Imported rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val target = targetsFor(allOf<KrakenRuleRef>(consumer).single()).single()
@@ -204,7 +202,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             EntryPoint "Composed" {
                 EntryPoint "Reused"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val target = targetsFor(allOf<KrakenEpRef>(file).single()).single()
@@ -222,11 +220,9 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
      * tests suivent le comportement à son nouvel emplacement — la sémantique
      * de visibilité, elle, est inchangée.
      */
-    private fun usageCountOf(declaration: PsiElement): Int =
-        myFixture.findUsages(declaration as com.intellij.psi.PsiNamedElement).size
+    private fun usageCountOf(declaration: PsiElement): Int = myFixture.findUsages(declaration as com.intellij.psi.PsiNamedElement).size
 
-    private fun codeVisionHintOf(declaration: PsiElement): String? =
-        KrakenReferencesCodeVisionProvider().getHint(declaration, declaration.containingFile)
+    private fun codeVisionHintOf(declaration: PsiElement): String? = KrakenReferencesCodeVisionProvider().getHint(declaration, declaration.containingFile)
 
     /** Une règle partagée par plusieurs EntryPoints : tous sont des usages. */
     fun testImplementationIsUsedByEveryEntryPointReferencingIt() {
@@ -236,7 +232,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             EntryPoint "Billing" {
                 "Shared rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.addFileToProject(
             "quoting.rules",
@@ -244,7 +240,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             EntryPoint "Quoting" {
                 "Shared rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val file = myFixture.configureByText(
             "rules.rules",
@@ -256,7 +252,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 "Shared rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val declaration = allOf<KrakenRuleDecl>(file).single()
@@ -264,7 +260,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
         assertEquals("3 usages", codeVisionHintOf(declaration))
         assertEquals(
             listOf("billing.rules", "quoting.rules", "rules.rules"),
-            myFixture.findUsages(declaration).mapNotNull { it.file?.name }.sorted()
+            myFixture.findUsages(declaration).mapNotNull { it.file?.name }.sorted(),
         )
     }
 
@@ -285,7 +281,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             EntryPoint "Other validation" {
                 "Shared rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val base = myFixture.configureByText(
             "base.rules",
@@ -299,14 +295,14 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             EntryPoint "Base validation" {
                 "Shared rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val declaration = allOf<KrakenRuleDecl>(base).single()
         assertEquals("1 usage", codeVisionHintOf(declaration))
         assertEquals(
             listOf("base.rules"),
-            myFixture.findUsages(declaration).mapNotNull { it.file?.name }
+            myFixture.findUsages(declaration).mapNotNull { it.file?.name },
         )
     }
 
@@ -318,7 +314,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             EntryPoint "First" {
                 EntryPoint "Reused"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val file = myFixture.configureByText(
             "base.rules",
@@ -330,14 +326,14 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             EntryPoint "Second" {
                 EntryPoint "Reused"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val declaration = allOf<KrakenEntryPointDecl>(file).first { it.name == "Reused" }
         assertEquals("2 usages", codeVisionHintOf(declaration))
         assertEquals(
             listOf("base.rules", "first.rules"),
-            myFixture.findUsages(declaration).mapNotNull { it.file?.name }.sorted()
+            myFixture.findUsages(declaration).mapNotNull { it.file?.name }.sorted(),
         )
     }
 
@@ -349,7 +345,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
             Rule "Never referenced" On Policy.state {
                 Assert true
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         assertEquals("no usages", codeVisionHintOf(allOf<KrakenRuleDecl>(file).single()))

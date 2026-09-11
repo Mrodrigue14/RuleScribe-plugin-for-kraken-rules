@@ -31,8 +31,7 @@ class KrakenStructureViewFactory : PsiStructureViewFactory {
     override fun getStructureViewBuilder(psiFile: PsiFile): StructureViewBuilder? {
         if (psiFile !is KrakenFile) return null
         return object : TreeBasedStructureViewBuilder() {
-            override fun createStructureViewModel(editor: Editor?): StructureViewModel =
-                KrakenStructureViewModel(psiFile, editor)
+            override fun createStructureViewModel(editor: Editor?): StructureViewModel = KrakenStructureViewModel(psiFile, editor)
         }
     }
 }
@@ -45,12 +44,12 @@ class KrakenStructureViewModel(file: KrakenFile, editor: Editor?) :
 
     override fun isAlwaysShowsPlus(element: StructureViewTreeElement): Boolean = false
 
-    override fun isAlwaysLeaf(element: StructureViewTreeElement): Boolean =
-        element.value !is KrakenFile
+    override fun isAlwaysLeaf(element: StructureViewTreeElement): Boolean = element.value !is KrakenFile
 }
 
 class KrakenStructureViewElement(private val element: PsiElement) :
-    StructureViewTreeElement, SortableTreeElement {
+    StructureViewTreeElement,
+    SortableTreeElement {
 
     override fun getValue(): Any = element
 
@@ -64,8 +63,7 @@ class KrakenStructureViewElement(private val element: PsiElement) :
 
     override fun getAlphaSortKey(): String = presentableText()
 
-    override fun getPresentation(): ItemPresentation =
-        PresentationData(presentableText(), typeText(), icon(), null)
+    override fun getPresentation(): ItemPresentation = PresentationData(presentableText(), typeText(), icon(), null)
 
     override fun getChildren(): Array<TreeElement> {
         if (element !is KrakenFile) return TreeElement.EMPTY_ARRAY
@@ -75,7 +73,7 @@ class KrakenStructureViewElement(private val element: PsiElement) :
         items.addAll(PsiTreeUtil.findChildrenOfType(element, KrakenDimensionDecl::class.java))
         items.addAll(KrakenPsiUtil.contextDecls(element))
         items.addAll(
-            PsiTreeUtil.collectElements(element) { it.node?.elementType == KrakenTypes.FUNCTION_DECL }
+            PsiTreeUtil.collectElements(element) { it.node?.elementType == KrakenTypes.FUNCTION_DECL },
         )
         return items
             .sortedBy { it.textOffset }
@@ -85,12 +83,18 @@ class KrakenStructureViewElement(private val element: PsiElement) :
 
     private fun presentableText(): String = when {
         element is KrakenFile -> element.name
+
         element is KrakenRuleDecl -> element.name ?: "Rule"
+
         element is KrakenEntryPointDecl -> element.name ?: "EntryPoint"
+
         element is KrakenDimensionDecl -> element.dimensionName ?: "Dimension"
+
         element.node?.elementType == KrakenTypes.CONTEXT_DECL ->
             KrakenPsiUtil.contextName(element) ?: "Context"
+
         element.node?.elementType == KrakenTypes.FUNCTION_DECL -> functionName()
+
         else -> element.text.take(30)
     }
 
@@ -117,8 +121,11 @@ class KrakenStructureViewElement(private val element: PsiElement) :
         var node = element.node.firstChildNode
         var seenKw = false
         while (node != null) {
-            if (node.elementType == KrakenTypes.FUNCTION_KW) seenKw = true
-            else if (seenKw && node.elementType in KrakenPsiUtil.ID_TOKENS) return node.text
+            if (node.elementType == KrakenTypes.FUNCTION_KW) {
+                seenKw = true
+            } else if (seenKw && node.elementType in KrakenPsiUtil.ID_TOKENS) {
+                return node.text
+            }
             node = node.treeNext
         }
         return "Function"

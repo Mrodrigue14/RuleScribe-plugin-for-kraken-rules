@@ -63,6 +63,7 @@ Every change is checked automatically in GitHub Actions:
 
 | Tool | What it checks | When |
 | ---- | -------------- | ---- |
+| **ktlint** | Kotlin style, blocking: the build fails on a deviation | push, PR |
 | **CodeQL** | Static analysis (SAST) of the Kotlin/Java code, `security-and-quality` suite | push, PR, weekly |
 | **Qodana** | JetBrains static analysis, aware of the IntelliJ Platform APIs | push to `main`, weekly |
 | **poutine** (BoostSecurity) | CI/CD pipeline misconfigurations — injection, unsafe triggers, supply-chain | push, PR, weekly |

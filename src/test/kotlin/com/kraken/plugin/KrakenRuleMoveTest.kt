@@ -19,28 +19,31 @@ import com.kraken.plugin.refactoring.KrakenDeclarationMover
  */
 class KrakenRuleMoveTest : BasePlatformTestCase() {
 
-    private fun file(name: String, text: String): KrakenFile =
-        myFixture.addFileToProject(name, text) as KrakenFile
+    private fun file(name: String, text: String): KrakenFile = myFixture.addFileToProject(name, text) as KrakenFile
 
-    private fun ruleIn(file: KrakenFile, name: String): KrakenRuleDecl =
-        PsiTreeUtil.findChildrenOfType(file, KrakenRuleDecl::class.java).first { it.name == name }
+    private fun ruleIn(file: KrakenFile, name: String): KrakenRuleDecl = PsiTreeUtil.findChildrenOfType(file, KrakenRuleDecl::class.java).first { it.name == name }
 
-    private fun refIn(file: KrakenFile, name: String): KrakenRuleRef =
-        PsiTreeUtil.findChildrenOfType(file, KrakenRuleRef::class.java).first { it.ruleName == name }
+    private fun refIn(file: KrakenFile, name: String): KrakenRuleRef = PsiTreeUtil.findChildrenOfType(file, KrakenRuleRef::class.java).first { it.ruleName == name }
 
     private fun assertParses(vararg files: KrakenFile) {
         for (f in files) {
             val errors = PsiTreeUtil.findChildrenOfType(f, PsiErrorElement::class.java)
-            assertEquals("${f.name} ne parse plus :\n${f.text}", emptyList<String>(),
-                errors.map { it.errorDescription })
+            assertEquals(
+                "${f.name} ne parse plus :\n${f.text}",
+                emptyList<String>(),
+                errors.map { it.errorDescription },
+            )
         }
     }
 
     fun testRuleLandsInTheTargetAndLeavesTheSource() {
-        val a = file("a.rules", """
+        val a = file(
+            "a.rules",
+            """
             Namespace Policy
             Rule "Moved" On Policy.state { Assert true }
-        """.trimIndent())
+            """.trimIndent(),
+        )
         val b = file("b.rules", "Namespace Policy")
 
         WriteCommandAction.runWriteCommandAction(project) { KrakenDeclarationMover.move(project, ruleIn(a, "Moved"), b) }
@@ -52,15 +55,21 @@ class KrakenRuleMoveTest : BasePlatformTestCase() {
 
     /** Le point qui compte : la référence n'a pas bougé et résout toujours. */
     fun testReferencesStillResolveWhenTheDestinationIsVisible() {
-        val a = file("a.rules", """
+        val a = file(
+            "a.rules",
+            """
             Namespace Policy
             Rule "Moved" On Policy.state { Assert true }
-        """.trimIndent())
+            """.trimIndent(),
+        )
         val b = file("b.rules", "Namespace Policy")
-        val ep = file("ep.rules", """
+        val ep = file(
+            "ep.rules",
+            """
             Namespace Policy
             EntryPoint "Validation" { "Moved" }
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         assertNotNull("résout avant", refIn(ep, "Moved").reference.resolve())
         WriteCommandAction.runWriteCommandAction(project) { KrakenDeclarationMover.move(project, ruleIn(a, "Moved"), b) }
@@ -74,15 +83,21 @@ class KrakenRuleMoveTest : BasePlatformTestCase() {
      * plus rien.
      */
     fun testReferencesStopResolvingWhenTheDestinationIsOutOfSight() {
-        val a = file("a.rules", """
+        val a = file(
+            "a.rules",
+            """
             Namespace Policy
             Rule "Moved" On Policy.state { Assert true }
-        """.trimIndent())
+            """.trimIndent(),
+        )
         val far = file("far.rules", "Namespace Unrelated")
-        val ep = file("ep.rules", """
+        val ep = file(
+            "ep.rules",
+            """
             Namespace Policy
             EntryPoint "Validation" { "Moved" }
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         assertNotNull("résout avant", refIn(ep, "Moved").reference.resolve())
         WriteCommandAction.runWriteCommandAction(project) { KrakenDeclarationMover.move(project, ruleIn(a, "Moved"), far) }
@@ -92,10 +107,13 @@ class KrakenRuleMoveTest : BasePlatformTestCase() {
 
     /** Après déplacement, l'index de stubs doit retrouver la règle chez elle. */
     fun testTheStubIndexFindsTheRuleInItsNewHome() {
-        val a = file("a.rules", """
+        val a = file(
+            "a.rules",
+            """
             Namespace Policy
             Rule "Moved" On Policy.state { Assert true }
-        """.trimIndent())
+            """.trimIndent(),
+        )
         val b = file("b.rules", "Namespace Policy")
 
         WriteCommandAction.runWriteCommandAction(project) { KrakenDeclarationMover.move(project, ruleIn(a, "Moved"), b) }
@@ -107,10 +125,13 @@ class KrakenRuleMoveTest : BasePlatformTestCase() {
 
     /** Déplacer vers son propre fichier ne fait rien. */
     fun testMovingIntoTheSameFileIsARefusal() {
-        val a = file("a.rules", """
+        val a = file(
+            "a.rules",
+            """
             Namespace Policy
             Rule "Stay" On Policy.state { Assert true }
-        """.trimIndent())
+            """.trimIndent(),
+        )
         val before = a.text
         WriteCommandAction.runWriteCommandAction(project) { KrakenDeclarationMover.move(project, ruleIn(a, "Stay"), a) }
         assertEquals(before, a.text)

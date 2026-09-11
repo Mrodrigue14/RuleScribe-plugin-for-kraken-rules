@@ -21,7 +21,9 @@ import com.kraken.plugin.parser.KrakenTypes
  * Le nom seul ne suffit pas à identifier une fonction : le moteur l'indexe par
  * `(nom, nombre de paramètres)` — voir `FunctionHeader`. D'où [arity].
  */
-class KrakenFunctionDecl(node: ASTNode) : ASTWrapperPsiElement(node), PsiNameIdentifierOwner {
+class KrakenFunctionDecl(node: ASTNode) :
+    ASTWrapperPsiElement(node),
+    PsiNameIdentifierOwner {
 
     override fun getNameIdentifier(): PsiElement? = nameLeaf()?.psi
 
@@ -117,9 +119,8 @@ class KrakenFunctionDecl(node: ASTNode) : ASTWrapperPsiElement(node), PsiNameIde
     }
 
     /** Commentaire de doc qui précède immédiatement la déclaration, s'il y en a un. */
-    fun docComment(): PsiElement? =
-        PsiTreeUtil.skipWhitespacesBackward(this)
-            ?.takeIf { it.node.elementType == KrakenTypes.DOC_COMMENT }
+    fun docComment(): PsiElement? = PsiTreeUtil.skipWhitespacesBackward(this)
+        ?.takeIf { it.node.elementType == KrakenTypes.DOC_COMMENT }
 
     override fun getPresentation(): ItemPresentation = KrakenPresentations.of(
         this,
@@ -154,7 +155,9 @@ class KrakenFunctionDecl(node: ASTNode) : ASTWrapperPsiElement(node), PsiNameIde
             if (child.psi !is com.intellij.psi.PsiWhiteSpace &&
                 child.psi !is com.intellij.psi.PsiComment &&
                 child.textLength > 0
-            ) return child
+            ) {
+                return child
+            }
             child = child.treeNext
         }
         return null

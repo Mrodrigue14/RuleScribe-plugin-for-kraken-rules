@@ -33,8 +33,10 @@ class KrakenFunctionAnnotator : Annotator {
         val attribute = when {
             KrakenFunctionCatalog.find(name, arity) != null ->
                 KrakenSyntaxHighlighter.NATIVE_FUNCTION
+
             KrakenPsiUtil.findFunctionVisible(element, name, arity) != null ->
                 KrakenSyntaxHighlighter.DECLARED_FUNCTION
+
             // Appel non résolu : on ne colore pas. L'inspection dédiée le
             // signale, et teindre un nom inconnu en « fonction » serait mentir.
             else -> return

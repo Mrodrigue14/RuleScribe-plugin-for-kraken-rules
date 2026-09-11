@@ -16,38 +16,48 @@ import com.kraken.plugin.refactoring.KrakenMoveConflicts
  */
 class KrakenMoveConflictsTest : BasePlatformTestCase() {
 
-    private fun file(name: String, text: String): KrakenFile =
-        myFixture.addFileToProject(name, text) as KrakenFile
+    private fun file(name: String, text: String): KrakenFile = myFixture.addFileToProject(name, text) as KrakenFile
 
-    private fun ruleIn(file: KrakenFile, name: String): KrakenRuleDecl =
-        PsiTreeUtil.findChildrenOfType(file, KrakenRuleDecl::class.java).first { it.name == name }
+    private fun ruleIn(file: KrakenFile, name: String): KrakenRuleDecl = PsiTreeUtil.findChildrenOfType(file, KrakenRuleDecl::class.java).first { it.name == name }
 
     /** Même namespace : rien ne peut casser. */
     fun testMovingWithinTheSameNamespaceIsSafe() {
-        val a = file("a.rules", """
+        val a = file(
+            "a.rules",
+            """
             Namespace Policy
             Rule "Shared" On Policy.state { Assert true }
-        """.trimIndent())
+            """.trimIndent(),
+        )
         val b = file("b.rules", "Namespace Policy")
-        file("ep.rules", """
+        file(
+            "ep.rules",
+            """
             Namespace Policy
             EntryPoint "Validation" { "Shared" }
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         assertEquals(emptyList<Any>(), KrakenMoveConflicts.brokenBy(ruleIn(a, "Shared"), b))
     }
 
     /** Le cas qui motive l'analyse : la destination sort de la portée du référent. */
     fun testMovingOutOfSightIsReported() {
-        val a = file("a.rules", """
+        val a = file(
+            "a.rules",
+            """
             Namespace Policy
             Rule "Shared" On Policy.state { Assert true }
-        """.trimIndent())
+            """.trimIndent(),
+        )
         val far = file("far.rules", "Namespace Unrelated")
-        file("ep.rules", """
+        file(
+            "ep.rules",
+            """
             Namespace Policy
             EntryPoint "Validation" { "Shared" }
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val broken = KrakenMoveConflicts.brokenBy(ruleIn(a, "Shared"), far)
         assertEquals("la référence de l'EntryPoint doit être signalée", 1, broken.size)
@@ -56,16 +66,22 @@ class KrakenMoveConflictsTest : BasePlatformTestCase() {
 
     /** Un `Include` vers la destination suffit à préserver la résolution. */
     fun testIncludingTheDestinationKeepsItResolving() {
-        val a = file("a.rules", """
+        val a = file(
+            "a.rules",
+            """
             Namespace Policy
             Rule "Shared" On Policy.state { Assert true }
-        """.trimIndent())
+            """.trimIndent(),
+        )
         val other = file("other.rules", "Namespace Base")
-        file("ep.rules", """
+        file(
+            "ep.rules",
+            """
             Namespace Policy
             Include Base
             EntryPoint "Validation" { "Shared" }
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         assertEquals(emptyList<Any>(), KrakenMoveConflicts.brokenBy(ruleIn(a, "Shared"), other))
     }
@@ -75,16 +91,22 @@ class KrakenMoveConflictsTest : BasePlatformTestCase() {
      * le namespace de destination reste valide après le déplacement.
      */
     fun testAnImportNamingTheDestinationKeepsItResolving() {
-        val a = file("a.rules", """
+        val a = file(
+            "a.rules",
+            """
             Namespace Policy
             Rule "Shared" On Policy.state { Assert true }
-        """.trimIndent())
+            """.trimIndent(),
+        )
         val other = file("other.rules", "Namespace Base")
-        file("ep.rules", """
+        file(
+            "ep.rules",
+            """
             Namespace Consumer
             Import Rule "Shared" From Base
             EntryPoint "Validation" { "Shared" }
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         assertEquals(emptyList<Any>(), KrakenMoveConflicts.brokenBy(ruleIn(a, "Shared"), other))
     }
@@ -95,16 +117,22 @@ class KrakenMoveConflictsTest : BasePlatformTestCase() {
      * contient plus la règle.
      */
     fun testAnImportNamingTheOldNamespaceBreaks() {
-        val a = file("a.rules", """
+        val a = file(
+            "a.rules",
+            """
             Namespace Policy
             Rule "Shared" On Policy.state { Assert true }
-        """.trimIndent())
+            """.trimIndent(),
+        )
         val other = file("other.rules", "Namespace Base")
-        file("ep.rules", """
+        file(
+            "ep.rules",
+            """
             Namespace Consumer
             Import Rule "Shared" From Policy
             EntryPoint "Validation" { "Shared" }
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val broken = KrakenMoveConflicts.brokenBy(ruleIn(a, "Shared"), other)
         assertEquals("l'import pointe vers l'ancien namespace : $broken", 1, broken.size)
@@ -112,10 +140,13 @@ class KrakenMoveConflictsTest : BasePlatformTestCase() {
 
     /** Une règle que personne ne référence se déplace sans risque. */
     fun testAnUnreferencedRuleHasNoConflicts() {
-        val a = file("a.rules", """
+        val a = file(
+            "a.rules",
+            """
             Namespace Policy
             Rule "Lonely" On Policy.state { Assert true }
-        """.trimIndent())
+            """.trimIndent(),
+        )
         val far = file("far.rules", "Namespace Unrelated")
 
         assertEquals(emptyList<Any>(), KrakenMoveConflicts.brokenBy(ruleIn(a, "Lonely"), far))

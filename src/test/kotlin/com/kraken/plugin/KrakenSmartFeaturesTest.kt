@@ -1,13 +1,13 @@
 package com.kraken.plugin
 
 import com.intellij.codeInsight.completion.CompletionType
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.documentation.KrakenDocumentationProvider
 import com.kraken.plugin.inspection.KrakenDuplicateRuleInspection
 import com.kraken.plugin.inspection.KrakenUnknownContextInspection
 import com.kraken.plugin.inspection.KrakenUnusedRuleInspection
 import com.kraken.plugin.psi.KrakenRuleDecl
-import com.intellij.psi.util.PsiTreeUtil
 
 class KrakenSmartFeaturesTest : BasePlatformTestCase() {
 
@@ -25,7 +25,7 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
             }
 
             Rule "r" On Policy.<caret>
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.complete(CompletionType.BASIC)
         val strings = myFixture.lookupElementStrings.orEmpty()
@@ -46,7 +46,7 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
             Rule "r" On Policy.state {
                 When Policy.<caret>
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.complete(CompletionType.BASIC)
         val strings = myFixture.lookupElementStrings.orEmpty()
@@ -65,12 +65,12 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
             Rule "r" On Nowhere.field {
                 Assert true
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val highlights = myFixture.doHighlighting()
         assertTrue(
             "Expected unknown context problem, got: ${highlights.map { it.description }}",
-            highlights.any { it.description == "[kvr027] Missing context definition with name 'Nowhere'." }
+            highlights.any { it.description == "[kvr027] Missing context definition with name 'Nowhere'." },
         )
     }
 
@@ -96,7 +96,7 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
             Rule "Dimensioned" On Policy.c {
                 Assert false
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val highlights = myFixture.doHighlighting()
         val duplicates = highlights.filter { it.description?.startsWith("[kvr053]") == true }
@@ -119,7 +119,7 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 "Used"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val highlights = myFixture.doHighlighting()
         assertTrue(highlights.any { it.description?.startsWith("Rule 'Dead' is not referenced") == true })
@@ -134,7 +134,7 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
                 Description "Une règle documentée"
                 Assert state != null
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val rule = PsiTreeUtil.findChildrenOfType(myFixture.file, KrakenRuleDecl::class.java).first()
         val doc = KrakenDocumentationProvider().generateDoc(rule, null)
@@ -152,7 +152,7 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
             Rule "OtherRule" On Policy.x {
                 Assert true
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.configureByText(
             "test.rules",
@@ -162,7 +162,7 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 "OtherRule<caret>"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val reference = myFixture.file.findReferenceAt(myFixture.caretOffset)
         assertNotNull(reference)

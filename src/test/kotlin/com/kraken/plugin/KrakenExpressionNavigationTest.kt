@@ -45,22 +45,20 @@ class KrakenExpressionNavigationTest : BasePlatformTestCase() {
         Rule "Under test" On Policy.policyCd {
             $body
         }
-        """.trimIndent()
+        """.trimIndent(),
     )
 
-    private fun ref(name: String): KrakenRefExpr =
-        PsiTreeUtil.collectElementsOfType(myFixture.file, KrakenRefExpr::class.java)
-            .first { it.referenceName == name }
+    private fun ref(name: String): KrakenRefExpr = PsiTreeUtil.collectElementsOfType(myFixture.file, KrakenRefExpr::class.java)
+        .first { it.referenceName == name }
 
-    private fun segment(name: String): KrakenPathSegment =
-        PsiTreeUtil.collectElementsOfType(myFixture.file, KrakenPathSegment::class.java)
-            .first { it.segmentName == name }
+    private fun segment(name: String): KrakenPathSegment = PsiTreeUtil.collectElementsOfType(myFixture.file, KrakenPathSegment::class.java)
+        .first { it.segmentName == name }
 
     private fun assertResolvesTo(target: PsiElement?, expectedText: String) {
         assertNotNull("Expected the reference to resolve", target)
         assertTrue(
             "Resolved to \"${target!!.text.trim()}\", expected something containing \"$expectedText\"",
-            target.text.contains(expectedText)
+            target.text.contains(expectedText),
         )
     }
 
@@ -141,7 +139,7 @@ class KrakenExpressionNavigationTest : BasePlatformTestCase() {
             Rule "Under test" On Policy.policyCd {
                 Assert AddressInfo.<caret>
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val suggestions = myFixture.completeBasic()?.map { it.lookupString }.orEmpty()
         assertTrue("champ du contexte résolu", suggestions.contains("postalCode"))

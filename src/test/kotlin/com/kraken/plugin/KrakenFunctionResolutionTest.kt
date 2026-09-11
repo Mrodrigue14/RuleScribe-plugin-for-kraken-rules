@@ -16,8 +16,7 @@ import com.kraken.plugin.psi.KrakenFunctionDecl
  */
 class KrakenFunctionResolutionTest : BasePlatformTestCase() {
 
-    private inline fun <reified T : com.intellij.psi.PsiElement> allOf(): List<T> =
-        PsiTreeUtil.findChildrenOfType(myFixture.file, T::class.java).toList()
+    private inline fun <reified T : com.intellij.psi.PsiElement> allOf(): List<T> = PsiTreeUtil.findChildrenOfType(myFixture.file, T::class.java).toList()
 
     // ------------------------------------------------------------------
     // Catalogue natif
@@ -28,7 +27,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
         assertEquals(9, KrakenFunctionCatalog.libraries.size)
         assertTrue(
             "Chaque fonction porte une description",
-            KrakenFunctionCatalog.functions.all { !it.description.isNullOrBlank() }
+            KrakenFunctionCatalog.functions.all { !it.description.isNullOrBlank() },
         )
     }
 
@@ -60,7 +59,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             Function Limits(Coverage[] coverages) : Number[] {
                 coverages.limitAmount
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val declaration = allOf<KrakenFunctionDecl>().single()
@@ -77,7 +76,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             "signature.rules",
             """
             Function GetPolicyCd(Policy) : String
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val declaration = allOf<KrakenFunctionDecl>().single()
@@ -93,7 +92,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             Function <T is Coverage> First(T[] items) : T {
                 items[0]
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         assertEquals("First", allOf<KrakenFunctionDecl>().single().name)
@@ -106,7 +105,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             Rule "Uses functions" On Policy.limit {
                 Assert Round(Sum(coverages.limitAmount), 2) > 0
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val calls = allOf<KrakenFunctionCall>().associateBy { it.functionName }
@@ -123,7 +122,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             Rule "Past date" On Policy.effectiveDate {
                 Assert effectiveDate < Today()
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val call = allOf<KrakenFunctionCall>().single()
@@ -147,7 +146,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             Rule "Uses plan" On Policy.state {
                 Assert Plan(packageDetails) != null
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val target = allOf<KrakenFunctionCall>().single().reference?.resolve()
@@ -166,7 +165,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             Rule "Wrong arity" On Policy.state {
                 Assert Plan(a, b) != null
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val call = allOf<KrakenFunctionCall>().single()
@@ -183,7 +182,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             Function Hidden(Policy p) : String {
                 p.policyCd
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.configureByText(
             "consumer.rules",
@@ -193,7 +192,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             Rule "Cannot see it" On Policy.state {
                 Assert Hidden(policy) != null
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val call = allOf<KrakenFunctionCall>().single()
@@ -218,7 +217,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             Rule "Calls a homonym" On Policy.state {
                 Assert Plan(details) != null
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         // Un namespace explicite est nécessaire : un fichier qui n'en déclare
         // aucun est visible depuis partout, et l'appel « Elsewhere » compterait
@@ -239,7 +238,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             Rule "Second caller" On Policy.term {
                 Assert Plan(other) != null
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val declaration = allOf<KrakenFunctionDecl>().single()
@@ -249,7 +248,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
         assertEquals(
             "2 usages",
             com.kraken.plugin.navigation.KrakenReferencesCodeVisionProvider()
-                .getHint(declaration, file)
+                .getHint(declaration, file),
         )
     }
 
@@ -262,7 +261,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             Function Shared(Policy p) : String {
                 p.policyCd
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.configureByText(
             "consumer.rules",
@@ -274,7 +273,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             Rule "Sees it" On Policy.state {
                 Assert Shared(policy) != null
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val target = allOf<KrakenFunctionCall>().single().reference?.resolve()

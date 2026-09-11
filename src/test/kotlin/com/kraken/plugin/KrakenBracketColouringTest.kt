@@ -25,11 +25,9 @@ class KrakenBracketColouringTest : BasePlatformTestCase() {
             }
     }
 
-    private fun depthsOf(source: String): List<String> =
-        painted(source).filter { it.second != UNMATCHED }.map { it.second }
+    private fun depthsOf(source: String): List<String> = painted(source).filter { it.second != UNMATCHED }.map { it.second }
 
-    private fun unmatchedIn(source: String): List<String> =
-        painted(source).filter { it.second == UNMATCHED }.map { it.first }
+    private fun unmatchedIn(source: String): List<String> = painted(source).filter { it.second == UNMATCHED }.map { it.first }
 
     fun testNestingCyclesThroughTheDepthColours() {
         val depths = depthsOf(
@@ -37,12 +35,12 @@ class KrakenBracketColouringTest : BasePlatformTestCase() {
             Rule "R" On Policy.state {
                 Assert Round(Sum(a)) > 0
             }
-            """.trimIndent()
+            """.trimIndent(),
         ).distinct()
         // `{` niveau 0, `(` de Round niveau 1, `(` de Sum niveau 2.
         assertEquals(
             listOf(DEPTH[0], DEPTH[1], DEPTH[2]).sorted(),
-            depths.sorted()
+            depths.sorted(),
         )
     }
 
@@ -53,7 +51,7 @@ class KrakenBracketColouringTest : BasePlatformTestCase() {
             Rule "R" On Policy.state {
                 Assert Round(Sum(Count(a))) > 0
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         assertTrue("le 4e niveau reprend la 1re teinte", depths.count { it == DEPTH[0] } >= 4)
     }
@@ -66,8 +64,8 @@ class KrakenBracketColouringTest : BasePlatformTestCase() {
                 Rule "R" On Policy.state {
                     Assert Count(Coverage[limit > 0]) = 1
                 }
-                """.trimIndent()
-            )
+                """.trimIndent(),
+            ),
         )
     }
 
@@ -80,8 +78,8 @@ class KrakenBracketColouringTest : BasePlatformTestCase() {
                 Rule "R" On Policy.state {
                     Assert Count(Coverage?[limit > 0]) = 1
                 }
-                """.trimIndent()
-            )
+                """.trimIndent(),
+            ),
         )
     }
 
@@ -97,8 +95,8 @@ class KrakenBracketColouringTest : BasePlatformTestCase() {
                 Rule "R" On Policy.state {
                     Assert a) > 0
                 }
-                """.trimIndent()
-            )
+                """.trimIndent(),
+            ),
         )
     }
 
@@ -113,7 +111,7 @@ class KrakenBracketColouringTest : BasePlatformTestCase() {
             Rule "R" On Policy.state {
                 Assert Round(a] > 0
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         assertTrue("la fermante dépareillée est signalée : $unmatched", unmatched.contains("]"))
         assertTrue("l'ouvrante restée seule aussi : $unmatched", unmatched.contains("("))

@@ -17,25 +17,23 @@ import com.kraken.plugin.psi.KrakenRuleDecl
  */
 class KrakenDuplicateRuleInspection : LocalInspectionTool() {
 
-    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor =
-        object : PsiElementVisitor() {
-            override fun visitElement(element: PsiElement) {
-                if (element !is KrakenRuleDecl) return
-                val name = element.name ?: return
-                if (hasAnnotations(element)) return
-                val duplicates = KrakenPsiUtil.findRulesVisible(element)
-                    .filter { it.name == name && !hasAnnotations(it) }
-                if (duplicates.size > 1) {
-                    holder.registerProblem(
-                        element.nameIdentifier ?: element,
-                        KrakenDiagnostic.DUPLICATE_RULE_VERSION.format(),
-                        ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
-                        KrakenAddDimensionAnnotationFix()
-                    )
-                }
+    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : PsiElementVisitor() {
+        override fun visitElement(element: PsiElement) {
+            if (element !is KrakenRuleDecl) return
+            val name = element.name ?: return
+            if (hasAnnotations(element)) return
+            val duplicates = KrakenPsiUtil.findRulesVisible(element)
+                .filter { it.name == name && !hasAnnotations(it) }
+            if (duplicates.size > 1) {
+                holder.registerProblem(
+                    element.nameIdentifier ?: element,
+                    KrakenDiagnostic.DUPLICATE_RULE_VERSION.format(),
+                    ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
+                    KrakenAddDimensionAnnotationFix(),
+                )
             }
         }
+    }
 
-    private fun hasAnnotations(rule: KrakenRuleDecl): Boolean =
-        rule.node.findChildByType(KrakenTypes.ANNOTATION) != null
+    private fun hasAnnotations(rule: KrakenRuleDecl): Boolean = rule.node.findChildByType(KrakenTypes.ANNOTATION) != null
 }

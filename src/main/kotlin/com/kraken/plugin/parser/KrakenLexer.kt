@@ -46,26 +46,37 @@ class KrakenLexer : LexerBase() {
                 tokenEnd = scanWhile(tokenStart + 1) { it.isWhitespace() }
                 currentToken = TokenType.WHITE_SPACE
             }
+
             c == '/' && peek(1) == '/' -> {
                 tokenEnd = scanWhile(tokenStart + 2) { it != '\n' && it != '\r' }
                 currentToken = KrakenTypes.LINE_COMMENT
             }
+
             c == '/' && peek(1) == '*' -> scanBlockComment()
+
             c == '"' || c == '\'' -> scanString(c)
+
             c.isDigit() -> scanNumber()
+
             c.isLetter() || c == '_' -> scanWord()
+
             c == '?' && peek(1) == '.' -> twoCharToken(KrakenTypes.QDOT)
+
             c == '?' && peek(1) == '[' -> twoCharToken(KrakenTypes.QLBRACKET)
+
             c == '*' && peek(1) == '*' -> twoCharToken(KrakenTypes.OP)
+
             // Avant SINGLE_CHAR_TOKENS, qui rendrait sinon `<` puis `=`
             // séparément : `>=` est un opérateur à part entière côté moteur
             // (`OP_MORE_EQUALS` dans Common.g4), et le découper empêchait
             // toute analyse de la comparaison.
             (c == '>' || c == '<') && peek(1) == '=' -> twoCharToken(KrakenTypes.OP)
+
             // Même raison, en sens inverse : `|` figure dans la table des
             // tokens simples (PIPE), qui est consultée avant les opérateurs à
             // deux caractères. Sans ce cas, `||` se découperait en deux PIPE.
             c == '|' && peek(1) == '|' -> twoCharToken(KrakenTypes.OP)
+
             else -> scanSymbol(c)
         }
     }
@@ -205,7 +216,7 @@ class KrakenLexer : LexerBase() {
                 // `|` seul : token propre, parce qu'il sépare aussi les membres
                 // d'un type union. `||` est capté avant, comme OP à deux
                 // caractères.
-                '|' to KrakenTypes.PIPE
+                '|' to KrakenTypes.PIPE,
             )
         }
 

@@ -43,6 +43,12 @@ jobs:
         with:
           cache-read-only: "false"
 
+      # Le style avant les tests : il coûte quelques secondes et échoue sur un
+      # défaut mécanique, alors que la suite prend des minutes. Autant le dire
+      # tout de suite plutôt qu'après avoir fait attendre.
+      - name: Style Kotlin
+        run: ./gradlew ktlintCheck
+
       # koverVerify lance les tests puis contrôle le plancher de couverture.
       # -PwarningsAsErrors=true : strict en CI, souple en local, pour qu'un
       # avertissement du compilateur ne s'accumule pas dans la branche stable.

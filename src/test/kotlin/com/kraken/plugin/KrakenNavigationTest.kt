@@ -16,7 +16,7 @@ class KrakenNavigationTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 "Target<caret> rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val reference = myFixture.file.findReferenceAt(myFixture.caretOffset)
         assertNotNull("Expected a reference at caret", reference)
@@ -36,7 +36,7 @@ class KrakenNavigationTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 "Old name"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.renameElementAtCaret("New name")
         val text = myFixture.file.text

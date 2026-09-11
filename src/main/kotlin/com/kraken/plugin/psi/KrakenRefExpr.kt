@@ -20,8 +20,7 @@ class KrakenRefExpr(node: ASTNode) : ASTWrapperPsiElement(node) {
     val referenceName: String
         get() = text.trim()
 
-    override fun getReference(): PsiReference? =
-        if (referenceName.isEmpty()) null else KrakenIdentifierReference(this)
+    override fun getReference(): PsiReference? = if (referenceName.isEmpty()) null else KrakenIdentifierReference(this)
 }
 
 /**
@@ -40,8 +39,7 @@ class KrakenPathSegment(node: ASTNode) : ASTWrapperPsiElement(node) {
     val segmentName: String
         get() = node.firstChildNode?.text?.trim().orEmpty()
 
-    override fun getReference(): PsiReference? =
-        if (isCall || segmentName.isEmpty()) null else KrakenPathSegmentReference(this)
+    override fun getReference(): PsiReference? = if (isCall || segmentName.isEmpty()) null else KrakenPathSegmentReference(this)
 
     /**
      * Contexte auquel appartient ce segment, déduit du maillon précédent.
@@ -57,21 +55,18 @@ class KrakenPathSegment(node: ASTNode) : ASTWrapperPsiElement(node) {
     }
 }
 
-class KrakenIdentifierReference(element: KrakenRefExpr) :
-    PsiReferenceBase<KrakenRefExpr>(element, TextRange(0, element.textLength), true) {
+class KrakenIdentifierReference(element: KrakenRefExpr) : PsiReferenceBase<KrakenRefExpr>(element, TextRange(0, element.textLength), true) {
 
-    override fun resolve(): PsiElement? =
-        KrakenScopeResolver.resolve(element, element.referenceName)
+    override fun resolve(): PsiElement? = KrakenScopeResolver.resolve(element, element.referenceName)
 
-    override fun getVariants(): Array<Any> =
-        KrakenScopeResolver.visibleNames(element).toTypedArray()
+    override fun getVariants(): Array<Any> = KrakenScopeResolver.visibleNames(element).toTypedArray()
 }
 
 class KrakenPathSegmentReference(element: KrakenPathSegment) :
     PsiReferenceBase<KrakenPathSegment>(
         element,
         TextRange(0, element.segmentName.length),
-        true
+        true,
     ) {
 
     override fun resolve(): PsiElement? {

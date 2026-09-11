@@ -22,16 +22,25 @@ object KrakenTypeInference {
         if (element == null) return KrakenType.Unknown
         return when (element.node?.elementType) {
             KrakenTypes.EXPRESSION, KrakenTypes.VALUE_CHAIN -> typeOfChain(element)
+
             KrakenTypes.POSTFIX_EXPR -> typeOfPostfix(element)
+
             KrakenTypes.GROUP_EXPR -> typeOf(singleExpressionIn(element))
+
             KrakenTypes.FUNCTION_CALL -> typeOfCall(element as? KrakenFunctionCall)
+
             KrakenTypes.REF_EXPR -> typeOfDeclaration((element as KrakenRefExpr).reference?.resolve())
+
             KrakenTypes.STRING -> KrakenType.String
+
             // Le lexer range les littéraux de date sous NUMBER_LIT : c'est le
             // texte qui les distingue, pas le type de token.
             KrakenTypes.NUMBER_LIT -> literalType(element.text)
+
             KrakenTypes.TRUE_KW, KrakenTypes.FALSE_KW -> KrakenType.Boolean
+
             KrakenTypes.NULL_KW -> KrakenType.Any
+
             else -> KrakenType.Unknown
         }
     }
@@ -60,16 +69,17 @@ object KrakenTypeInference {
     }
 
     /** Enfants AST utiles : ni blancs, ni commentaires. */
-    fun significantChildren(element: PsiElement): List<PsiElement> =
-        element.node.getChildren(null)
-            .filter { it.psi !is com.intellij.psi.PsiWhiteSpace && it.psi !is com.intellij.psi.PsiComment }
-            .map { it.psi }
+    fun significantChildren(element: PsiElement): List<PsiElement> = element.node.getChildren(null)
+        .filter { it.psi !is com.intellij.psi.PsiWhiteSpace && it.psi !is com.intellij.psi.PsiComment }
+        .map { it.psi }
 
     fun isOperator(element: PsiElement): Boolean = when (element.node?.elementType) {
         KrakenTypes.OP, KrakenTypes.PIPE, KrakenTypes.LT, KrakenTypes.GT, KrakenTypes.STAR, KrakenTypes.COLON,
         KrakenTypes.IN_KW, KrakenTypes.IS_KW, KrakenTypes.AND_KW, KrakenTypes.OR_KW,
         KrakenTypes.INSTANCEOF_KW, KrakenTypes.TYPEOF_KW, KrakenTypes.SATISFIES_KW,
-        KrakenTypes.MATCHES_KW -> true
+        KrakenTypes.MATCHES_KW,
+        -> true
+
         else -> false
     }
 
@@ -99,8 +109,7 @@ object KrakenTypeInference {
         return if (bracketed && headType is KrakenType.Array) headType.element else headType
     }
 
-    private fun wrap(type: KrakenType): KrakenType =
-        if (type is KrakenType.Array) type else KrakenType.Array(type)
+    private fun wrap(type: KrakenType): KrakenType = if (type is KrakenType.Array) type else KrakenType.Array(type)
 
     /**
      * Vrai si un maillon **avant** [last] désigne une collection : la chaîne
@@ -115,12 +124,11 @@ object KrakenTypeInference {
     }
 
     /** Segments d'accès appartenant à cette chaîne, sans descendre dans les appels. */
-    private fun directSegments(chain: PsiElement): List<KrakenPathSegment> =
-        significantChildren(chain)
-            .filter { it.node.elementType == KrakenTypes.DOT_ACCESS }
-            .mapNotNull { access ->
-                significantChildren(access).filterIsInstance<KrakenPathSegment>().firstOrNull()
-            }
+    private fun directSegments(chain: PsiElement): List<KrakenPathSegment> = significantChildren(chain)
+        .filter { it.node.elementType == KrakenTypes.DOT_ACCESS }
+        .mapNotNull { access ->
+            significantChildren(access).filterIsInstance<KrakenPathSegment>().firstOrNull()
+        }
 
     private fun typeOfCall(call: KrakenFunctionCall?): KrakenType {
         if (call == null) return KrakenType.Unknown
@@ -140,6 +148,7 @@ object KrakenTypeInference {
         val node = declaration?.node ?: return KrakenType.Unknown
         return when (node.elementType) {
             KrakenTypes.FIELD_DECL -> fieldType(declaration)
+
             // `Child Address` et `Child* Address` : le nom est le contexte, et
             // l'étoile en fait une collection.
             KrakenTypes.CHILD_DECL -> {
@@ -147,11 +156,14 @@ object KrakenTypeInference {
                 val context = KrakenType.Context(name)
                 if (node.findChildByType(KrakenTypes.STAR) != null) KrakenType.Array(context) else context
             }
+
             KrakenTypes.FUNCTION_PARAM ->
                 identifiersOf(declaration).firstOrNull()
                     ?.let { KrakenType.fromDslName(it + arraySuffix(declaration)) }
                     ?: KrakenType.Unknown
+
             KrakenTypes.CONTEXT_DECL -> KrakenType.Unknown
+
             else -> KrakenType.Unknown
         }
     }
@@ -164,11 +176,9 @@ object KrakenTypeInference {
         return if (field.node.findChildByType(KrakenTypes.STAR) != null) KrakenType.Array(base) else base
     }
 
-    private fun arraySuffix(param: PsiElement): String =
-        if (param.node.findChildByType(KrakenTypes.LBRACKET) != null) "[]" else ""
+    private fun arraySuffix(param: PsiElement): String = if (param.node.findChildByType(KrakenTypes.LBRACKET) != null) "[]" else ""
 
-    private fun singleExpressionIn(group: PsiElement): PsiElement? =
-        significantChildren(group).singleOrNull { it.node.elementType == KrakenTypes.EXPRESSION }
+    private fun singleExpressionIn(group: PsiElement): PsiElement? = significantChildren(group).singleOrNull { it.node.elementType == KrakenTypes.EXPRESSION }
 
     /** Identifiants d'une déclaration, en s'arrêtant avant la navigation `: …`. */
     private fun identifiersOf(element: PsiElement): List<String> {
