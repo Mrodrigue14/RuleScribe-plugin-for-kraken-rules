@@ -1,11 +1,11 @@
 package com.kraken.plugin.refactoring
 
-import com.kraken.plugin.lang.KrakenFile
-import com.kraken.plugin.psi.KrakenPsiUtil
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
+import com.kraken.plugin.lang.KrakenFile
 import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.psi.KrakenEpRef
+import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
 import com.kraken.plugin.psi.KrakenRuleRef
 

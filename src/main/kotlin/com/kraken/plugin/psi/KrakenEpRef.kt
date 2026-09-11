@@ -45,19 +45,17 @@ class KrakenEpRef(node: ASTNode) : ASTWrapperPsiElement(node) {
     }
 }
 
-class KrakenEntryPointReference(element: KrakenEpRef, range: TextRange) :
-    PsiReferenceBase<KrakenEpRef>(element, range) {
+class KrakenEntryPointReference(element: KrakenEpRef, range: TextRange) : PsiReferenceBase<KrakenEpRef>(element, range) {
 
     override fun resolve(): PsiElement? {
         val name = element.entryPointName ?: return null
         return KrakenPsiUtil.findEntryPointVisible(element, name)
     }
 
-    override fun getVariants(): Array<Any> =
-        KrakenPsiUtil.findEntryPointsVisible(element)
-            .mapNotNull { it.name }
-            .distinct()
-            .toTypedArray()
+    override fun getVariants(): Array<Any> = KrakenPsiUtil.findEntryPointsVisible(element)
+        .mapNotNull { it.name }
+        .distinct()
+        .toTypedArray()
 }
 
 class KrakenEpRefManipulator : AbstractElementManipulator<KrakenEpRef>() {
@@ -71,6 +69,5 @@ class KrakenEpRefManipulator : AbstractElementManipulator<KrakenEpRef>() {
         return element
     }
 
-    override fun getRangeInElement(element: KrakenEpRef): TextRange =
-        KrakenEpRef.stringRangeInside(element) ?: TextRange(0, element.textLength)
+    override fun getRangeInElement(element: KrakenEpRef): TextRange = KrakenEpRef.stringRangeInside(element) ?: TextRange(0, element.textLength)
 }

@@ -40,37 +40,38 @@ import com.kraken.plugin.psi.KrakenScopeResolver
  */
 class KrakenUnresolvedIdentifierInspection : LocalInspectionTool() {
 
-    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor =
-        object : PsiElementVisitor() {
-            override fun visitElement(element: PsiElement) {
-                if (element !is KrakenRefExpr) return
-                val name = element.referenceName
-                if (name.isEmpty() || name == EXTERNAL_CONTEXT) return
-                if (isCallHead(element)) return
+    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : PsiElementVisitor() {
+        override fun visitElement(element: PsiElement) {
+            if (element !is KrakenRefExpr) return
+            val name = element.referenceName
+            if (name.isEmpty() || name == EXTERNAL_CONTEXT) return
+            if (isCallHead(element)) return
 
-                // Hors d'une règle ou d'une fonction, aucune portée de
-                // référence : rien à affirmer. Il ne suffit pas que la clause
-                // `On` nomme une cible, encore faut-il que ce contexte existe —
-                // sinon aucun champ n'est connu et tout paraîtrait introuvable.
-                val inFunction =
-                    PsiTreeUtil.getParentOfType(element, KrakenFunctionDecl::class.java, false) != null
-                if (!inFunction && !hasResolvableTarget(element)) return
+            // Hors d'une règle ou d'une fonction, aucune portée de
+            // référence : rien à affirmer. Il ne suffit pas que la clause
+            // `On` nomme une cible, encore faut-il que ce contexte existe —
+            // sinon aucun champ n'est connu et tout paraîtrait introuvable.
+            val inFunction =
+                PsiTreeUtil.getParentOfType(element, KrakenFunctionDecl::class.java, false) != null
+            if (!inFunction && !hasResolvableTarget(element)) return
 
-                // Prédicat de filtre dont on ignore le type de l'élément :
-                // portée indéterminée, pas vide. Le moteur y accepte tout
-                // (Scope.isDynamic), typiquement sous le contexte externe.
-                if (KrakenScopeResolver.isInFilterPredicate(element) &&
-                    KrakenScopeResolver.filterContext(element) == null
-                ) return
-
-                if (element.reference?.resolve() != null) return
-                holder.registerProblem(
-                    element,
-                    KrakenDiagnostic.REFERENCE_NOT_FOUND.format(name),
-                    ProblemHighlightType.GENERIC_ERROR_OR_WARNING
-                )
+            // Prédicat de filtre dont on ignore le type de l'élément :
+            // portée indéterminée, pas vide. Le moteur y accepte tout
+            // (Scope.isDynamic), typiquement sous le contexte externe.
+            if (KrakenScopeResolver.isInFilterPredicate(element) &&
+                KrakenScopeResolver.filterContext(element) == null
+            ) {
+                return
             }
+
+            if (element.reference?.resolve() != null) return
+            holder.registerProblem(
+                element,
+                KrakenDiagnostic.REFERENCE_NOT_FOUND.format(name),
+                ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
+            )
         }
+    }
 
     private fun hasResolvableTarget(element: PsiElement): Boolean {
         val target = KrakenScopeResolver.targetContextName(element) ?: return false
@@ -93,11 +94,10 @@ class KrakenUnresolvedIdentifierInspection : LocalInspectionTool() {
      * constante reste un défaut qu'on veut voir.
      */
     @Suppress("KotlinConstantConditions")
-    private fun isCallHead(element: KrakenRefExpr): Boolean =
-        PsiTreeUtil.getParentOfType(element, KrakenFunctionCall::class.java, false)
-            ?.node?.findChildByType(KrakenTypes.CALL_ARGS)
-            ?.let { element.textRange.endOffset <= it.startOffset }
-            ?: false
+    private fun isCallHead(element: KrakenRefExpr): Boolean = PsiTreeUtil.getParentOfType(element, KrakenFunctionCall::class.java, false)
+        ?.node?.findChildByType(KrakenTypes.CALL_ARGS)
+        ?.let { element.textRange.endOffset <= it.startOffset }
+        ?: false
 
     private companion object {
         /**

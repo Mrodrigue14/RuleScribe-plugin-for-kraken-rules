@@ -1,14 +1,14 @@
 package com.kraken.plugin.highlighter
 
+import com.intellij.lang.Language
+import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.fileTypes.SyntaxHighlighter
 import com.intellij.openapi.options.colors.AttributesDescriptor
 import com.intellij.openapi.options.colors.ColorDescriptor
-import com.intellij.lang.Language
-import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.options.colors.ColorSettingsPage
 import com.intellij.openapi.options.colors.RainbowColorSettingsPage
-import com.kraken.plugin.lang.KrakenLanguage
 import com.kraken.plugin.lang.KrakenIcons
+import com.kraken.plugin.lang.KrakenLanguage
 import javax.swing.Icon
 
 /**
@@ -18,13 +18,13 @@ import javax.swing.Icon
  * Elle ne commande que les teintes de profondeur — le rouge des accolades
  * orphelines reste affiché, puisqu'il signale une erreur.
  */
-class KrakenColorSettingsPage : ColorSettingsPage, RainbowColorSettingsPage {
+class KrakenColorSettingsPage :
+    ColorSettingsPage,
+    RainbowColorSettingsPage {
 
-    override fun isRainbowType(type: TextAttributesKey?): Boolean =
-        type in KrakenSyntaxHighlighter.BRACKET_DEPTH
+    override fun isRainbowType(type: TextAttributesKey?): Boolean = type in KrakenSyntaxHighlighter.BRACKET_DEPTH
 
     override fun getLanguage(): Language = KrakenLanguage
-
 
     override fun getIcon(): Icon = KrakenIcons.FILE
 
@@ -116,7 +116,7 @@ class KrakenColorSettingsPage : ColorSettingsPage, RainbowColorSettingsPage {
             AttributesDescriptor("Nesting//Depth 1", KrakenSyntaxHighlighter.BRACKET_DEPTH[0]),
             AttributesDescriptor("Nesting//Depth 2", KrakenSyntaxHighlighter.BRACKET_DEPTH[1]),
             AttributesDescriptor("Nesting//Depth 3", KrakenSyntaxHighlighter.BRACKET_DEPTH[2]),
-            AttributesDescriptor("Nesting//Unmatched bracket", KrakenSyntaxHighlighter.UNMATCHED_BRACKET)
+            AttributesDescriptor("Nesting//Unmatched bracket", KrakenSyntaxHighlighter.UNMATCHED_BRACKET),
         )
     }
 }

@@ -51,42 +51,47 @@ private fun <T> Iterable<T>.afterFirstOccurrenceOf(key: (T) -> String?): List<T>
  * (`kvf004`/`kvf017`), ou une borne elle-même générique (`kvf005`/`kvf018`).
  */
 class KrakenFunctionGenericBoundInspection : LocalInspectionTool() {
-    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor =
-        object : KrakenFunctionDeclVisitor(holder) {
-            override fun check(function: KrakenFunctionDecl, holder: ProblemsHolder) {
-                val bounds = function.genericBounds
-                if (bounds.isEmpty()) return
-                val signature = !function.hasBody()
+    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor(holder) {
+        override fun check(function: KrakenFunctionDecl, holder: ProblemsHolder) {
+            val bounds = function.genericBounds
+            if (bounds.isEmpty()) return
+            val signature = !function.hasBody()
 
-                for (duplicate in bounds.afterFirstOccurrenceOf { it.generic }) {
-                    val diagnostic =
-                        if (signature) KrakenDiagnostic.SIGNATURE_GENERIC_BOUND_DUPLICATE
-                        else KrakenDiagnostic.FUNCTION_GENERIC_BOUND_DUPLICATE
-                    holder.registerProblem(
-                        duplicate.nameElement,
-                        diagnostic.format(duplicate.generic),
-                        ProblemHighlightType.GENERIC_ERROR_OR_WARNING
-                    )
-                }
+            for (duplicate in bounds.afterFirstOccurrenceOf { it.generic }) {
+                val diagnostic =
+                    if (signature) {
+                        KrakenDiagnostic.SIGNATURE_GENERIC_BOUND_DUPLICATE
+                    } else {
+                        KrakenDiagnostic.FUNCTION_GENERIC_BOUND_DUPLICATE
+                    }
+                holder.registerProblem(
+                    duplicate.nameElement,
+                    diagnostic.format(duplicate.generic),
+                    ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
+                )
+            }
 
-                for (bound in bounds) {
-                    val element = bound.boundElement ?: continue
-                    val text = bound.bound ?: continue
-                    // Le moteur résout la borne sans environnement de bornes
-                    // (`resolveTypeOf` à un seul argument) : une borne ne peut
-                    // donc pas se référer à un autre générique.
-                    if (KrakenTypeToken.parse(text)?.isGeneric != true) continue
-                    val diagnostic =
-                        if (signature) KrakenDiagnostic.SIGNATURE_GENERIC_BOUND_IS_ITSELF_GENERIC
-                        else KrakenDiagnostic.FUNCTION_GENERIC_BOUND_IS_ITSELF_GENERIC
-                    holder.registerProblem(
-                        element,
-                        diagnostic.format(text, bound.generic),
-                        ProblemHighlightType.GENERIC_ERROR_OR_WARNING
-                    )
-                }
+            for (bound in bounds) {
+                val element = bound.boundElement ?: continue
+                val text = bound.bound ?: continue
+                // Le moteur résout la borne sans environnement de bornes
+                // (`resolveTypeOf` à un seul argument) : une borne ne peut
+                // donc pas se référer à un autre générique.
+                if (KrakenTypeToken.parse(text)?.isGeneric != true) continue
+                val diagnostic =
+                    if (signature) {
+                        KrakenDiagnostic.SIGNATURE_GENERIC_BOUND_IS_ITSELF_GENERIC
+                    } else {
+                        KrakenDiagnostic.FUNCTION_GENERIC_BOUND_IS_ITSELF_GENERIC
+                    }
+                holder.registerProblem(
+                    element,
+                    diagnostic.format(text, bound.generic),
+                    ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
+                )
             }
         }
+    }
 }
 
 /**
@@ -94,42 +99,51 @@ class KrakenFunctionGenericBoundInspection : LocalInspectionTool() {
  * position de retour (`kvf007`/`kvf020`) comme de paramètre (`kvf010`/`kvf021`).
  */
 class KrakenFunctionTypeUnionGenericMixInspection : LocalInspectionTool() {
-    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor =
-        object : KrakenFunctionDeclVisitor(holder) {
-            override fun check(function: KrakenFunctionDecl, holder: ProblemsHolder) {
-                val signature = !function.hasBody()
+    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor(holder) {
+        override fun check(function: KrakenFunctionDecl, holder: ProblemsHolder) {
+            val signature = !function.hasBody()
 
+            report(
+                holder,
+                function.returnTypeElement,
+                function.returnType,
+                if (signature) {
+                    KrakenDiagnostic.SIGNATURE_RETURN_TYPE_UNION_GENERIC_MIX
+                } else {
+                    KrakenDiagnostic.FUNCTION_RETURN_TYPE_UNION_GENERIC_MIX
+                },
+            )
+            for (parameter in function.parameterList) {
                 report(
-                    holder, function.returnTypeElement, function.returnType,
-                    if (signature) KrakenDiagnostic.SIGNATURE_RETURN_TYPE_UNION_GENERIC_MIX
-                    else KrakenDiagnostic.FUNCTION_RETURN_TYPE_UNION_GENERIC_MIX
+                    holder,
+                    parameter.typeElement,
+                    parameter.type,
+                    if (signature) {
+                        KrakenDiagnostic.SIGNATURE_PARAMETER_TYPE_UNION_GENERIC_MIX
+                    } else {
+                        KrakenDiagnostic.FUNCTION_PARAMETER_TYPE_UNION_GENERIC_MIX
+                    },
                 )
-                for (parameter in function.parameterList) {
-                    report(
-                        holder, parameter.typeElement, parameter.type,
-                        if (signature) KrakenDiagnostic.SIGNATURE_PARAMETER_TYPE_UNION_GENERIC_MIX
-                        else KrakenDiagnostic.FUNCTION_PARAMETER_TYPE_UNION_GENERIC_MIX
-                    )
-                }
-            }
-
-            private fun report(
-                holder: ProblemsHolder,
-                element: PsiElement?,
-                text: String?,
-                diagnostic: KrakenDiagnostic,
-            ) {
-                if (element == null || text == null) return
-                val type = KrakenTypeToken.parse(text) ?: return
-                if (type.isUnion && type.isGeneric) {
-                    holder.registerProblem(
-                        element,
-                        diagnostic.format(text),
-                        ProblemHighlightType.GENERIC_ERROR_OR_WARNING
-                    )
-                }
             }
         }
+
+        private fun report(
+            holder: ProblemsHolder,
+            element: PsiElement?,
+            text: String?,
+            diagnostic: KrakenDiagnostic,
+        ) {
+            if (element == null || text == null) return
+            val type = KrakenTypeToken.parse(text) ?: return
+            if (type.isUnion && type.isGeneric) {
+                holder.registerProblem(
+                    element,
+                    diagnostic.format(text),
+                    ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
+                )
+            }
+        }
+    }
 }
 
 /**
@@ -141,20 +155,19 @@ class KrakenFunctionTypeUnionGenericMixInspection : LocalInspectionTool() {
  * tolérante sur ce point.
  */
 class KrakenFunctionParameterDuplicateInspection : LocalInspectionTool() {
-    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor =
-        object : KrakenFunctionDeclVisitor(holder) {
-            override fun check(function: KrakenFunctionDecl, holder: ProblemsHolder) {
-                if (!function.hasBody()) return
-                for (duplicate in function.parameterList.afterFirstOccurrenceOf { it.name }) {
-                    val element = duplicate.nameElement ?: continue
-                    holder.registerProblem(
-                        element,
-                        KrakenDiagnostic.FUNCTION_PARAMETER_DUPLICATE.format(duplicate.name),
-                        ProblemHighlightType.GENERIC_ERROR_OR_WARNING
-                    )
-                }
+    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor(holder) {
+        override fun check(function: KrakenFunctionDecl, holder: ProblemsHolder) {
+            if (!function.hasBody()) return
+            for (duplicate in function.parameterList.afterFirstOccurrenceOf { it.name }) {
+                val element = duplicate.nameElement ?: continue
+                holder.registerProblem(
+                    element,
+                    KrakenDiagnostic.FUNCTION_PARAMETER_DUPLICATE.format(duplicate.name),
+                    ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
+                )
             }
         }
+    }
 }
 
 /**
@@ -169,18 +182,17 @@ class KrakenFunctionParameterDuplicateInspection : LocalInspectionTool() {
  * ne fait pas cette vérification.
  */
 class KrakenFunctionNativeDuplicateInspection : LocalInspectionTool() {
-    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor =
-        object : KrakenFunctionDeclVisitor(holder) {
-            override fun check(function: KrakenFunctionDecl, holder: ProblemsHolder) {
-                if (!function.hasBody()) return
-                val name = function.name ?: return
-                val anchor = function.nameIdentifier ?: return
-                if (KrakenFunctionCatalog.byName(name).isEmpty()) return
-                holder.registerProblem(
-                    anchor,
-                    KrakenDiagnostic.FUNCTION_NATIVE_DUPLICATE.format(name),
-                    ProblemHighlightType.GENERIC_ERROR_OR_WARNING
-                )
-            }
+    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor(holder) {
+        override fun check(function: KrakenFunctionDecl, holder: ProblemsHolder) {
+            if (!function.hasBody()) return
+            val name = function.name ?: return
+            val anchor = function.nameIdentifier ?: return
+            if (KrakenFunctionCatalog.byName(name).isEmpty()) return
+            holder.registerProblem(
+                anchor,
+                KrakenDiagnostic.FUNCTION_NATIVE_DUPLICATE.format(name),
+                ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
+            )
         }
+    }
 }

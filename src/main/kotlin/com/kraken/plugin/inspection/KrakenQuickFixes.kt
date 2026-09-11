@@ -9,7 +9,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenRuleDecl
 
-/**
+/*
  * Correctifs proposés depuis les inspections.
  *
  * Ils écrivent dans le document plutôt que de construire du PSI : le plugin

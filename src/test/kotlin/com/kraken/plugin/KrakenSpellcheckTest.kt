@@ -29,8 +29,8 @@ class KrakenSpellcheckTest : BasePlatformTestCase() {
                     Assert true
                     Error "code" : "Limit amount is mandatoryy"
                 }
-                """.trimIndent()
-            ).contains("mandatoryy")
+                """.trimIndent(),
+            ).contains("mandatoryy"),
         )
     }
 
@@ -42,8 +42,8 @@ class KrakenSpellcheckTest : BasePlatformTestCase() {
                 Rule "R" On Policy.state {
                     Assert true
                 }
-                """.trimIndent()
-            ).contains("deliberatelly")
+                """.trimIndent(),
+            ).contains("deliberatelly"),
         )
     }
 
@@ -57,8 +57,8 @@ class KrakenSpellcheckTest : BasePlatformTestCase() {
                     Assert true
                     Error "code" : "Limit amount is mandatory"
                 }
-                """.trimIndent()
-            )
+                """.trimIndent(),
+            ),
         )
     }
 
@@ -73,7 +73,7 @@ class KrakenSpellcheckTest : BasePlatformTestCase() {
                 Assert true
                 Error "limitAmountMandatoryy" : "Limit amount is requiredd"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         assertTrue("le message doit être vérifié : $reported", reported.contains("requiredd"))
         assertFalse("le code ne doit pas l'être : $reported", reported.contains("Mandatoryy"))
@@ -96,8 +96,8 @@ class KrakenSpellcheckTest : BasePlatformTestCase() {
                 Rule "AZStateCoverateVisibility" On AutoCOMPCoverage.policyCd {
                     Assert policyCd != null
                 }
-                """.trimIndent()
-            )
+                """.trimIndent(),
+            ),
         )
     }
 }

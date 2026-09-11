@@ -11,7 +11,9 @@ import com.kraken.plugin.parser.KrakenTypes
 /**
  * Déclaration `EntryPoint "nom" { ... }`.
  */
-class KrakenEntryPointDecl(node: ASTNode) : ASTWrapperPsiElement(node), PsiNameIdentifierOwner {
+class KrakenEntryPointDecl(node: ASTNode) :
+    ASTWrapperPsiElement(node),
+    PsiNameIdentifierOwner {
 
     override fun getNameIdentifier(): PsiElement? = nameLeaf()?.psi
 
@@ -35,6 +37,5 @@ class KrakenEntryPointDecl(node: ASTNode) : ASTWrapperPsiElement(node), PsiNameI
 
     override fun getTextOffset(): Int = nameIdentifier?.textOffset ?: super.getTextOffset()
 
-    private fun nameLeaf(): ASTNode? =
-        node.findChildByType(KrakenTypes.EP_NAME)?.findChildByType(KrakenTypes.STRING)
+    private fun nameLeaf(): ASTNode? = node.findChildByType(KrakenTypes.EP_NAME)?.findChildByType(KrakenTypes.STRING)
 }

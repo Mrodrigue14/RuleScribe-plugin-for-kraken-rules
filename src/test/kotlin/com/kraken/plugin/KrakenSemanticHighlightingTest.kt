@@ -38,7 +38,7 @@ class KrakenSemanticHighlightingTest : BasePlatformTestCase() {
             Rule "Under test" On Policy.policyCd {
                 $body
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val text = myFixture.file.text
         val start = text.lastIndexOf(needle)
@@ -58,21 +58,21 @@ class KrakenSemanticHighlightingTest : BasePlatformTestCase() {
     fun testACrossContextNameIsColouredAsAContext() {
         assertEquals(
             listOf(KrakenSyntaxHighlighter.CONTEXT_REFERENCE.externalName),
-            attributesFor("Assert Elsewhere.tag != null", "Elsewhere")
+            attributesFor("Assert Elsewhere.tag != null", "Elsewhere"),
         )
     }
 
     fun testAChildContextResolvesAsAField() {
         assertEquals(
             listOf(KrakenSyntaxHighlighter.FIELD_REFERENCE.externalName),
-            attributesFor("Assert Coverage.limitAmount > 0", "Coverage")
+            attributesFor("Assert Coverage.limitAmount > 0", "Coverage"),
         )
     }
 
     fun testAFieldOfTheTargetContextIsColouredAsAField() {
         assertEquals(
             listOf(KrakenSyntaxHighlighter.FIELD_REFERENCE.externalName),
-            attributesFor("Assert policyCd != null", "policyCd")
+            attributesFor("Assert policyCd != null", "policyCd"),
         )
     }
 
@@ -80,7 +80,7 @@ class KrakenSemanticHighlightingTest : BasePlatformTestCase() {
     fun testALocalVariableIsColouredAsAField() {
         assertEquals(
             listOf(KrakenSyntaxHighlighter.FIELD_REFERENCE.externalName),
-            attributesFor("Assert set x to 1 return x > 0", "x >")
+            attributesFor("Assert set x to 1 return x > 0", "x >"),
         )
     }
 

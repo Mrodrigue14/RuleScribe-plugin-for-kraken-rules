@@ -36,7 +36,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
             Rule "Under test" On Policy.policyCd {
                 $body
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.enableInspections(KrakenUnresolvedIdentifierInspection())
         return myFixture.doHighlighting()
@@ -66,7 +66,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
     fun testArgumentOfACallIsStillChecked() {
         assertEquals(
             listOf("[kvr049] Reference 'absent' not found."),
-            problems("Assert Round(absent) > 0")
+            problems("Assert Round(absent) > 0"),
         )
     }
 
@@ -93,7 +93,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
     fun testExpressionVariablesAreAccepted() {
         assertEquals(
             emptyList<String>(),
-            problems("Assert every c in AddressInfo satisfies c != null")
+            problems("Assert every c in AddressInfo satisfies c != null"),
         )
     }
 
@@ -118,7 +118,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
     fun testFilterPredicateFieldsAreAccepted() {
         assertEquals(
             emptyList<String>(),
-            problems("Assert Count(AddressInfo[postalCode != null]) = 1")
+            problems("Assert Count(AddressInfo[postalCode != null]) = 1"),
         )
     }
 
@@ -129,7 +129,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
     fun testFilterOnADynamicHeadIsNotJudged() {
         assertEquals(
             emptyList<String>(),
-            problems("Assert IsEmpty(context.additional.vehicles[model = policyCd])")
+            problems("Assert IsEmpty(context.additional.vehicles[model = policyCd])"),
         )
     }
 
@@ -148,7 +148,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
             Rule "No such context" On NotAContext.field {
                 Assert anything > 0
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.enableInspections(KrakenUnresolvedIdentifierInspection())
         val reported = myFixture.doHighlighting()
@@ -171,7 +171,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
             Context Policy {
                 String somethingElse
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.addFileToProject(
             "real-policy.rules",
@@ -179,7 +179,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
             Context Policy {
                 Date effectiveDate
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.configureByText(
             "rule.rules",
@@ -187,7 +187,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
             Rule "Effective date past" On Policy.effectiveDate {
                 Assert effectiveDate < Today()
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.enableInspections(KrakenUnresolvedIdentifierInspection())
         val reported = myFixture.doHighlighting()
@@ -196,7 +196,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
         assertEquals(
             "Le champ n'existe que dans l'une des déclarations homonymes",
             emptyList<String>(),
-            reported
+            reported,
         )
     }
 
@@ -209,7 +209,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
             Function Postal(AddressInfo info) : String {
                 info.postalCode
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.enableInspections(KrakenUnresolvedIdentifierInspection())
         val reported = myFixture.doHighlighting()

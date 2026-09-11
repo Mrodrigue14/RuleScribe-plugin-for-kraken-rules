@@ -83,8 +83,7 @@ sealed class KrakenType {
     }
 
     companion object {
-        private fun areNumeric(a: KrakenType, b: KrakenType): kotlin.Boolean =
-            (a == Number || a == Money) && (b == Number || b == Money)
+        private fun areNumeric(a: KrakenType, b: KrakenType): kotlin.Boolean = (a == Number || a == Money) && (b == Number || b == Money)
 
         /**
          * Type KEL d'un nom écrit dans le DSL, qu'il vienne d'un champ de

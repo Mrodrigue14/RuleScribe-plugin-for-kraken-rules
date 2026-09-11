@@ -35,15 +35,14 @@ import com.kraken.plugin.types.KrakenTypeInference
  */
 class KrakenTypeMismatchInspection : LocalInspectionTool() {
 
-    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor =
-        object : PsiElementVisitor() {
-            override fun visitElement(element: PsiElement) {
-                when {
-                    element is KrakenFunctionCall -> checkArguments(element, holder)
-                    element.node?.elementType == KrakenTypes.VALUE_CHAIN -> checkComparison(element, holder)
-                }
+    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : PsiElementVisitor() {
+        override fun visitElement(element: PsiElement) {
+            when {
+                element is KrakenFunctionCall -> checkArguments(element, holder)
+                element.node?.elementType == KrakenTypes.VALUE_CHAIN -> checkComparison(element, holder)
             }
         }
+    }
 
     /** `effectiveDate < createdOn` : Date contre DateTime, refusé par le moteur. */
     private fun checkComparison(chain: PsiElement, holder: ProblemsHolder) {
@@ -68,12 +67,16 @@ class KrakenTypeMismatchInspection : LocalInspectionTool() {
                 // `areVersusAssignable` du moteur.
                 if (leftType.isAssignableFrom(rightType) || rightType.isAssignableFrom(leftType)) continue
                 KrakenDiagnostic.NOT_SAME_TYPE.format(
-                    operator, leftType.displayName(), rightType.displayName()
+                    operator,
+                    leftType.displayName(),
+                    rightType.displayName(),
                 )
             } else {
                 if (leftType.isComparableWith(rightType)) continue
                 KrakenDiagnostic.NOT_COMPARABLE.format(
-                    operator, leftType.displayName(), rightType.displayName()
+                    operator,
+                    leftType.displayName(),
+                    rightType.displayName(),
                 )
             }
             holder.registerProblem(chain, message, ProblemHighlightType.GENERIC_ERROR_OR_WARNING)
@@ -118,9 +121,12 @@ class KrakenTypeMismatchInspection : LocalInspectionTool() {
             holder.registerProblem(
                 argument,
                 KrakenDiagnostic.INCOMPATIBLE_PARAMETER.format(
-                    actual.displayName(), index, call.functionName, expected.displayName()
+                    actual.displayName(),
+                    index,
+                    call.functionName,
+                    expected.displayName(),
                 ),
-                ProblemHighlightType.GENERIC_ERROR_OR_WARNING
+                ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
             )
         }
     }

@@ -82,7 +82,8 @@ internal enum class KrakenDiagnostic(val code: String, private val template: Str
     IMPORT_UNKNOWN_RULE("kbs025", "Cannot import rule ''{0}'' from namespace ''{1}'' to ''{2}'', because rule does not exist."),
     IMPORT_UNKNOWN_NAMESPACE("kbs026", "Cannot import rule ''{0}'' from namespace ''{1}'' to ''{2}'', because namespace does not exist."),
     IMPORT_DUPLICATE("kbs027", "Cannot import rule ''{0}'' from namespace ''{1}'' to ''{2}'', because rule is already defined."),
-    IMPORT_AMBIGUOUS("kbs027", "Cannot import rule ''{0}'' to ''{1}'', because it is imported from multiple namespaces: {2}.");
+    IMPORT_AMBIGUOUS("kbs027", "Cannot import rule ''{0}'' to ''{1}'', because it is imported from multiple namespaces: {2}."),
+    ;
 
     /** Libellé prêt à afficher, préfixé du code du moteur. */
     fun format(vararg args: Any?): String = "[$code] " + MessageFormat.format(template, *args)

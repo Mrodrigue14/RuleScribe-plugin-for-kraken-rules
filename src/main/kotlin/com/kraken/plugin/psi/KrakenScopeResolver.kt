@@ -123,8 +123,7 @@ object KrakenScopeResolver {
     }
 
     /** `Coverage[] coverages` → `coverages`. Le nom est facultatif au parsing. */
-    private fun parameterName(param: com.intellij.lang.ASTNode): String? =
-        identifiersOf(param).takeIf { it.size >= 2 }?.last()
+    private fun parameterName(param: com.intellij.lang.ASTNode): String? = identifiersOf(param).takeIf { it.size >= 2 }?.last()
 
     /** Ce que [resolve] proposerait ici, pour la complétion. */
     fun visibleNames(reference: PsiElement): List<String> {
@@ -184,6 +183,7 @@ object KrakenScopeResolver {
                 when (child.elementType) {
                     KrakenTypes.FIELD_DECL ->
                         if (fieldDeclName(child) == field) return child.psi
+
                     KrakenTypes.CHILD_DECL ->
                         if (childDeclName(child) == field) return child.psi
                 }
@@ -193,7 +193,9 @@ object KrakenScopeResolver {
             for (parent in inherited.getChildren(null)) {
                 if (parent.elementType == KrakenTypes.COMMA ||
                     parent.psi is com.intellij.psi.PsiWhiteSpace
-                ) continue
+                ) {
+                    continue
+                }
                 findField(from, parent.text.trim(), field, depth + 1)?.let { return it }
             }
         }
@@ -220,10 +222,9 @@ object KrakenScopeResolver {
      * On remonte l'arbre : une variable n'est visible que dans l'expression qui
      * la déclare, ce que la structure de l'arbre exprime déjà.
      */
-    private fun declaredVariable(reference: PsiElement, name: String): PsiElement? =
-        variableScopes(reference).firstOrNull { variableNameOf(it) == name }?.let { scope ->
-            variableLeaf(scope)
-        }
+    private fun declaredVariable(reference: PsiElement, name: String): PsiElement? = variableScopes(reference).firstOrNull { variableNameOf(it) == name }?.let { scope ->
+        variableLeaf(scope)
+    }
 
     private fun variableScopes(reference: PsiElement): List<PsiElement> {
         val scopes = mutableListOf<PsiElement>()
@@ -247,8 +248,10 @@ object KrakenScopeResolver {
     /** Le nom déclaré est le premier identifiant après le mot-clé introducteur. */
     private fun variableLeaf(scope: PsiElement): PsiElement? {
         val keywords = setOf(
-            KrakenTypes.SET_KW, KrakenTypes.FOR_KW,
-            KrakenTypes.EVERY_KW, KrakenTypes.SOME_KW
+            KrakenTypes.SET_KW,
+            KrakenTypes.FOR_KW,
+            KrakenTypes.EVERY_KW,
+            KrakenTypes.SOME_KW,
         )
         var child = scope.node.firstChildNode
         var seenKeyword = false
@@ -263,19 +266,15 @@ object KrakenScopeResolver {
         return null
     }
 
-    private fun variableNameOf(scope: PsiElement): String? =
-        variableLeaf(scope)?.text?.trim()?.takeIf { it.isNotEmpty() }
+    private fun variableNameOf(scope: PsiElement): String? = variableLeaf(scope)?.text?.trim()?.takeIf { it.isNotEmpty() }
 
     /** `String policyCd` → `policyCd` : le nom est le second identifiant. */
-    private fun fieldDeclName(field: com.intellij.lang.ASTNode): String? =
-        identifiersOf(field).lastOrNull()
+    private fun fieldDeclName(field: com.intellij.lang.ASTNode): String? = identifiersOf(field).lastOrNull()
 
-    private fun fieldDeclType(field: com.intellij.lang.ASTNode): String? =
-        identifiersOf(field).takeIf { it.size >= 2 }?.first()
+    private fun fieldDeclType(field: com.intellij.lang.ASTNode): String? = identifiersOf(field).takeIf { it.size >= 2 }?.first()
 
     /** `Child Address : path` → `Address`. */
-    private fun childDeclName(child: com.intellij.lang.ASTNode): String? =
-        identifiersOf(child).firstOrNull()
+    private fun childDeclName(child: com.intellij.lang.ASTNode): String? = identifiersOf(child).firstOrNull()
 
     /** Identifiants d'une déclaration, en s'arrêtant avant la navigation `: …`. */
     private fun identifiersOf(node: com.intellij.lang.ASTNode): List<String> {

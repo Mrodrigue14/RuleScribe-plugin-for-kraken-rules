@@ -14,7 +14,7 @@ class KrakenEntryPointRefTest : BasePlatformTestCase() {
             EntryPoint "Nested target" {
                 "Some rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.configureByText(
             "main.rules",
@@ -22,7 +22,7 @@ class KrakenEntryPointRefTest : BasePlatformTestCase() {
             EntryPoint "Main" {
                 EntryPoint "Nested<caret> target"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val reference = myFixture.file.findReferenceAt(myFixture.caretOffset)
         assertNotNull("Expected a reference on nested EntryPoint item", reference)
@@ -39,12 +39,12 @@ class KrakenEntryPointRefTest : BasePlatformTestCase() {
             EntryPoint "Main" {
                 EntryPoint "Missing"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val highlights = myFixture.doHighlighting()
         assertTrue(
             "Expected 'Unknown entry point' problem, got: ${highlights.map { it.description }}",
-            highlights.any { it.description == "[kve002] Included entry point 'Missing' does not exist." }
+            highlights.any { it.description == "[kve002] Included entry point 'Missing' does not exist." },
         )
     }
 
@@ -68,7 +68,7 @@ class KrakenEntryPointRefTest : BasePlatformTestCase() {
                 "Listed rule",
                 <caret>
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.complete(CompletionType.BASIC)
         val strings = myFixture.lookupElementStrings.orEmpty()
@@ -89,7 +89,7 @@ class KrakenEntryPointRefTest : BasePlatformTestCase() {
             EntryPoint "Main" {
                 EntryPoint "Old ep"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.renameElementAtCaret("New ep")
         val text = myFixture.file.text
@@ -116,7 +116,7 @@ class KrakenDeclarationToUsagesTest : com.intellij.testFramework.fixtures.BasePl
             EntryPoint "Validation" {
                 "Policy code mandatory"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.configureByText(
             "rules.rules",
@@ -124,7 +124,7 @@ class KrakenDeclarationToUsagesTest : com.intellij.testFramework.fixtures.BasePl
             Rule "Policy code<caret> mandatory" On Policy.policyCd {
                 Set Mandatory
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val leaf = myFixture.file.findElementAt(myFixture.caretOffset)
@@ -133,7 +133,8 @@ class KrakenDeclarationToUsagesTest : com.intellij.testFramework.fixtures.BasePl
         assertNull("The handler must not shadow the platform's usages popup", targets)
 
         val declaration = com.intellij.psi.util.PsiTreeUtil.findChildrenOfType(
-            myFixture.file, com.kraken.plugin.psi.KrakenRuleDecl::class.java
+            myFixture.file,
+            com.kraken.plugin.psi.KrakenRuleDecl::class.java,
         ).first()
         val usages = myFixture.findUsages(declaration)
         assertEquals(1, usages.size)
@@ -147,7 +148,7 @@ class KrakenDeclarationToUsagesTest : com.intellij.testFramework.fixtures.BasePl
             EntryPoint "Validation" {
                 "Multi word rule name"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.configureByText(
             "rules.rules",
@@ -155,10 +156,11 @@ class KrakenDeclarationToUsagesTest : com.intellij.testFramework.fixtures.BasePl
             Rule "Multi word<caret> rule name" On Policy.x {
                 Assert true
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val declaration = com.intellij.psi.util.PsiTreeUtil.findChildrenOfType(
-            myFixture.file, com.kraken.plugin.psi.KrakenRuleDecl::class.java
+            myFixture.file,
+            com.kraken.plugin.psi.KrakenRuleDecl::class.java,
         ).first()
         val usages = myFixture.findUsages(declaration)
         assertEquals("Expected exactly one usage, got $usages", 1, usages.size)

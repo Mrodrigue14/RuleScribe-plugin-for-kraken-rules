@@ -7,8 +7,8 @@ import com.intellij.icons.AllIcons
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.parser.KrakenTypes
-import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenEntryPointDecl
+import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
 
 /**
@@ -19,7 +19,7 @@ class KrakenRuleUsagesLineMarkerProvider : RelatedItemLineMarkerProvider() {
 
     override fun collectNavigationMarkers(
         element: PsiElement,
-        result: MutableCollection<in RelatedItemLineMarkerInfo<*>>
+        result: MutableCollection<in RelatedItemLineMarkerInfo<*>>,
     ) {
         // Le marqueur est posé sur la feuille STRING du nom (règle ou entry point)
         if (element.node?.elementType != KrakenTypes.STRING) return
@@ -34,6 +34,7 @@ class KrakenRuleUsagesLineMarkerProvider : RelatedItemLineMarkerProvider() {
                     .setTooltipText("Referenced by ${references.size} entry point item(s)")
                 result.add(builder.createLineMarkerInfo(element))
             }
+
             KrakenTypes.EP_NAME -> {
                 val declaration = PsiTreeUtil.getParentOfType(element, KrakenEntryPointDecl::class.java) ?: return
                 if (declaration.name == null) return

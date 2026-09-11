@@ -4,8 +4,8 @@ import com.intellij.lang.documentation.AbstractDocumentationProvider
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.TokenSet
-import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.functions.KrakenFunctionCatalog
+import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenFunctionDecl
 import com.kraken.plugin.psi.KrakenPsiUtil
@@ -27,7 +27,7 @@ class KrakenDocumentationProvider : AbstractDocumentationProvider() {
         editor: com.intellij.openapi.editor.Editor,
         file: com.intellij.psi.PsiFile,
         contextElement: PsiElement?,
-        targetOffset: Int
+        targetOffset: Int,
     ): PsiElement? = contextElement?.let {
         com.intellij.psi.util.PsiTreeUtil.getParentOfType(it, KrakenFunctionCall::class.java, false)
     }
@@ -67,8 +67,10 @@ class KrakenDocumentationProvider : AbstractDocumentationProvider() {
                 }
             }
             for (clauseType in listOf(
-                KrakenTypes.WHEN_CLAUSE, KrakenTypes.SET_PAYLOAD,
-                KrakenTypes.DEFAULT_PAYLOAD, KrakenTypes.ASSERT_PAYLOAD
+                KrakenTypes.WHEN_CLAUSE,
+                KrakenTypes.SET_PAYLOAD,
+                KrakenTypes.DEFAULT_PAYLOAD,
+                KrakenTypes.ASSERT_PAYLOAD,
             )) {
                 for (clause in body.findChildrenRecursively(clauseType)) {
                     sb.append("<br/><code>")
@@ -83,7 +85,7 @@ class KrakenDocumentationProvider : AbstractDocumentationProvider() {
     private fun compact(text: String): String = text.replace(Regex("\\s+"), " ").trim()
 
     private fun com.intellij.lang.ASTNode.findChildrenRecursively(
-        type: com.intellij.psi.tree.IElementType
+        type: com.intellij.psi.tree.IElementType,
     ): List<com.intellij.lang.ASTNode> {
         val out = mutableListOf<com.intellij.lang.ASTNode>()
         var child = firstChildNode

@@ -32,7 +32,7 @@ class KrakenPasteFormatTest : BasePlatformTestCase() {
             }
 
             <caret>
-            """.trimIndent()
+            """.trimIndent(),
         )
         CopyPasteManager.getInstance().setContents(StringSelection(pastedRule))
         myFixture.performEditorAction(IdeActions.ACTION_EDITOR_PASTE)
@@ -43,7 +43,7 @@ class KrakenPasteFormatTest : BasePlatformTestCase() {
         val text = doPaste(CodeInsightSettings.INDENT_BLOCK)
         assertTrue(
             "Paste (indent block) mangled the rule body:\n$text",
-            text.contains("    Set Mandatory") && text.contains("    Error \"code\" : \"message\"")
+            text.contains("    Set Mandatory") && text.contains("    Error \"code\" : \"message\""),
         )
     }
 
@@ -51,7 +51,7 @@ class KrakenPasteFormatTest : BasePlatformTestCase() {
         val text = doPaste(CodeInsightSettings.REFORMAT_BLOCK)
         assertTrue(
             "Paste (reformat block) mangled the rule body:\n$text",
-            text.contains("    Set Mandatory") && text.contains("    Error \"code\" : \"message\"")
+            text.contains("    Set Mandatory") && text.contains("    Error \"code\" : \"message\""),
         )
     }
 
@@ -67,16 +67,16 @@ class KrakenPasteFormatTest : BasePlatformTestCase() {
                 Set Mandatory
                 <caret>
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         CopyPasteManager.getInstance().setContents(
-            StringSelection("Error \"code\" : \"message\"")
+            StringSelection("Error \"code\" : \"message\""),
         )
         myFixture.performEditorAction(IdeActions.ACTION_EDITOR_PASTE)
         val text = myFixture.editor.document.text
         assertTrue(
             "Paste inside rule body lost indentation:\n$text",
-            text.contains("    Error \"code\" : \"message\"")
+            text.contains("    Error \"code\" : \"message\""),
         )
     }
 

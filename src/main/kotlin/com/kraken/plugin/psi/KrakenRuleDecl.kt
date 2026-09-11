@@ -18,7 +18,8 @@ import com.kraken.plugin.psi.stubs.KrakenRuleStub
  * (index) sans charger l'AST. L'interface [StubBasedPsiElement] doit être
  * implémentée explicitement : c'est elle que DefaultStubBuilder vérifie.
  */
-class KrakenRuleDecl : StubBasedPsiElementBase<KrakenRuleStub>,
+class KrakenRuleDecl :
+    StubBasedPsiElementBase<KrakenRuleStub>,
     StubBasedPsiElement<KrakenRuleStub>,
     PsiNameIdentifierOwner {
 
@@ -67,6 +68,5 @@ class KrakenRuleDecl : StubBasedPsiElementBase<KrakenRuleStub>,
 
     fun ruleKeyword(): PsiElement? = node.findChildByType(KrakenTypes.RULE_KW)?.psi
 
-    private fun nameLeaf(): ASTNode? =
-        node.findChildByType(KrakenTypes.RULE_NAME)?.findChildByType(KrakenTypes.STRING)
+    private fun nameLeaf(): ASTNode? = node.findChildByType(KrakenTypes.RULE_NAME)?.findChildByType(KrakenTypes.STRING)
 }

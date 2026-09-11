@@ -19,7 +19,7 @@ class KrakenGotoDeclarationHandler : GotoDeclarationHandler {
     override fun getGotoDeclarationTargets(
         sourceElement: PsiElement?,
         offset: Int,
-        editor: Editor?
+        editor: Editor?,
     ): Array<PsiElement>? {
         if (sourceElement == null) return null
 

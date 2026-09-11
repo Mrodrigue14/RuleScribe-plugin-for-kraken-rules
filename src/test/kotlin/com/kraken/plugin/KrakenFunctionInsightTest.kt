@@ -38,7 +38,7 @@ class KrakenFunctionInsightTest : BasePlatformTestCase() {
             Rule "Uses functions" On Policy.limit {
                 Assert $prefix<caret>
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.completeBasic()
         return myFixture.lookupElementStrings?.contains(expected)
@@ -64,13 +64,13 @@ class KrakenFunctionInsightTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 <caret>
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val suggestions = myFixture.completeBasic().map { it.lookupString }
         assertFalse(
             "Un EntryPoint liste des règles, pas des fonctions",
-            suggestions.contains("Round")
+            suggestions.contains("Round"),
         )
         assertTrue(suggestions.contains("\"Some rule\""))
     }
@@ -91,7 +91,7 @@ class KrakenFunctionInsightTest : BasePlatformTestCase() {
             Rule "Rounds" On Policy.limit {
                 Assert Round(1.5) > 0
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val doc = docAtCall()
@@ -113,7 +113,7 @@ class KrakenFunctionInsightTest : BasePlatformTestCase() {
             Function Limits(Coverage[] coverages) : Number[] {
                 coverages.limitAmount
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val declaration = PsiTreeUtil.findChildOfType(myFixture.file, KrakenFunctionDecl::class.java)
@@ -131,7 +131,7 @@ class KrakenFunctionInsightTest : BasePlatformTestCase() {
             "signature.rules",
             """
             Function GetPolicyCd(Policy) : String
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val declaration = PsiTreeUtil.findChildOfType(myFixture.file, KrakenFunctionDecl::class.java)
@@ -151,7 +151,7 @@ class KrakenFunctionInsightTest : BasePlatformTestCase() {
              * @parameter coverages - les garanties
              * @unknownTag ignoré
              */
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         assertEquals("Description sur deux lignes.", parsed.description)

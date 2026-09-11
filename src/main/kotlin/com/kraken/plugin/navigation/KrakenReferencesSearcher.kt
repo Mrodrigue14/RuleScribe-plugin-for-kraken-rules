@@ -14,12 +14,11 @@ import com.kraken.plugin.psi.KrakenRuleDecl
  * l'index de mots et rate les noms multi-mots ("Policy code mandatory").
  * Ici on scanne directement les items d'EntryPoint par nom.
  */
-class KrakenReferencesSearcher :
-    QueryExecutorBase<PsiReference, ReferencesSearch.SearchParameters>(true) {
+class KrakenReferencesSearcher : QueryExecutorBase<PsiReference, ReferencesSearch.SearchParameters>(true) {
 
     override fun processQuery(
         queryParameters: ReferencesSearch.SearchParameters,
-        consumer: Processor<in PsiReference>
+        consumer: Processor<in PsiReference>,
     ) {
         val target = queryParameters.elementToSearch
         val scope = queryParameters.effectiveSearchScope
@@ -30,6 +29,7 @@ class KrakenReferencesSearcher :
                     consumer.process(ref.reference)
                 }
             }
+
             is KrakenEntryPointDecl -> {
                 for (ref in KrakenPsiUtil.findEpRefsVisibleTo(target)) {
                     if (!PsiSearchScopeUtil.isInScope(scope, ref)) continue

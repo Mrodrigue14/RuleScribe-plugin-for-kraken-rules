@@ -20,33 +20,33 @@ import com.kraken.plugin.refactoring.KrakenDeclarationMover
  */
 class KrakenEntryPointMoveTest : BasePlatformTestCase() {
 
-    private fun file(name: String, text: String): KrakenFile =
-        myFixture.addFileToProject(name, text) as KrakenFile
+    private fun file(name: String, text: String): KrakenFile = myFixture.addFileToProject(name, text) as KrakenFile
 
-    private fun epIn(file: KrakenFile, name: String): KrakenEntryPointDecl =
-        PsiTreeUtil.findChildrenOfType(file, KrakenEntryPointDecl::class.java).first { it.name == name }
+    private fun epIn(file: KrakenFile, name: String): KrakenEntryPointDecl = PsiTreeUtil.findChildrenOfType(file, KrakenEntryPointDecl::class.java).first { it.name == name }
 
-    private fun ruleRefIn(file: KrakenFile, name: String): KrakenRuleRef =
-        PsiTreeUtil.findChildrenOfType(file, KrakenRuleRef::class.java).first { it.ruleName == name }
+    private fun ruleRefIn(file: KrakenFile, name: String): KrakenRuleRef = PsiTreeUtil.findChildrenOfType(file, KrakenRuleRef::class.java).first { it.ruleName == name }
 
-    private fun epRefIn(file: KrakenFile, name: String): KrakenEpRef =
-        PsiTreeUtil.findChildrenOfType(file, KrakenEpRef::class.java).first { it.entryPointName == name }
+    private fun epRefIn(file: KrakenFile, name: String): KrakenEpRef = PsiTreeUtil.findChildrenOfType(file, KrakenEpRef::class.java).first { it.entryPointName == name }
 
     private fun assertParses(vararg files: KrakenFile) {
         for (f in files) {
             val errors = PsiTreeUtil.findChildrenOfType(f, PsiErrorElement::class.java)
             assertEquals(
-                "${f.name} ne parse plus :\n${f.text}", emptyList<String>(),
-                errors.map { it.errorDescription }
+                "${f.name} ne parse plus :\n${f.text}",
+                emptyList<String>(),
+                errors.map { it.errorDescription },
             )
         }
     }
 
     fun testEntryPointLandsInTheTargetAndLeavesTheSource() {
-        val a = file("a.rules", """
+        val a = file(
+            "a.rules",
+            """
             Namespace Policy
             EntryPoint "Moved" { }
-        """.trimIndent())
+            """.trimIndent(),
+        )
         val b = file("b.rules", "Namespace Policy")
 
         WriteCommandAction.runWriteCommandAction(project) {
@@ -60,11 +60,14 @@ class KrakenEntryPointMoveTest : BasePlatformTestCase() {
 
     /** Destination visible : le texte des items ne bouge pas et ils résolvent encore. */
     fun testItemsStillResolveWhenTheDestinationSeesThem() {
-        val a = file("a.rules", """
+        val a = file(
+            "a.rules",
+            """
             Namespace Policy
             Rule "Stays" On Policy.state { Assert true }
             EntryPoint "Moving" { "Stays" }
-        """.trimIndent())
+            """.trimIndent(),
+        )
         val b = file("b.rules", "Namespace Policy")
 
         WriteCommandAction.runWriteCommandAction(project) {
@@ -80,11 +83,14 @@ class KrakenEntryPointMoveTest : BasePlatformTestCase() {
      * cesse de résoudre. C'est ce que l'analyse annonce avant d'écrire.
      */
     fun testOwnItemKeepsItsTextAndStopsResolving() {
-        val a = file("a.rules", """
+        val a = file(
+            "a.rules",
+            """
             Namespace Policy
             Rule "Stays" On Policy.state { Assert true }
             EntryPoint "Moving" { "Stays" }
-        """.trimIndent())
+            """.trimIndent(),
+        )
         val far = file("far.rules", "Namespace Other")
 
         assertNotNull("l'item résout avant le déplacement", ruleRefIn(a, "Stays").reference.resolve())
@@ -101,15 +107,21 @@ class KrakenEntryPointMoveTest : BasePlatformTestCase() {
 
     /** L'autre sens : la référence entrante garde son texte et perd sa cible. */
     fun testIncomingReferenceKeepsItsTextAndStopsResolving() {
-        val a = file("a.rules", """
+        val a = file(
+            "a.rules",
+            """
             Namespace Policy
             EntryPoint "Moving" { }
-        """.trimIndent())
+            """.trimIndent(),
+        )
         val far = file("far.rules", "Namespace Other")
-        val outer = file("outer.rules", """
+        val outer = file(
+            "outer.rules",
+            """
             Namespace Policy
             EntryPoint "Outer" { EntryPoint "Moving" }
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         assertNotNull("la référence résout avant", epRefIn(outer, "Moving").reference?.resolve())
 

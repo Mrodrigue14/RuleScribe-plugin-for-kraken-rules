@@ -47,14 +47,13 @@ class KrakenTypeInferenceTest : BasePlatformTestCase() {
         Rule "Under test" On Policy.policyCd {
             $body
         }
-        """.trimIndent()
+        """.trimIndent(),
     )
 
-    private fun typeOfRef(name: String): KrakenType =
-        KrakenTypeInference.typeOf(
-            PsiTreeUtil.collectElementsOfType(myFixture.file, KrakenRefExpr::class.java)
-                .first { it.referenceName == name }
-        )
+    private fun typeOfRef(name: String): KrakenType = KrakenTypeInference.typeOf(
+        PsiTreeUtil.collectElementsOfType(myFixture.file, KrakenRefExpr::class.java)
+            .first { it.referenceName == name },
+    )
 
     // ------------------------------------------------------------------
     // Champs de contexte
@@ -112,7 +111,7 @@ class KrakenTypeInferenceTest : BasePlatformTestCase() {
             Rule "Uses it" On Policy.policyCd {
                 Assert Total(Coverage) > 0
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val call = PsiTreeUtil.collectElementsOfType(myFixture.file, KrakenFunctionCall::class.java)
             .first { it.functionName == "Total" }

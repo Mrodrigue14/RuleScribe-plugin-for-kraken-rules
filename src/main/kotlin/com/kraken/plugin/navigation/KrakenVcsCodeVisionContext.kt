@@ -39,14 +39,12 @@ class KrakenVcsCodeVisionContext : VcsCodeVisionCurlyBracketLanguageContext() {
      * d'usages à compter, mais savoir qui a modifié un modèle de données en
      * dernier a autant de valeur que pour une règle.
      */
-    override fun isAccepted(element: PsiElement): Boolean =
-        element is KrakenRuleDecl ||
-            element is KrakenEntryPointDecl ||
-            element is KrakenFunctionDecl ||
-            element.node?.elementType == KrakenTypes.CONTEXT_DECL
+    override fun isAccepted(element: PsiElement): Boolean = element is KrakenRuleDecl ||
+        element is KrakenEntryPointDecl ||
+        element is KrakenFunctionDecl ||
+        element.node?.elementType == KrakenTypes.CONTEXT_DECL
 
-    override fun isRBrace(element: PsiElement): Boolean =
-        element.node?.elementType == KrakenTypes.RBRACE
+    override fun isRBrace(element: PsiElement): Boolean = element.node?.elementType == KrakenTypes.RBRACE
 
     /**
      * Rien à faire : le provider ouvre lui-même l'annotation. Côté Java, cette

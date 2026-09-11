@@ -32,7 +32,7 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
             Rule "Under test" On Policy.policyCd {
                 $body
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.enableInspections(KrakenTypeMismatchInspection())
         return myFixture.doHighlighting()
@@ -49,9 +49,9 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         assertEquals(
             listOf(
                 "[kvr049] Operation LessThan can only be performed on comparable types, " +
-                    "but was performed on 'Date' and 'DateTime'."
+                    "but was performed on 'Date' and 'DateTime'.",
             ),
-            problems("Assert effectiveDate < createdOn")
+            problems("Assert effectiveDate < createdOn"),
         )
     }
 
@@ -59,9 +59,9 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         assertEquals(
             listOf(
                 "[kvr049] Operation LessThan can only be performed on comparable types, " +
-                    "but was performed on 'String' and 'Number'."
+                    "but was performed on 'String' and 'Number'.",
             ),
-            problems("Assert policyCd < premium")
+            problems("Assert policyCd < premium"),
         )
     }
 
@@ -74,9 +74,9 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         assertEquals(
             listOf(
                 "[kvr049] Operation LessThan can only be performed on comparable types, " +
-                    "but was performed on 'String' and 'String'."
+                    "but was performed on 'String' and 'String'.",
             ),
-            problems("Assert policyCd < policyCd")
+            problems("Assert policyCd < policyCd"),
         )
     }
 
@@ -90,9 +90,9 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         assertEquals(
             listOf(
                 "[kvr049] Both sides of operator 'Equals' must have same type, " +
-                    "but left side was of type 'String' and right side was of type 'Number'."
+                    "but left side was of type 'String' and right side was of type 'Number'.",
             ),
-            problems("Assert policyCd = premium")
+            problems("Assert policyCd = premium"),
         )
     }
 
@@ -110,16 +110,16 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         assertEquals(
             listOf(
                 "[kvr049] Operation MoreThanOrEquals can only be performed on comparable types, " +
-                    "but was performed on 'Date' and 'DateTime'."
+                    "but was performed on 'Date' and 'DateTime'.",
             ),
-            problems("Assert effectiveDate >= createdOn")
+            problems("Assert effectiveDate >= createdOn"),
         )
         assertEquals(
             listOf(
                 "[kvr049] Operation LessThanOrEquals can only be performed on comparable types, " +
-                    "but was performed on 'Date' and 'DateTime'."
+                    "but was performed on 'Date' and 'DateTime'.",
             ),
-            problems("Assert effectiveDate <= createdOn")
+            problems("Assert effectiveDate <= createdOn"),
         )
     }
 
@@ -155,7 +155,7 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         assertEquals(
             "[kvr049] Incompatible type 'String' of function parameter at index 0 " +
                 "when invoking function Round. Expected type is 'Number'.",
-            reported.single()
+            reported.single(),
         )
     }
 
@@ -184,12 +184,12 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         assertEquals(
             "NumberOfDaysBetween renvoie un Number",
             emptyList<String>(),
-            problems("Assert NumberOfDaysBetween(effectiveDate, effectiveDate) < 365")
+            problems("Assert NumberOfDaysBetween(effectiveDate, effectiveDate) < 365"),
         )
         assertEquals(
             "NumberToString renvoie un String",
             emptyList<String>(),
-            problems("Assert NumberToString(premium) == \"11\"")
+            problems("Assert NumberToString(premium) == \"11\""),
         )
     }
 
@@ -210,7 +210,7 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
             Rule "Projects" On Policy.policyCd {
                 Assert Sum(Coverage.limit) > 0
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.enableInspections(KrakenTypeMismatchInspection())
         val reported = myFixture.doHighlighting()
@@ -233,7 +233,7 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
             Rule "Mixed casing" On Policy.code {
                 Assert code = label
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.enableInspections(KrakenTypeMismatchInspection())
         val reported = myFixture.doHighlighting()
@@ -256,7 +256,7 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
             Rule "Uses it" On Policy.policyCd {
                 Assert Twice(policyCd) > 0
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.enableInspections(KrakenTypeMismatchInspection())
         val reported = myFixture.doHighlighting()

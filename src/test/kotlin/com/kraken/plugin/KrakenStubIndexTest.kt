@@ -15,7 +15,7 @@ class KrakenStubIndexTest : BasePlatformTestCase() {
             Rule "Indexed rule" On Policy.state {
                 Assert true
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val keys = StubIndex.getInstance().getAllKeys(KrakenRuleNameIndex.KEY, project)
         assertTrue("Expected 'Indexed rule' among $keys", keys.contains("Indexed rule"))
@@ -25,7 +25,7 @@ class KrakenStubIndexTest : BasePlatformTestCase() {
             "Indexed rule",
             project,
             GlobalSearchScope.projectScope(project),
-            KrakenRuleDecl::class.java
+            KrakenRuleDecl::class.java,
         )
         assertEquals(1, elements.size)
         assertEquals("Indexed rule", elements.first().name)
@@ -38,7 +38,7 @@ class KrakenStubIndexTest : BasePlatformTestCase() {
             Rule "From index" On Policy.x {
                 Assert true
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.configureByText(
             "eps.rules",
@@ -46,7 +46,7 @@ class KrakenStubIndexTest : BasePlatformTestCase() {
             EntryPoint "E" {
                 "From<caret> index"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val target = myFixture.file.findReferenceAt(myFixture.caretOffset)?.resolve()
         assertTrue(target is KrakenRuleDecl)

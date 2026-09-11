@@ -17,21 +17,20 @@ import com.kraken.plugin.psi.KrakenPsiUtil
  */
 class KrakenUnknownContextInspection : LocalInspectionTool() {
 
-    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor =
-        object : PsiElementVisitor() {
-            override fun visitElement(element: PsiElement) {
-                if (element.node?.elementType != KrakenTypes.RULE_TARGET) return
-                val nameLeaf = contextLeaf(element) ?: return
-                val known = KrakenPsiUtil.findContextNamesVisible(element.containingFile)
-                if (known.isNotEmpty() && nameLeaf.text !in known) {
-                    holder.registerProblem(
-                        nameLeaf,
-                        KrakenDiagnostic.RULE_TARGET_CONTEXT_UNKNOWN.format(nameLeaf.text),
-                        ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
-                    )
-                }
+    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : PsiElementVisitor() {
+        override fun visitElement(element: PsiElement) {
+            if (element.node?.elementType != KrakenTypes.RULE_TARGET) return
+            val nameLeaf = contextLeaf(element) ?: return
+            val known = KrakenPsiUtil.findContextNamesVisible(element.containingFile)
+            if (known.isNotEmpty() && nameLeaf.text !in known) {
+                holder.registerProblem(
+                    nameLeaf,
+                    KrakenDiagnostic.RULE_TARGET_CONTEXT_UNKNOWN.format(nameLeaf.text),
+                    ProblemHighlightType.LIKE_UNKNOWN_SYMBOL,
+                )
             }
         }
+    }
 
     private fun contextLeaf(ruleTarget: PsiElement): PsiElement? {
         var child = ruleTarget.firstChild
@@ -39,7 +38,8 @@ class KrakenUnknownContextInspection : LocalInspectionTool() {
         while (child != null) {
             if (child.node?.elementType == KrakenTypes.ON_KW) {
                 seenOn = true
-            } else if (seenOn && child !is PsiWhiteSpace &&
+            } else if (seenOn &&
+                child !is PsiWhiteSpace &&
                 child.node?.elementType in KrakenPsiUtil.ID_TOKENS
             ) {
                 return child

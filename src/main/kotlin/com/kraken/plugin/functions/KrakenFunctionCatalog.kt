@@ -32,14 +32,12 @@ object KrakenFunctionCatalog {
     fun byName(name: String): List<KelFunction> = byName[name].orEmpty()
 
     /** La fonction correspondant exactement à l'identité (nom, arité) du moteur. */
-    fun find(name: String, arity: Int): KelFunction? =
-        byName(name).firstOrNull { it.parameters.size == arity }
+    fun find(name: String, arity: Int): KelFunction? = byName(name).firstOrNull { it.parameters.size == arity }
 
-    private fun load(): Catalog =
-        KrakenFunctionCatalog::class.java.getResourceAsStream(RESOURCE)
-            ?.reader(Charsets.UTF_8)
-            ?.use { Gson().fromJson(it, Catalog::class.java) }
-            ?: Catalog(emptyList(), emptyList())
+    private fun load(): Catalog = KrakenFunctionCatalog::class.java.getResourceAsStream(RESOURCE)
+        ?.reader(Charsets.UTF_8)
+        ?.use { Gson().fromJson(it, Catalog::class.java) }
+        ?: Catalog(emptyList(), emptyList())
 
     private const val RESOURCE = "/functions/kel-functions.json"
 
@@ -73,8 +71,7 @@ class KelFunction(
     val examples: List<KelExample>,
 ) {
     /** `Round(Number number, Number scale) : Number` */
-    fun signature(): String =
-        "$name(${parameters.joinToString(", ") { it.presentation() }}) : $returnType"
+    fun signature(): String = "$name(${parameters.joinToString(", ") { it.presentation() }}) : $returnType"
 }
 
 class KelParameter(

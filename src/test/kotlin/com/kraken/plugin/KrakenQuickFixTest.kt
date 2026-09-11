@@ -23,15 +23,20 @@ class KrakenQuickFixTest : BasePlatformTestCase() {
     private fun applyFix(fileName: String, before: String, label: String): String {
         myFixture.configureByText(fileName, before)
         val fix = myFixture.getAllQuickFixes().firstOrNull { it.familyName.startsWith(label) }
-            ?: error("correctif '$label' absent, disponibles: " +
-                myFixture.getAllQuickFixes().map { it.familyName })
+            ?: error(
+                "correctif '$label' absent, disponibles: " +
+                    myFixture.getAllQuickFixes().map { it.familyName },
+            )
         myFixture.launchAction(fix)
         val after = myFixture.file.text
         // Le correctif écrit du texte : la seule garantie qui compte est que
         // le fichier parse toujours.
         val errors = PsiTreeUtil.findChildrenOfType(myFixture.file, PsiErrorElement::class.java)
-        assertEquals("le correctif a cassé le fichier :\n$after", emptyList<String>(),
-            errors.map { it.errorDescription })
+        assertEquals(
+            "le correctif a cassé le fichier :\n$after",
+            emptyList<String>(),
+            errors.map { it.errorDescription },
+        )
         return after
     }
 
@@ -51,11 +56,11 @@ class KrakenQuickFixTest : BasePlatformTestCase() {
                 Assert true
             }
             """.trimIndent(),
-            "Declare dimension"
+            "Declare dimension",
         )
         assertTrue(
             "les dimensions restent groupées, une par ligne :\n$after",
-            after.contains("Dimension \"planCd\" : String\nDimension \"packageCd\" : String")
+            after.contains("Dimension \"planCd\" : String\nDimension \"packageCd\" : String"),
         )
     }
 
@@ -78,7 +83,7 @@ class KrakenQuickFixTest : BasePlatformTestCase() {
                 Assert true
             }
             """.trimIndent(),
-            "Declare dimension"
+            "Declare dimension",
         )
         val namespaceAt = after.indexOf("Namespace Policy")
         val newDimensionAt = after.indexOf("Dimension \"packageCd\"")
@@ -103,11 +108,11 @@ class KrakenQuickFixTest : BasePlatformTestCase() {
                 Assert false
             }
             """.trimIndent(),
-            "Add a differentiating @Dimension annotation"
+            "Add a differentiating @Dimension annotation",
         )
         assertTrue(
             "l'annotation précède la règle :\n$after",
-            after.contains("@Dimension(\"dimensionName\", \"value\")\nRule \"Same\"")
+            after.contains("@Dimension(\"dimensionName\", \"value\")\nRule \"Same\""),
         )
     }
 
@@ -127,11 +132,11 @@ class KrakenQuickFixTest : BasePlatformTestCase() {
                 }
             }
             """.trimIndent(),
-            "Add a differentiating @Dimension annotation"
+            "Add a differentiating @Dimension annotation",
         )
         assertTrue(
             "l'annotation reprend l'indentation de la règle :\n$after",
-            after.contains("    @Dimension(\"dimensionName\", \"value\")\n    Rule \"Same\"")
+            after.contains("    @Dimension(\"dimensionName\", \"value\")\n    Rule \"Same\""),
         )
     }
 }

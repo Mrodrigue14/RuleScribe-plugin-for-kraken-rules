@@ -36,8 +36,7 @@ class KrakenMoveRuleHandler : MoveHandlerDelegate() {
 
     override fun supportsLanguage(language: Language): Boolean = language == KrakenLanguage
 
-    override fun canMove(elements: Array<out PsiElement>, targetContainer: PsiElement?): Boolean =
-        elements.size == 1 && ruleOf(elements[0]) != null
+    override fun canMove(elements: Array<out PsiElement>, targetContainer: PsiElement?): Boolean = elements.size == 1 && ruleOf(elements[0]) != null
 
     override fun getActionName(elements: Array<out PsiElement>): String = "Move Rule…"
 
@@ -65,8 +64,7 @@ class KrakenMoveRuleHandler : MoveHandlerDelegate() {
         return true
     }
 
-    private fun ruleOf(element: PsiElement): KrakenRuleDecl? =
-        element as? KrakenRuleDecl ?: PsiTreeUtil.getParentOfType(element, KrakenRuleDecl::class.java, false)
+    private fun ruleOf(element: PsiElement): KrakenRuleDecl? = element as? KrakenRuleDecl ?: PsiTreeUtil.getParentOfType(element, KrakenRuleDecl::class.java, false)
 
     private fun chooseTarget(project: Project, source: KrakenFile): KrakenFile? {
         val chooser = TreeFileChooserFactory.getInstance(project).createFileChooser(

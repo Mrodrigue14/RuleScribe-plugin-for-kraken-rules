@@ -13,14 +13,11 @@ import com.kraken.plugin.psi.KrakenRuleDecl
  * Type d'élément stubbé pour RULE_DECL. Instancié par le parser généré via
  * l'attribut elementTypeClass du BNF (règle rule_decl).
  */
-class KrakenRuleStubElementType(debugName: String) :
-    IStubElementType<KrakenRuleStub, KrakenRuleDecl>(debugName, KrakenLanguage) {
+class KrakenRuleStubElementType(debugName: String) : IStubElementType<KrakenRuleStub, KrakenRuleDecl>(debugName, KrakenLanguage) {
 
-    override fun createPsi(stub: KrakenRuleStub): KrakenRuleDecl =
-        KrakenRuleDecl(stub, this)
+    override fun createPsi(stub: KrakenRuleStub): KrakenRuleDecl = KrakenRuleDecl(stub, this)
 
-    override fun createStub(psi: KrakenRuleDecl, parentStub: StubElement<out PsiElement>?): KrakenRuleStub =
-        KrakenRuleStubImpl(parentStub, this, psi.name)
+    override fun createStub(psi: KrakenRuleDecl, parentStub: StubElement<out PsiElement>?): KrakenRuleStub = KrakenRuleStubImpl(parentStub, this, psi.name)
 
     override fun getExternalId(): String = "kraken.RULE_DECL"
 
@@ -28,8 +25,7 @@ class KrakenRuleStubElementType(debugName: String) :
         dataStream.writeName(stub.name)
     }
 
-    override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): KrakenRuleStub =
-        KrakenRuleStubImpl(parentStub, this, dataStream.readNameString())
+    override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): KrakenRuleStub = KrakenRuleStubImpl(parentStub, this, dataStream.readNameString())
 
     override fun indexStub(stub: KrakenRuleStub, sink: IndexSink) {
         val name = stub.name

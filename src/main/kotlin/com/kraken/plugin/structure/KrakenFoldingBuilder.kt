@@ -11,7 +11,9 @@ import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.parser.KrakenTypes
 
-class KrakenFoldingBuilder : FoldingBuilderEx(), DumbAware {
+class KrakenFoldingBuilder :
+    FoldingBuilderEx(),
+    DumbAware {
 
     override fun buildFoldRegions(root: PsiElement, document: Document, quick: Boolean): Array<FoldingDescriptor> {
         val descriptors = mutableListOf<FoldingDescriptor>()
@@ -55,7 +57,7 @@ class KrakenFoldingBuilder : FoldingBuilderEx(), DumbAware {
             KrakenTypes.ENTRY_POINTS_BLOCK,
             KrakenTypes.EXTERNAL_CONTEXT_DECL,
             KrakenTypes.EXTERNAL_ENTITY_DECL,
-            KrakenTypes.FUNCTION_BODY
+            KrakenTypes.FUNCTION_BODY,
         )
     }
 }

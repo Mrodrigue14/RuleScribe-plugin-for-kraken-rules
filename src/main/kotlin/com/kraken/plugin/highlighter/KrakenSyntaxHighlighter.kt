@@ -15,8 +15,7 @@ class KrakenSyntaxHighlighter : SyntaxHighlighterBase() {
 
     override fun getHighlightingLexer(): Lexer = KrakenLexer()
 
-    override fun getTokenHighlights(tokenType: IElementType?): Array<TextAttributesKey> =
-        pack(ATTRIBUTES[tokenType])
+    override fun getTokenHighlights(tokenType: IElementType?): Array<TextAttributesKey> = pack(ATTRIBUTES[tokenType])
 
     companion object {
         val KEYWORD: TextAttributesKey =
@@ -44,13 +43,14 @@ class KrakenSyntaxHighlighter : SyntaxHighlighterBase() {
         val NATIVE_FUNCTION: TextAttributesKey =
             createTextAttributesKey(
                 "KRAKEN_NATIVE_FUNCTION",
-                DefaultLanguageHighlighterColors.STATIC_METHOD
+                DefaultLanguageHighlighterColors.STATIC_METHOD,
             )
         val DECLARED_FUNCTION: TextAttributesKey =
             createTextAttributesKey(
                 "KRAKEN_DECLARED_FUNCTION",
-                DefaultLanguageHighlighterColors.FUNCTION_CALL
+                DefaultLanguageHighlighterColors.FUNCTION_CALL,
             )
+
         // Même raison que ci-dessus, un cran plus loin : un nom résolu et un
         // nom inconnu sont tous deux IDENTIFIER. KrakenReferenceAnnotator ne
         // pose ces clés que sur ce qui se résout réellement — colorer un nom
@@ -58,12 +58,12 @@ class KrakenSyntaxHighlighter : SyntaxHighlighterBase() {
         val CONTEXT_REFERENCE: TextAttributesKey =
             createTextAttributesKey(
                 "KRAKEN_CONTEXT_REFERENCE",
-                DefaultLanguageHighlighterColors.CLASS_REFERENCE
+                DefaultLanguageHighlighterColors.CLASS_REFERENCE,
             )
         val FIELD_REFERENCE: TextAttributesKey =
             createTextAttributesKey(
                 "KRAKEN_FIELD_REFERENCE",
-                DefaultLanguageHighlighterColors.INSTANCE_FIELD
+                DefaultLanguageHighlighterColors.INSTANCE_FIELD,
             )
         val BRACES: TextAttributesKey =
             createTextAttributesKey("KRAKEN_BRACES", DefaultLanguageHighlighterColors.BRACES)
@@ -71,6 +71,7 @@ class KrakenSyntaxHighlighter : SyntaxHighlighterBase() {
             createTextAttributesKey("KRAKEN_PARENTHESES", DefaultLanguageHighlighterColors.PARENTHESES)
         val BRACKETS: TextAttributesKey =
             createTextAttributesKey("KRAKEN_BRACKETS", DefaultLanguageHighlighterColors.BRACKETS)
+
         /**
          * Profondeur d'imbrication des accolades, parenthèses et crochets.
          * Trois teintes qui se répètent : au-delà, distinguer les niveaux à
@@ -122,7 +123,7 @@ class KrakenSyntaxHighlighter : SyntaxHighlighterBase() {
                 KrakenTypes.IF_KW, KrakenTypes.THEN_KW, KrakenTypes.ELSE_KW,
                 KrakenTypes.FOR_KW, KrakenTypes.EVERY_KW, KrakenTypes.SOME_KW,
                 KrakenTypes.RETURN_KW, KrakenTypes.THIS_KW, KrakenTypes.INSTANCEOF_KW,
-                KrakenTypes.TYPEOF_KW, KrakenTypes.SATISFIES_KW
+                KrakenTypes.TYPEOF_KW, KrakenTypes.SATISFIES_KW,
             )) {
                 map[keyword] = KEYWORD
             }

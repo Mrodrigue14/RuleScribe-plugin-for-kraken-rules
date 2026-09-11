@@ -14,18 +14,17 @@ import com.kraken.plugin.psi.KrakenRuleDecl
  */
 class KrakenUnusedRuleInspection : LocalInspectionTool() {
 
-    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor =
-        object : PsiElementVisitor() {
-            override fun visitElement(element: PsiElement) {
-                if (element !is KrakenRuleDecl) return
-                val name = element.name ?: return
-                if (KrakenPsiUtil.findRuleRefsVisibleTo(element).isEmpty()) {
-                    holder.registerProblem(
-                        element.nameIdentifier ?: element,
-                        "Rule '$name' is not referenced by any entry point that can see its namespace",
-                        ProblemHighlightType.LIKE_UNUSED_SYMBOL
-                    )
-                }
+    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : PsiElementVisitor() {
+        override fun visitElement(element: PsiElement) {
+            if (element !is KrakenRuleDecl) return
+            val name = element.name ?: return
+            if (KrakenPsiUtil.findRuleRefsVisibleTo(element).isEmpty()) {
+                holder.registerProblem(
+                    element.nameIdentifier ?: element,
+                    "Rule '$name' is not referenced by any entry point that can see its namespace",
+                    ProblemHighlightType.LIKE_UNUSED_SYMBOL,
+                )
             }
         }
+    }
 }

@@ -14,12 +14,12 @@ class KrakenInspectionTest : BasePlatformTestCase() {
             Rule On Policy.state {
                 Assert true
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val highlights = myFixture.doHighlighting()
         assertTrue(
             "Expected 'Rule has no name' problem, got: ${highlights.map { it.description }}",
-            highlights.any { it.description == "[kvr001] Rule name is not defined." }
+            highlights.any { it.description == "[kvr001] Rule name is not defined." },
         )
     }
 
@@ -31,7 +31,7 @@ class KrakenInspectionTest : BasePlatformTestCase() {
             Rule "Named" On Policy.state {
                 Assert true
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val highlights = myFixture.doHighlighting()
         assertFalse(highlights.any { it.description == "[kvr001] Rule name is not defined." })
@@ -49,12 +49,12 @@ class KrakenInspectionTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 "Missing"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val highlights = myFixture.doHighlighting()
         assertTrue(
             "Expected 'Unknown rule' problem, got: ${highlights.map { it.description }}",
-            highlights.any { it.description == "[kve005] Rule is included in entry point, but such rule does not exist: Missing." }
+            highlights.any { it.description == "[kve005] Rule is included in entry point, but such rule does not exist: Missing." },
         )
     }
 
@@ -70,7 +70,7 @@ class KrakenInspectionTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 "Existing"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val highlights = myFixture.doHighlighting()
         assertFalse(highlights.any { it.description?.startsWith("Unknown rule") == true })

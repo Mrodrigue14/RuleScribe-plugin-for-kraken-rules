@@ -13,23 +13,22 @@ import com.kraken.plugin.psi.KrakenRuleRef
  */
 class KrakenUnresolvedRuleRefInspection : LocalInspectionTool() {
 
-    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor =
-        object : PsiElementVisitor() {
-            override fun visitElement(element: PsiElement) {
-                if (element is KrakenRuleRef && element.reference.resolve() == null) {
-                    holder.registerProblem(
-                        element,
-                        KrakenDiagnostic.ENTRYPOINT_UNKNOWN_RULE.format(element.ruleName),
-                        ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
-                    )
-                }
-                if (element is KrakenEpRef && element.reference?.resolve() == null) {
-                    holder.registerProblem(
-                        element,
-                        KrakenDiagnostic.ENTRYPOINT_UNKNOWN_INCLUDE.format(element.entryPointName),
-                        ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
-                    )
-                }
+    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : PsiElementVisitor() {
+        override fun visitElement(element: PsiElement) {
+            if (element is KrakenRuleRef && element.reference.resolve() == null) {
+                holder.registerProblem(
+                    element,
+                    KrakenDiagnostic.ENTRYPOINT_UNKNOWN_RULE.format(element.ruleName),
+                    ProblemHighlightType.LIKE_UNKNOWN_SYMBOL,
+                )
+            }
+            if (element is KrakenEpRef && element.reference?.resolve() == null) {
+                holder.registerProblem(
+                    element,
+                    KrakenDiagnostic.ENTRYPOINT_UNKNOWN_INCLUDE.format(element.entryPointName),
+                    ProblemHighlightType.LIKE_UNKNOWN_SYMBOL,
+                )
             }
         }
+    }
 }

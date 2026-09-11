@@ -57,12 +57,11 @@ internal object KrakenPresentations {
         return if (annotations.isEmpty()) base else "$base $annotations"
     }
 
-    fun of(element: PsiElement, text: String, icon: Icon?): ItemPresentation =
-        object : ItemPresentation {
-            override fun getPresentableText(): String = text
-            override fun getLocationString(): String? = location(element)
-            override fun getIcon(unused: Boolean): Icon? = icon
-        }
+    fun of(element: PsiElement, text: String, icon: Icon?): ItemPresentation = object : ItemPresentation {
+        override fun getPresentableText(): String = text
+        override fun getLocationString(): String? = location(element)
+        override fun getIcon(unused: Boolean): Icon? = icon
+    }
 
     private val WHITESPACE = Regex("""\s+""")
 

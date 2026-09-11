@@ -14,7 +14,7 @@ class KrakenPerfTest : BasePlatformTestCase() {
 
     fun testResolutionScalesToFiveHundredFiles() {
         val namespaces = 10
-        val perNamespace = 50   // 10 x 50 = 500 fichiers
+        val perNamespace = 50 // 10 x 50 = 500 fichiers
 
         for (n in 0 until namespaces) {
             for (i in 0 until perNamespace) {
@@ -26,7 +26,7 @@ class KrakenPerfTest : BasePlatformTestCase() {
                     Rule "Rule ${n}_$i" On Entity.id {
                         Set Mandatory
                     }
-                    """.trimIndent()
+                    """.trimIndent(),
                 )
             }
         }
@@ -40,7 +40,7 @@ class KrakenPerfTest : BasePlatformTestCase() {
             EntryPoint "EP" {
                 "Rule 0_0"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         val ref = PsiTreeUtil.findChildrenOfType(myFixture.file, KrakenRuleRef::class.java)
@@ -49,7 +49,7 @@ class KrakenPerfTest : BasePlatformTestCase() {
 
         assertNotNull(
             "La règle doit se résoudre à l'échelle de 500 fichiers",
-            ref!!.reference.resolve()
+            ref!!.reference.resolve(),
         )
 
         // Le cache doit rendre les résolutions répétées quasi instantanées.
@@ -61,7 +61,7 @@ class KrakenPerfTest : BasePlatformTestCase() {
         assertTrue(
             "300 résolutions sur 500 fichiers ont pris $elapsedMs ms — " +
                 "le cache du modèle de namespaces a-t-il régressé ?",
-            elapsedMs < 10_000
+            elapsedMs < 10_000,
         )
     }
 }

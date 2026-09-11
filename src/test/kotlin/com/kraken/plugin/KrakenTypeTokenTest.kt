@@ -19,8 +19,7 @@ import org.junit.Test
  */
 class KrakenTypeTokenTest {
 
-    private fun parse(raw: String): KrakenTypeToken =
-        KrakenTypeToken.parse(raw) ?: throw AssertionError("type non analysable : $raw")
+    private fun parse(raw: String): KrakenTypeToken = KrakenTypeToken.parse(raw) ?: throw AssertionError("type non analysable : $raw")
 
     @Test
     fun `un type simple n'est ni union ni générique`() {
@@ -80,7 +79,7 @@ class KrakenTypeTokenTest {
                 KrakenTypeToken.Array(KrakenTypeToken.Plain("Date")),
                 KrakenTypeToken.Plain("String"),
             ),
-            parse("Date[] | String")
+            parse("Date[] | String"),
         )
     }
 

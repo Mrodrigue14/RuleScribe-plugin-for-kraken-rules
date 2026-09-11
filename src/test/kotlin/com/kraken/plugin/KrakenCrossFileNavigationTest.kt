@@ -17,7 +17,7 @@ class KrakenCrossFileNavigationTest : BasePlatformTestCase() {
             Rule "Cross file rule" On Policy.state {
                 Assert true
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.configureByText(
             "entrypoints.rules",
@@ -25,7 +25,7 @@ class KrakenCrossFileNavigationTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 "Cross file<caret> rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val reference = myFixture.file.findReferenceAt(myFixture.caretOffset)
         assertNotNull("Expected a reference at caret", reference)
@@ -35,7 +35,7 @@ class KrakenCrossFileNavigationTest : BasePlatformTestCase() {
         assertEquals(
             "Target should live in the other file",
             "rules.rules",
-            target.containingFile.name
+            target.containingFile.name,
         )
     }
 
@@ -48,7 +48,7 @@ class KrakenCrossFileNavigationTest : BasePlatformTestCase() {
             Rule "Base rule" On BaseEntity.id {
                 Set Mandatory
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.configureByText(
             "policy.rules",
@@ -60,7 +60,7 @@ class KrakenCrossFileNavigationTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 "Base<caret> rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val reference = myFixture.file.findReferenceAt(myFixture.caretOffset)
         assertNotNull(reference)
@@ -77,7 +77,7 @@ class KrakenCrossFileNavigationTest : BasePlatformTestCase() {
             Rule "Deep rule" On X.y {
                 Assert true
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.addFileToProject(
             "b.rules",
@@ -85,7 +85,7 @@ class KrakenCrossFileNavigationTest : BasePlatformTestCase() {
             Namespace B
 
             Include C
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.configureByText(
             "a.rules",
@@ -97,13 +97,13 @@ class KrakenCrossFileNavigationTest : BasePlatformTestCase() {
             EntryPoint "E" {
                 "Deep<caret> rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val reference = myFixture.file.findReferenceAt(myFixture.caretOffset)
         assertNotNull(reference)
         assertTrue(
             "Transitively included rule should resolve",
-            reference!!.resolve() is KrakenRuleDecl
+            reference!!.resolve() is KrakenRuleDecl,
         )
     }
 
@@ -118,7 +118,7 @@ class KrakenCrossFileNavigationTest : BasePlatformTestCase() {
             Rule "Beta rule" On Policy.b {
                 Assert true
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.configureByText(
             "entrypoints.rules",
@@ -126,7 +126,7 @@ class KrakenCrossFileNavigationTest : BasePlatformTestCase() {
             EntryPoint "Validation" {
                 <caret>
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.complete(CompletionType.BASIC)
         val strings = myFixture.lookupElementStrings.orEmpty()
@@ -143,7 +143,7 @@ class KrakenCrossFileNavigationTest : BasePlatformTestCase() {
             Rule "Invisible rule" On X.y {
                 Assert true
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         myFixture.configureByText(
             "policy.rules",
@@ -153,13 +153,13 @@ class KrakenCrossFileNavigationTest : BasePlatformTestCase() {
             EntryPoint "E" {
                 "Invisible<caret> rule"
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         val reference = myFixture.file.findReferenceAt(myFixture.caretOffset)
         assertNotNull(reference)
         assertNull(
             "Rule from a non-included namespace must not resolve",
-            reference!!.resolve()
+            reference!!.resolve(),
         )
     }
 }

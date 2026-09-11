@@ -58,11 +58,10 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
         Rule "Under test" On Policy.policyCd {
             $body
         }
-        """.trimIndent()
+        """.trimIndent(),
     )
 
-    private fun resolve(name: String): PsiElement? =
-        KrakenScopeResolver.resolve(refTo(name), name)
+    private fun resolve(name: String): PsiElement? = KrakenScopeResolver.resolve(refTo(name), name)
 
     // ------------------------------------------------------------------
     // Portée locale : les champs du contexte visé par On
@@ -85,11 +84,11 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
             Rule "On a subtype" On Coverage.limit {
                 Assert inheritedCd != null
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
         assertNotNull(
             "Is Insurable brings its fields into scope",
-            KrakenScopeResolver.resolve(refTo("inheritedCd"), "inheritedCd")
+            KrakenScopeResolver.resolve(refTo("inheritedCd"), "inheritedCd"),
         )
     }
 
@@ -155,7 +154,7 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
         assertNotNull(target)
         assertFalse(
             "The quantifier variable wins over Policy.limitAmount",
-            target!!.node.elementType == KrakenTypes.FIELD_DECL
+            target!!.node.elementType == KrakenTypes.FIELD_DECL,
         )
     }
 
@@ -173,7 +172,7 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
         // `Child AddressInfo` dans Policy : le nom de l'enfant est le contexte.
         assertEquals(
             "AddressInfo",
-            KrakenScopeResolver.contextDenotedBy(refTo("AddressInfo"), "AddressInfo")
+            KrakenScopeResolver.contextDenotedBy(refTo("AddressInfo"), "AddressInfo"),
         )
     }
 

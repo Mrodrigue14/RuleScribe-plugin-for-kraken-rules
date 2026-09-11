@@ -59,7 +59,8 @@ class KrakenParserDefinition : ParserDefinition {
     companion object {
         @JvmField
         val FILE: IFileElementType = object : IStubFileElementType<PsiFileStub<KrakenFile>>(
-            "kraken.FILE", KrakenLanguage
+            "kraken.FILE",
+            KrakenLanguage,
         ) {
             // À incrémenter à chaque évolution de la grammaire ou des stubs
             override fun getStubVersion(): Int = 2
@@ -73,7 +74,7 @@ class KrakenParserDefinition : ParserDefinition {
         val COMMENTS: TokenSet = TokenSet.create(
             KrakenTypes.LINE_COMMENT,
             KrakenTypes.BLOCK_COMMENT,
-            KrakenTypes.DOC_COMMENT
+            KrakenTypes.DOC_COMMENT,
         )
 
         @JvmField

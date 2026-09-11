@@ -37,7 +37,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
     override fun addCompletions(
         parameters: CompletionParameters,
         context: ProcessingContext,
-        result: CompletionResultSet
+        result: CompletionResultSet,
     ) {
         // Position dans le fichier original (sans identifiant fictif) : arbre intact
         val position = parameters.originalPosition ?: parameters.position
@@ -45,8 +45,13 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
         val prev = prevVisibleLeaf(position)
 
         val inRuleTarget = isInside(position, KrakenTypes.RULE_TARGET) ||
-                (prev != null && (prev.node?.elementType == KrakenTypes.ON_KW ||
-                        isInside(prev, KrakenTypes.RULE_TARGET)))
+            (
+                prev != null &&
+                    (
+                        prev.node?.elementType == KrakenTypes.ON_KW ||
+                            isInside(prev, KrakenTypes.RULE_TARGET)
+                        )
+                )
 
         when {
             isInside(position, KrakenTypes.DIMENSION_ANNOTATION) -> {
@@ -54,13 +59,15 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
                     result.addElement(
                         LookupElementBuilder.create("\"$name\"")
                             .withPresentableText(name)
-                            .withTypeText("dimension", true)
+                            .withTypeText("dimension", true),
                     )
                 }
             }
+
             isInside(position, KrakenTypes.ANNOTATION) -> {
                 addKeywords(result, ANNOTATION_KEYWORDS)
             }
+
             inRuleTarget -> {
                 if (prev != null && prev.node?.elementType == KrakenTypes.DOT) {
                     // "On Contexte.<caret>" : champs et enfants du contexte
@@ -69,40 +76,48 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
                     if (contextName != null) {
                         for (field in KrakenPsiUtil.contextFieldNames(file, contextName)) {
                             result.addElement(
-                                LookupElementBuilder.create(field).withTypeText("field", true)
+                                LookupElementBuilder.create(field).withTypeText("field", true),
                             )
                         }
                     }
                 } else {
                     for (name in KrakenPsiUtil.findContextNamesVisible(file)) {
                         result.addElement(
-                            LookupElementBuilder.create(name).withTypeText("context", true)
+                            LookupElementBuilder.create(name).withTypeText("context", true),
                         )
                     }
                 }
             }
-            prev != null && (prev.node?.elementType == KrakenTypes.DOT ||
-                    prev.node?.elementType == KrakenTypes.QDOT) -> {
+
+            prev != null &&
+                (
+                    prev.node?.elementType == KrakenTypes.DOT ||
+                        prev.node?.elementType == KrakenTypes.QDOT
+                    ) -> {
                 // "Contexte.<caret>" dans une expression (When, Assert, Default To…)
                 val headName = prevVisibleLeaf(prev)?.text
                 if (headName != null) {
                     for (field in KrakenPsiUtil.contextFieldNames(file, headName)) {
                         result.addElement(
-                            LookupElementBuilder.create(field).withTypeText("field", true)
+                            LookupElementBuilder.create(field).withTypeText("field", true),
                         )
                     }
                 }
             }
+
             isInside(position, KrakenTypes.ENTRY_POINT_DECL) -> {
                 addEntryPointItemCompletions(position, file, result)
             }
+
             isInside(position, KrakenTypes.RULE_BODY) -> {
                 addKeywords(result, RULE_BODY_KEYWORDS)
                 addFunctionCompletions(position, result)
             }
+
             isInside(position, KrakenTypes.FUNCTION_BODY) -> {
                 addFunctionCompletions(position, result)
             }
+
             else -> {
                 addKeywords(result, TOP_LEVEL_KEYWORDS)
             }
@@ -118,7 +133,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
     private fun addEntryPointItemCompletions(
         position: PsiElement,
         file: KrakenFile,
-        result: CompletionResultSet
+        result: CompletionResultSet,
     ) {
         val currentDecl = PsiTreeUtil.getParentOfType(position, KrakenEntryPointDecl::class.java, false)
         val currentName = currentDecl?.name
@@ -139,7 +154,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
                 LookupElementBuilder.create("\"$name\"")
                     .withPresentableText(name)
                     .withIcon(AllIcons.Nodes.Method)
-                    .withTypeText(rule.containingFile.name, true)
+                    .withTypeText(rule.containingFile.name, true),
             )
         }
         for (entryPoint in KrakenPsiUtil.findEntryPointsVisible(file)) {
@@ -149,7 +164,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
                 LookupElementBuilder.create("EntryPoint \"$name\"")
                     .withPresentableText("EntryPoint $name")
                     .withIcon(AllIcons.Nodes.Plugin)
-                    .withTypeText(entryPoint.containingFile.name, true)
+                    .withTypeText(entryPoint.containingFile.name, true),
             )
         }
     }
@@ -168,7 +183,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
                     .withIcon(AllIcons.Nodes.Function)
                     .withTailText("(${function.parameters.joinToString(", ") { it.presentation() }})", true)
                     .withTypeText(function.returnType, true)
-                    .withInsertHandler(parenthesesFor(function.parameters.isNotEmpty()))
+                    .withInsertHandler(parenthesesFor(function.parameters.isNotEmpty())),
             )
         }
         for (declaration in KrakenPsiUtil.findFunctionsVisible(position)) {
@@ -178,13 +193,12 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
                     .withIcon(AllIcons.Nodes.Function)
                     .withTailText("(${declaration.parameters.joinToString(", ")})", true)
                     .withTypeText(declaration.returnType ?: declaration.containingFile.name, true)
-                    .withInsertHandler(parenthesesFor(declaration.arity > 0))
+                    .withInsertHandler(parenthesesFor(declaration.arity > 0)),
             )
         }
     }
 
-    private fun parenthesesFor(hasParameters: Boolean): InsertHandler<LookupElement> =
-        ParenthesesInsertHandler.getInstance(hasParameters)
+    private fun parenthesesFor(hasParameters: Boolean): InsertHandler<LookupElement> = ParenthesesInsertHandler.getInstance(hasParameters)
 
     private fun addKeywords(result: CompletionResultSet, keywords: List<String>) {
         for (keyword in keywords) {
@@ -217,7 +231,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
             "Context", "Contexts", "Root Context", "System Context",
             "ExternalContext", "ExternalEntity",
             "Namespace", "Include", "Import Rule",
-            "Dimension", "Function"
+            "Dimension", "Function",
         )
 
         private val RULE_BODY_KEYWORDS = listOf(
@@ -226,12 +240,16 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
             "Assert Size", "Assert Size Min", "Assert Number Min", "Assert In",
             "Set Mandatory", "Set Hidden", "Set Disabled",
             "Default To", "Reset To",
-            "Error", "Warn", "Info", "Overridable"
+            "Error", "Warn", "Info", "Overridable",
         )
 
         private val ANNOTATION_KEYWORDS = listOf(
-            "Dimension", "ServerSideOnly", "NotStrict", "ForbidTarget", "ForbidReference"
-   
+            "Dimension",
+            "ServerSideOnly",
+            "NotStrict",
+            "ForbidTarget",
+            "ForbidReference",
+
         )
     }
 }
