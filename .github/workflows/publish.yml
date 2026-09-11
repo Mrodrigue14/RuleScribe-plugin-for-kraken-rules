@@ -124,7 +124,7 @@ jobs:
       # attestations déjà émises portent. La changer casserait la vérification
       # des releases passées comme des futures.
       - name: Attester le SBOM
-        uses: actions/attest@v3
+        uses: actions/attest@v4
         with:
           subject-path: ${{ steps.artifact.outputs.path }}
           predicate-type: https://cyclonedx.org/bom

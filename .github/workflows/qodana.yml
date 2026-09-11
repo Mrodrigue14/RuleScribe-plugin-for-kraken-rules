@@ -52,7 +52,7 @@ jobs:
       # donc rien. La porte bloquante reste CodeQL et les tests, exigés par la
       # protection de branche ; les résultats restent visibles dans Security.
       - name: Qodana Scan
-        uses: JetBrains/qodana-action@v2026.2.0
+        uses: JetBrains/qodana-action@v2026.2.1
         with:
           upload-result: true
           post-pr-comment: false
