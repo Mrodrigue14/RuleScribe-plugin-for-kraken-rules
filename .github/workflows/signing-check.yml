@@ -1,14 +1,13 @@
-name: Vérification de la signature
+name: Signing check
 
-# Test à blanc de la chaîne de signature : build → signPlugin →
-# verifyPluginSignature, SANS rien publier ni tagger. Sert à valider les
-# secrets de signature avant une release (une signature qui casse pendant
-# `publish` obligerait à supprimer le tag et à recommencer), et à re-tester
-# après une rotation ou un renouvellement du certificat.
+# Dry run of the signing chain (build → signPlugin → verifyPluginSignature)
+# WITHOUT publishing or tagging anything. Use it to validate the signing secrets
+# before a release, since signing that breaks during `publish` means deleting the
+# tag and starting over, and again after rotating or renewing the certificate.
 on:
   workflow_dispatch:
 
-# Lecture seule : ce workflow ne publie rien.
+# Read-only: this workflow publishes nothing.
 permissions:
   contents: read
 
@@ -18,7 +17,7 @@ concurrency:
 
 jobs:
   signing-check:
-    name: Signer et vérifier (test à blanc)
+    name: Sign and verify (dry run)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -28,28 +27,27 @@ jobs:
       - name: Setup Java + Gradle
         uses: ./.github/actions/setup-java-gradle
 
-      - name: Build, signature et vérification
+      - name: Build, sign and verify
         env:
           CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
         run: ./gradlew buildPlugin signPlugin verifyPluginSignature
 
-      # Sans ce contrôle, des secrets absents feraient simplement sauter
-      # signPlugin et ce workflow passerait au vert sans avoir rien signé.
-      - name: Confirmer qu'un artefact signé a bien été produit
+      # Without this check, missing secrets would just skip signPlugin and this
+      # workflow would pass without signing anything.
+      - name: Confirm a signed artifact was produced
         run: |
           set -euo pipefail
           if ! ls build/distributions/*-signed.zip >/dev/null 2>&1; then
-            echo "::error::Aucun artefact signé produit — les secrets CERTIFICATE_CHAIN / PRIVATE_KEY / PRIVATE_KEY_PASSWORD sont-ils bien configurés ?"
+            echo "::error::No signed artifact produced. Are the CERTIFICATE_CHAIN / PRIVATE_KEY / PRIVATE_KEY_PASSWORD secrets configured?"
             exit 1
           fi
           ls -lh build/distributions/*-signed.zip
 
-      # Le certificat est du matériel public : afficher son sujet et sa date
-      # d'expiration ne divulgue rien, et évite de découvrir une expiration
-      # le jour d'une release.
-      - name: Identité et expiration du certificat
+      # The certificate is public: printing its subject and expiry date discloses
+      # nothing and avoids discovering an expiry on release day.
+      - name: Certificate identity and expiry
         env:
           CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
         run: |
@@ -58,7 +56,7 @@ jobs:
           openssl x509 -in chain.crt -noout -subject -issuer -enddate
           END_EPOCH=$(date -d "$(openssl x509 -in chain.crt -noout -enddate | cut -d= -f2)" +%s)
           DAYS=$(( (END_EPOCH - $(date +%s)) / 86400 ))
-          echo "Expire dans $DAYS jours."
+          echo "Expires in $DAYS days."
           if [ "$DAYS" -lt 30 ]; then
-            echo "::warning::Le certificat de signature expire dans $DAYS jours — prévoir son renouvellement."
+            echo "::warning::The signing certificate expires in $DAYS days; plan its renewal."
           fi

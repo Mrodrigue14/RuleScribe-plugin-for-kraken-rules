@@ -1,24 +1,24 @@
 name: Dependency check (OWASP)
 
-# Rôle : UPDATER de la stratégie "single updater + readers" recommandée par
-# OWASP pour cacher la base H2 (odc.mv.db). Ce job (planifié + manuel) met à
-# jour la base NVD, scanne, puis ARCHIVE le `data` dir dans la release
-# `nvd-cache`. Les jobs lecteurs (ex. publish) restaurent cet artefact et
-# scannent avec autoUpdate désactivé → aucun appel NVD, donc rapides et fiables.
+# UPDATER role in the "single updater + readers" strategy OWASP recommends for
+# caching the H2 database (odc.mv.db). This job (scheduled and manual) updates the
+# NVD database, scans, then ARCHIVES the `data` dir in the `nvd-cache` release.
+# Reader jobs (such as publish) restore it and scan with autoUpdate disabled,
+# making no NVD calls.
 #
-# Hors chemin critique des push/PR : construire la base NVD 2.0 est long et n'a
-# pas à bloquer les commits. Push/PR restent couverts par CodeQL et Dependabot.
+# Kept off the push/PR path: building the NVD 2.0 database is slow and must not
+# block commits. Pushes and PRs stay covered by CodeQL and Dependabot.
 on:
   schedule:
     - cron: '0 5 * * 0'
   workflow_dispatch:
     inputs:
       seed_data_url:
-        description: "URL d'un zip de base NVD pré-construite (bootstrap ponctuel)"
+        description: "URL of a pre-built NVD database zip (one-off bootstrap)"
         required: false
         default: ""
 
-# contents: write pour publier l'archive de la base NVD dans la release nvd-cache.
+# contents: write to publish the NVD database archive in the nvd-cache release.
 permissions:
   contents: write
 
@@ -32,7 +32,7 @@ concurrency:
 
 jobs:
   dependency-check:
-    name: Mise à jour + scan OWASP
+    name: OWASP update + scan
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -42,11 +42,10 @@ jobs:
       - name: Setup Java + Gradle
         uses: ./.github/actions/setup-java-gradle
 
-      # Restaure la base NVD précédente (release nvd-cache) ou un seed manuel,
-      # pour une mise à jour INCRÉMENTALE au lieu d'un téléchargement complet.
-      # Les mtimes sont préservés par unzip (important pour la validité du
-      # sous-dossier `cache`, cf. doc OWASP).
-      - name: Restaurer la base NVD existante
+      # Restores the previous NVD database (nvd-cache release) or a manual seed, for
+      # an INCREMENTAL update instead of a full download. unzip keeps mtimes, which
+      # matters for the validity of the `cache` subfolder (see the OWASP docs).
+      - name: Restore the existing NVD database
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SEED_URL: ${{ github.event.inputs.seed_data_url }}
@@ -54,32 +53,32 @@ jobs:
           set -uo pipefail
           mkdir -p ~/.gradle/dependency-check-data
           if [ -n "${SEED_URL:-}" ]; then
-            echo "Bootstrap depuis l'URL fournie."
+            echo "Bootstrapping from the given URL."
             curl -fsSL "$SEED_URL" -o /tmp/nvd-data.zip || true
           else
-            echo "Restauration depuis la release $NVD_CACHE_TAG (si elle existe)."
+            echo "Restoring from release $NVD_CACHE_TAG (if it exists)."
             gh release download "$NVD_CACHE_TAG" --pattern "$NVD_CACHE_ASSET" \
-              --output /tmp/nvd-data.zip --clobber || echo "(aucune archive existante)"
+              --output /tmp/nvd-data.zip --clobber || echo "(no existing archive)"
           fi
           if [ -f /tmp/nvd-data.zip ]; then
             unzip -q -o /tmp/nvd-data.zip -d ~/.gradle/dependency-check-data && rm -f /tmp/nvd-data.zip
           fi
 
-      - name: Mise à jour NVD + scan (échoue si CVE >= 7.0)
+      - name: NVD update + scan (fails on CVE >= 7.0)
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: ./gradlew dependencyCheckAnalyze
 
-      # Archive la base à jour et la publie pour les jobs lecteurs. Ne s'exécute
-      # que si le scan a réussi (base complète) — on ne publie jamais une base
-      # partielle. zip préserve les mtimes.
-      - name: Archiver et publier la base NVD (release nvd-cache)
+      # Archives the updated database and publishes it for reader jobs. Only runs if
+      # the scan succeeded (complete database), so a partial database is never
+      # published. zip keeps mtimes.
+      - name: Archive and publish the NVD database (nvd-cache release)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           if [ ! -d ~/.gradle/dependency-check-data ]; then
-            echo "Pas de data dir à archiver."; exit 0
+            echo "No data dir to archive."; exit 0
           fi
           ( cd ~/.gradle/dependency-check-data && zip -r -q "$GITHUB_WORKSPACE/$NVD_CACHE_ASSET" . )
           gh release view "$NVD_CACHE_TAG" >/dev/null 2>&1 \
@@ -88,7 +87,7 @@ jobs:
                  --prerelease
           gh release upload "$NVD_CACHE_TAG" "$NVD_CACHE_ASSET" --clobber
 
-      - name: Publier le rapport
+      - name: Upload the report
         if: always()
         uses: actions/upload-artifact@v7
         with:

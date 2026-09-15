@@ -8,15 +8,15 @@ src/main/gen/
 *.tmp
 __pycache__/
 
-# Matériel de signature du plugin : ne doit JAMAIS être committé.
-# Les clés/certificats vivent uniquement dans les secrets GitHub.
+# Plugin signing material: must NEVER be committed.
+# Keys and certificates only live in GitHub secrets.
 *.pem
 *.crt
 *.p12
 *.key
 
-# Index local CodeGraph : propre à la machine, jamais partagé
+# Local CodeGraph index: machine-specific, never shared
 .codegraph/
 
-# Sandbox du plugin Gradle IntelliJ 2.x
+# IntelliJ Platform Gradle Plugin 2.x sandbox
 .intellijPlatform/

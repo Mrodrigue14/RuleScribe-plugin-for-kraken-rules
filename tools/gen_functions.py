@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
-"""Génère le catalogue des fonctions natives KEL depuis les sources du moteur.
+"""Generates the KEL native function catalogue from the engine sources.
 
-Les 55 fonctions intégrées de Kraken sont des méthodes Java statiques annotées
-`@ExpressionFunction` dans des classes `FunctionLibrary` ; le moteur les découvre
-par `ServiceLoader` au démarrage. RuleScribe est un plugin d'analyse statique :
-il n'exécute rien et n'a aucune dépendance de compilation vers le moteur. Il lui
-faut donc une copie figée de ce catalogue, et cette copie doit être REGÉNÉRÉE,
-jamais éditée à la main — même règle que `src/main/gen`.
+Kraken's 55 built-in functions are static Java methods annotated
+`@ExpressionFunction` in `FunctionLibrary` classes, which the engine discovers
+through `ServiceLoader` at startup. RuleScribe is a static analysis plugin: it
+runs nothing and has no compile-time dependency on the engine, so it needs a
+frozen copy of this catalogue, which must be REGENERATED, never edited by hand
+(the same rule as `src/main/gen`).
 
     python3 tools/gen_functions.py ../kraken-rules
 
-Sortie : src/main/resources/functions/kel-functions.json
+Output: src/main/resources/functions/kel-functions.json
 
-La correspondance type Java → type KEL reproduit `FunctionRegistry.fromJavaType`
-du moteur (voir `kraken-expression-language`). Une annotation `@ParameterType` /
-`@ReturnType` explicite, quand elle est présente, prime sur la signature Java —
-exactement comme dans `getParameterType` / `getReturnType`.
+The Java type to KEL type mapping reproduces the engine's
+`FunctionRegistry.fromJavaType` (see `kraken-expression-language`). An explicit
+`@ParameterType` / `@ReturnType` annotation takes precedence over the Java
+signature, exactly as in `getParameterType` / `getReturnType`.
 
-Source : eisgroup/kraken-rules (Apache-2.0). Voir NOTICE.
+Source: eisgroup/kraken-rules (Apache-2.0). See NOTICE.
 """
 
 import json
@@ -32,8 +32,8 @@ OUTPUT = Path(__file__).resolve().parent.parent / (
     "src/main/resources/functions/kel-functions.json"
 )
 
-# FunctionRegistry.fromJavaType : les types Java reconnus, avant repli sur le
-# nom simple de la classe. L'ordre n'a pas d'importance, les clés sont exactes.
+# FunctionRegistry.fromJavaType: the recognised Java types, before falling back to
+# the simple class name. Order does not matter; keys are exact.
 JAVA_TO_KEL = {
     "Number": "Number",
     "BigDecimal": "Number",
@@ -53,15 +53,15 @@ COLLECTIONS = {"Collection", "List", "Set", "Iterable"}
 
 
 def kel_type(java_type: str, generics: set) -> str:
-    """Type KEL correspondant à un type Java, façon FunctionRegistry."""
+    """KEL type of a Java type, as FunctionRegistry maps it."""
     java_type = java_type.strip()
 
     match = re.fullmatch(r"(\w+)\s*<(.+)>", java_type)
     if match:
         raw, arg = match.group(1), match.group(2).strip()
         if raw in COLLECTIONS:
-            # Collection<?> et Collection<? extends X> : le moteur retient la
-            # borne supérieure, ou Any en son absence.
+            # Collection<?> and Collection<? extends X>: the engine keeps the upper
+            # bound, or Any when there is none.
             if arg == "?":
                 return "Any[]"
             arg = re.sub(r"^\?\s+extends\s+", "", arg)
@@ -76,19 +76,19 @@ def kel_type(java_type: str, generics: set) -> str:
 
 
 def strip_comments(source: str) -> str:
-    """Retire les commentaires de bloc, sauf les annotations qu'on parse."""
+    """Strips block comments, keeping the annotations that are parsed."""
     return re.sub(r"//[^\n]*", "", source)
 
 
 def unescape(text: str) -> str:
-    """Concatène un littéral Java multi-lignes en une seule chaîne."""
+    """Joins a multi-line Java literal into a single string."""
     parts = re.findall(r'"((?:[^"\\]|\\.)*)"', text)
     joined = "".join(parts)
     return joined.replace('\\"', '"').replace("\\n", "\n").replace("\\\\", "\\")
 
 
 def parse_annotation_args(text: str) -> str:
-    """Contenu entre les parenthèses d'une annotation, parenthèses équilibrées."""
+    """Content between an annotation's parentheses, with balanced parentheses."""
     depth = 0
     for index, char in enumerate(text):
         if char == "(":
@@ -117,12 +117,12 @@ def parse_examples(block: str) -> list:
 
 
 def parse_parameters(signature: str, block: str, generics: set) -> list:
-    """Paramètres d'une méthode, avec leur type KEL et leur nom documenté."""
+    """A method's parameters, with their KEL type and documented name."""
     inner = parse_annotation_args("(" + signature.split("(", 1)[1])
     if not inner.strip():
         return []
 
-    # Découpe sur les virgules de premier niveau : les génériques en contiennent.
+    # Split on top-level commas only: generics contain commas too.
     parts, depth, current = [], 0, ""
     for char in inner:
         if char in "<(":
@@ -147,7 +147,7 @@ def parse_parameters(signature: str, block: str, generics: set) -> list:
         if documented:
             found = re.search(r'name\s*=\s*"([^"]*)"', documented.group(1))
             name = found.group(1) if found else None
-        # Le nom du paramètre Java est le dernier identifiant de la déclaration.
+        # The Java parameter name is the last identifier of the declaration.
         java = re.sub(r"@\w+\s*(\([^)]*\))?", "", part).strip()
         tokens = java.rsplit(" ", 1)
         java_name = tokens[-1] if len(tokens) == 2 else None
@@ -176,8 +176,8 @@ def parse_library(path: Path) -> dict:
     functions = []
     for marker in re.finditer(r'@ExpressionFunction\s*\(\s*"([^"]*)"\s*\)', source):
         name = marker.group(1)
-        # Le bloc d'annotations précède l'annotation @ExpressionFunction ; la
-        # signature la suit, jusqu'à l'accolade ouvrante du corps.
+        # The annotation block precedes @ExpressionFunction; the signature follows it,
+        # up to the body's opening brace.
         start = source.rfind("@FunctionDocumentation", 0, marker.start())
         block = source[start if start != -1 else marker.start():marker.start()]
         signature = source[marker.end():source.find("{", marker.end())]
@@ -191,8 +191,8 @@ def parse_library(path: Path) -> dict:
         since = re.search(r'since\s*=\s*"([^"]*)"', block)
         returns = re.search(r'@ReturnType\s*\(\s*"([^"]*)"', block + signature)
         java_return = signature.strip().split("static", 1)[-1].strip()
-        # `public static <T> Collection<T> join(…)` : la liste de paramètres de
-        # type précède le type de retour, il faut la retirer avant de le lire.
+        # `public static <T> Collection<T> join(…)`: the type parameter list precedes
+        # the return type and must be removed before reading it.
         if java_return.startswith("<"):
             depth = 0
             for index, char in enumerate(java_return):
@@ -225,7 +225,7 @@ def main() -> int:
     engine = Path(sys.argv[1])
     directory = engine / LIBRARY_DIR
     if not directory.is_dir():
-        print(f"Répertoire introuvable : {directory}")
+        print(f"Directory not found: {directory}")
         return 1
 
     libraries = [parse_library(p) for p in sorted(directory.glob("*Functions.java"))]
@@ -251,10 +251,10 @@ def main() -> int:
         encoding="utf-8",
     )
 
-    print(f"{len(functions)} fonctions, {len(libraries)} bibliothèques -> {OUTPUT}")
+    print(f"{len(functions)} functions, {len(libraries)} libraries -> {OUTPUT}")
     missing = [f["name"] for f in functions if not f["description"]]
     if missing:
-        print(f"Sans description : {', '.join(sorted(set(missing)))}")
+        print(f"Without a description: {', '.join(sorted(set(missing)))}")
     return 0
 
 

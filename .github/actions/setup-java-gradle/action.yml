@@ -1,26 +1,26 @@
 name: Setup Java + Gradle
 description: >-
-  JDK Temurin, Gradle (avec cache) et gradlew exécutable. Factorise le bloc de
-  setup répété par build / dependency-check / plugin-verifier / publish, pour
-  qu'un changement de version de JDK ou d'action se fasse à un seul endroit.
+  Temurin JDK, Gradle (with cache) and an executable gradlew. Shares the setup
+  block of build / dependency-check / plugin-verifier / publish, so a JDK or
+  action version change happens in one place.
 
 inputs:
   java-version:
-    description: Version du JDK Temurin à installer.
+    description: Temurin JDK version to install.
     required: false
     default: "17"
   cache-read-only:
     description: >-
-      Ne pas ÉCRIRE le cache Gradle (true par défaut). Seul build.yml doit
-      l'écrire : ça évite d'accumuler des caches multi-Go (SDK IntelliJ) qui
-      satureraient le budget de 10 Go du repo.
+      Do not WRITE the Gradle cache (true by default). Only build.yml writes it,
+      which avoids piling up multi-GB caches (IntelliJ SDK) that would fill the
+      repository's 10 GB budget.
     required: false
     default: "true"
 
-# Les actions internes sont épinglées à leur SHA de commit (tag en commentaire) :
-# sans ça, épingler CETTE composite action n'apporterait aucune garantie, puisque
-# elle tirerait des composants mutables (finding poutine "unpinnable_action").
-# Dependabot met à jour SHA + commentaire automatiquement.
+# Inner actions are pinned to their commit SHA (tag in a comment): otherwise pinning
+# THIS composite action would guarantee nothing, since it would pull mutable
+# components (poutine finding "unpinnable_action"). Dependabot updates the SHA and
+# the comment automatically.
 runs:
   using: composite
   steps:
@@ -35,6 +35,6 @@ runs:
       with:
         cache-read-only: ${{ inputs.cache-read-only }}
 
-    - name: Rendre gradlew exécutable
+    - name: Make gradlew executable
       shell: bash
       run: chmod +x gradlew

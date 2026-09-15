@@ -1,10 +1,8 @@
-# Style Kotlin, lu par ktlint et par IntelliJ.
+# Kotlin style, read by both ktlint and IntelliJ.
 #
-# `intellij_idea` et non `ktlint_official` : ce code est écrit dans IntelliJ,
-# pour IntelliJ, et le style officiel de l'IDE est celui que l'éditeur produit
-# tout seul. Mesuré sur la base avant reformatage — ktlint_official demandait
-# 1970 corrections, android_studio 1093, intellij_idea 745. Les trois donnent un
-# code cohérent ; seul le dernier ne demande pas de se battre contre l'outil
-# avec lequel le dépôt est développé.
+# `intellij_idea` rather than `ktlint_official`: this code is written in
+# IntelliJ, and the IDE's own style is what the editor produces by itself.
+# Measured on the codebase before reformatting, ktlint_official required 1970
+# fixes, android_studio 1093 and intellij_idea 745.
 [*.{kt,kts}]
 ktlint_code_style = intellij_idea

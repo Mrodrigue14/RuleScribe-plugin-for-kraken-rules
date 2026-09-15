@@ -1,12 +1,10 @@
 name: "RuleScribe CodeQL config"
 
-# Suite de requêtes complète : sécurité (security-extended) + qualité de code.
-# Bien plus large que le jeu de requêtes par défaut de CodeQL — c'est le
-# principal levier pour renforcer la couverture de l'analyse.
+# Full query suite: security (security-extended) plus code quality, much broader
+# than CodeQL's default query set.
 queries:
   - uses: security-and-quality
 
-# NB : paths-ignore n'a AUCUN effet pour les langages compilés (java-kotlin) —
-# le code généré est compilé et analysé quand même. Le filtrage du parseur
-# généré (src/main/gen) est donc fait sur le SARIF via filter-sarif dans le
-# workflow codeql.yml.
+# paths-ignore has NO effect for compiled languages (java-kotlin): generated code
+# is compiled and analysed anyway, so the generated parser (src/main/gen) is
+# filtered out of the SARIF in the codeql.yml workflow.
