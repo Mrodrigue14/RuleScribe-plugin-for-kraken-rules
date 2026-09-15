@@ -188,10 +188,10 @@ class KrakenLexer : LexerBase() {
          * pas, `&` seul non plus (seul `&&` existe) : les accepter revenait à
          * laisser passer n'importe quelle suite de symboles.
          *
-         * `**`, `?.`, `?[`, `>=` et `<=` sont reconnus en amont, avant la
-         * table des tokens à un caractère.
+         * `**`, `?.`, `?[`, `>=`, `<=` et `||` sont reconnus en amont, avant
+         * la table des tokens à un caractère.
          */
-        private val TWO_CHAR_OPERATORS = setOf("!=", "==", "&&", "||")
+        private val TWO_CHAR_OPERATORS = setOf("!=", "==", "&&")
         private const val SINGLE_CHAR_OPERATORS = "+-=!?%"
 
         private val DATE_TIME_REGEX =

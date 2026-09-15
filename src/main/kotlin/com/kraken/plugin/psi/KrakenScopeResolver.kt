@@ -123,7 +123,7 @@ object KrakenScopeResolver {
     }
 
     /** `Coverage[] coverages` → `coverages`. Le nom est facultatif au parsing. */
-    private fun parameterName(param: com.intellij.lang.ASTNode): String? = identifiersOf(param).takeIf { it.size >= 2 }?.last()
+    private fun parameterName(param: com.intellij.lang.ASTNode): String? = KrakenPsiUtil.identifiersOf(param).takeIf { it.size >= 2 }?.last()
 
     /** Ce que [resolve] proposerait ici, pour la complétion. */
     fun visibleNames(reference: PsiElement): List<String> {
@@ -246,17 +246,18 @@ object KrakenScopeResolver {
     }
 
     /** Le nom déclaré est le premier identifiant après le mot-clé introducteur. */
+    private val VARIABLE_KEYWORDS = setOf(
+        KrakenTypes.SET_KW,
+        KrakenTypes.FOR_KW,
+        KrakenTypes.EVERY_KW,
+        KrakenTypes.SOME_KW,
+    )
+
     private fun variableLeaf(scope: PsiElement): PsiElement? {
-        val keywords = setOf(
-            KrakenTypes.SET_KW,
-            KrakenTypes.FOR_KW,
-            KrakenTypes.EVERY_KW,
-            KrakenTypes.SOME_KW,
-        )
         var child = scope.node.firstChildNode
         var seenKeyword = false
         while (child != null) {
-            if (child.elementType in keywords) {
+            if (child.elementType in VARIABLE_KEYWORDS) {
                 seenKeyword = true
             } else if (seenKeyword && child.psi !is com.intellij.psi.PsiWhiteSpace) {
                 return child.psi
@@ -269,31 +270,10 @@ object KrakenScopeResolver {
     private fun variableNameOf(scope: PsiElement): String? = variableLeaf(scope)?.text?.trim()?.takeIf { it.isNotEmpty() }
 
     /** `String policyCd` → `policyCd` : le nom est le second identifiant. */
-    private fun fieldDeclName(field: com.intellij.lang.ASTNode): String? = identifiersOf(field).lastOrNull()
+    private fun fieldDeclName(field: com.intellij.lang.ASTNode): String? = KrakenPsiUtil.identifiersOf(field).lastOrNull()
 
-    private fun fieldDeclType(field: com.intellij.lang.ASTNode): String? = identifiersOf(field).takeIf { it.size >= 2 }?.first()
+    private fun fieldDeclType(field: com.intellij.lang.ASTNode): String? = KrakenPsiUtil.identifiersOf(field).takeIf { it.size >= 2 }?.first()
 
     /** `Child Address : path` → `Address`. */
-    private fun childDeclName(child: com.intellij.lang.ASTNode): String? = identifiersOf(child).firstOrNull()
-
-    /** Identifiants d'une déclaration, en s'arrêtant avant la navigation `: …`. */
-    private fun identifiersOf(node: com.intellij.lang.ASTNode): List<String> {
-        val names = mutableListOf<String>()
-        var child = node.firstChildNode
-        while (child != null) {
-            when {
-                child.elementType == KrakenTypes.COLON -> return names
-                child.elementType == KrakenTypes.ANNOTATION -> Unit
-                child.psi is com.intellij.psi.PsiWhiteSpace -> Unit
-                child.elementType == KrakenTypes.STAR -> Unit
-                child.elementType == KrakenTypes.LBRACKET -> Unit
-                child.elementType == KrakenTypes.RBRACKET -> Unit
-                child.elementType == KrakenTypes.CHILD_KW -> Unit
-                child.elementType == KrakenTypes.EXTERNAL_KW -> Unit
-                else -> child.text.trim().takeIf { it.isNotEmpty() }?.let { names += it }
-            }
-            child = child.treeNext
-        }
-        return names
-    }
+    private fun childDeclName(child: com.intellij.lang.ASTNode): String? = KrakenPsiUtil.identifiersOf(child).firstOrNull()
 }

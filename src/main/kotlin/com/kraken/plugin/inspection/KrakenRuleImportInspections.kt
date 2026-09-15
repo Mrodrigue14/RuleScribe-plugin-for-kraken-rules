@@ -22,13 +22,12 @@ private abstract class KrakenRuleImportVisitorBase(
     final override fun visitElement(element: PsiElement) {
         if (element.node?.elementType != KrakenTypes.RULE_IMPORT_DECL) return
         val imports = KrakenPsiUtil.ruleImportsIn(element)
-        if (imports.isNotEmpty()) checkImportDecl(element, imports, holder)
+        if (imports.isNotEmpty()) checkImportDecl(element, imports)
     }
 
     abstract fun checkImportDecl(
         decl: PsiElement,
         imports: List<KrakenPsiUtil.RuleImport>,
-        holder: ProblemsHolder,
     )
 }
 
@@ -44,7 +43,6 @@ class KrakenImportUnknownNamespaceInspection : LocalInspectionTool() {
         override fun checkImportDecl(
             decl: PsiElement,
             imports: List<KrakenPsiUtil.RuleImport>,
-            holder: ProblemsHolder,
         ) {
             val first = imports.first()
             if (!KrakenPsiUtil.namespaceExists(decl.project, first.sourceNamespace)) {
@@ -68,7 +66,6 @@ class KrakenImportUnknownRuleInspection : LocalInspectionTool() {
         override fun checkImportDecl(
             decl: PsiElement,
             imports: List<KrakenPsiUtil.RuleImport>,
-            holder: ProblemsHolder,
         ) {
             // Comme le moteur : ne vérifie l'existence de la règle que si
             // le namespace source existe (sinon l'autre inspection suffit).
@@ -101,7 +98,6 @@ class KrakenImportNameClashInspection : LocalInspectionTool() {
         override fun checkImportDecl(
             decl: PsiElement,
             imports: List<KrakenPsiUtil.RuleImport>,
-            holder: ProblemsHolder,
         ) {
             val file = decl.containingFile as? KrakenFile ?: return
             val localNs = KrakenPsiUtil.namespaceOf(file)
@@ -133,7 +129,6 @@ class KrakenImportAmbiguousInspection : LocalInspectionTool() {
         override fun checkImportDecl(
             decl: PsiElement,
             imports: List<KrakenPsiUtil.RuleImport>,
-            holder: ProblemsHolder,
         ) {
             // Le moteur groupe les imports de tout le namespace par nom de
             // règle et refuse tout nom importé plus d'une fois.

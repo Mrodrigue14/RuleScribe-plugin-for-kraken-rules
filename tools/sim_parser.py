@@ -22,7 +22,7 @@ KEYWORDS.update({'and':'AND_KW','or':'OR_KW','not':'NOT_KW','if':'IF_KW','then':
 SINGLE = {'{':'LBRACE','}':'RBRACE','(':'LPAREN',')':'RPAREN','[':'LBRACKET',']':'RBRACKET',
           ',':'COMMA','.':'DOT',':':'COLON','@':'AT','*':'STAR','<':'LT','>':'GT','/':'OP',
           '|':'PIPE'}
-TWO_CHAR_OPS = {'!=','==','&&','||'}
+TWO_CHAR_OPS = {'!=','==','&&'}
 SINGLE_CHAR_OPS = set('+-=!?%')
 DATE_RE = re.compile(r'\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z?)?')
 

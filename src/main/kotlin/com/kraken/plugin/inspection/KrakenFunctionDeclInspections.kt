@@ -34,11 +34,14 @@ private abstract class KrakenFunctionDeclVisitor(
 ) : PsiElementVisitor() {
 
     final override fun visitElement(element: PsiElement) {
-        if (element is KrakenFunctionDecl) check(element, holder)
+        if (element is KrakenFunctionDecl) check(element)
     }
 
-    abstract fun check(function: KrakenFunctionDecl, holder: ProblemsHolder)
+    abstract fun check(function: KrakenFunctionDecl)
 }
+
+/** Le code du moteur dépend de la présence d'un corps : signature ou fonction. */
+private fun pick(signature: Boolean, forSignature: KrakenDiagnostic, forFunction: KrakenDiagnostic): KrakenDiagnostic = if (signature) forSignature else forFunction
 
 /** Un doublon se signale à partir de la deuxième occurrence : c'est celle à supprimer. */
 private fun <T> Iterable<T>.afterFirstOccurrenceOf(key: (T) -> String?): List<T> {
@@ -52,18 +55,13 @@ private fun <T> Iterable<T>.afterFirstOccurrenceOf(key: (T) -> String?): List<T>
  */
 class KrakenFunctionGenericBoundInspection : LocalInspectionTool() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor(holder) {
-        override fun check(function: KrakenFunctionDecl, holder: ProblemsHolder) {
+        override fun check(function: KrakenFunctionDecl) {
             val bounds = function.genericBounds
             if (bounds.isEmpty()) return
             val signature = !function.hasBody()
 
             for (duplicate in bounds.afterFirstOccurrenceOf { it.generic }) {
-                val diagnostic =
-                    if (signature) {
-                        KrakenDiagnostic.SIGNATURE_GENERIC_BOUND_DUPLICATE
-                    } else {
-                        KrakenDiagnostic.FUNCTION_GENERIC_BOUND_DUPLICATE
-                    }
+                val diagnostic = pick(signature, KrakenDiagnostic.SIGNATURE_GENERIC_BOUND_DUPLICATE, KrakenDiagnostic.FUNCTION_GENERIC_BOUND_DUPLICATE)
                 holder.registerProblem(
                     duplicate.nameElement,
                     diagnostic.format(duplicate.generic),
@@ -78,12 +76,7 @@ class KrakenFunctionGenericBoundInspection : LocalInspectionTool() {
                 // (`resolveTypeOf` à un seul argument) : une borne ne peut
                 // donc pas se référer à un autre générique.
                 if (KrakenTypeToken.parse(text)?.isGeneric != true) continue
-                val diagnostic =
-                    if (signature) {
-                        KrakenDiagnostic.SIGNATURE_GENERIC_BOUND_IS_ITSELF_GENERIC
-                    } else {
-                        KrakenDiagnostic.FUNCTION_GENERIC_BOUND_IS_ITSELF_GENERIC
-                    }
+                val diagnostic = pick(signature, KrakenDiagnostic.SIGNATURE_GENERIC_BOUND_IS_ITSELF_GENERIC, KrakenDiagnostic.FUNCTION_GENERIC_BOUND_IS_ITSELF_GENERIC)
                 holder.registerProblem(
                     element,
                     diagnostic.format(text, bound.generic),
@@ -100,29 +93,21 @@ class KrakenFunctionGenericBoundInspection : LocalInspectionTool() {
  */
 class KrakenFunctionTypeUnionGenericMixInspection : LocalInspectionTool() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor(holder) {
-        override fun check(function: KrakenFunctionDecl, holder: ProblemsHolder) {
+        override fun check(function: KrakenFunctionDecl) {
             val signature = !function.hasBody()
 
             report(
                 holder,
                 function.returnTypeElement,
                 function.returnType,
-                if (signature) {
-                    KrakenDiagnostic.SIGNATURE_RETURN_TYPE_UNION_GENERIC_MIX
-                } else {
-                    KrakenDiagnostic.FUNCTION_RETURN_TYPE_UNION_GENERIC_MIX
-                },
+                pick(signature, KrakenDiagnostic.SIGNATURE_RETURN_TYPE_UNION_GENERIC_MIX, KrakenDiagnostic.FUNCTION_RETURN_TYPE_UNION_GENERIC_MIX),
             )
             for (parameter in function.parameterList) {
                 report(
                     holder,
                     parameter.typeElement,
                     parameter.type,
-                    if (signature) {
-                        KrakenDiagnostic.SIGNATURE_PARAMETER_TYPE_UNION_GENERIC_MIX
-                    } else {
-                        KrakenDiagnostic.FUNCTION_PARAMETER_TYPE_UNION_GENERIC_MIX
-                    },
+                    pick(signature, KrakenDiagnostic.SIGNATURE_PARAMETER_TYPE_UNION_GENERIC_MIX, KrakenDiagnostic.FUNCTION_PARAMETER_TYPE_UNION_GENERIC_MIX),
                 )
             }
         }
@@ -156,7 +141,7 @@ class KrakenFunctionTypeUnionGenericMixInspection : LocalInspectionTool() {
  */
 class KrakenFunctionParameterDuplicateInspection : LocalInspectionTool() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor(holder) {
-        override fun check(function: KrakenFunctionDecl, holder: ProblemsHolder) {
+        override fun check(function: KrakenFunctionDecl) {
             if (!function.hasBody()) return
             for (duplicate in function.parameterList.afterFirstOccurrenceOf { it.name }) {
                 val element = duplicate.nameElement ?: continue
@@ -183,7 +168,7 @@ class KrakenFunctionParameterDuplicateInspection : LocalInspectionTool() {
  */
 class KrakenFunctionNativeDuplicateInspection : LocalInspectionTool() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor(holder) {
-        override fun check(function: KrakenFunctionDecl, holder: ProblemsHolder) {
+        override fun check(function: KrakenFunctionDecl) {
             if (!function.hasBody()) return
             val name = function.name ?: return
             val anchor = function.nameIdentifier ?: return

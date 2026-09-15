@@ -26,25 +26,29 @@ class KrakenRuleUsagesLineMarkerProvider : RelatedItemLineMarkerProvider() {
         when (element.parent?.node?.elementType) {
             KrakenTypes.RULE_NAME -> {
                 val declaration = PsiTreeUtil.getParentOfType(element, KrakenRuleDecl::class.java) ?: return
-                if (declaration.name == null) return
                 val references = KrakenPsiUtil.findRuleRefsVisibleTo(declaration)
-                if (references.isEmpty()) return
-                val builder = NavigationGutterIconBuilder.create(AllIcons.Gutter.ImplementedMethod)
-                    .setTargets(references)
-                    .setTooltipText("Referenced by ${references.size} entry point item(s)")
-                result.add(builder.createLineMarkerInfo(element))
+                addMarker(element, references, "Referenced by ${references.size} entry point item(s)", result)
             }
 
             KrakenTypes.EP_NAME -> {
                 val declaration = PsiTreeUtil.getParentOfType(element, KrakenEntryPointDecl::class.java) ?: return
-                if (declaration.name == null) return
                 val references = KrakenPsiUtil.findEpRefsVisibleTo(declaration)
-                if (references.isEmpty()) return
-                val builder = NavigationGutterIconBuilder.create(AllIcons.Gutter.ImplementedMethod)
-                    .setTargets(references)
-                    .setTooltipText("Included by ${references.size} entry point(s)")
-                result.add(builder.createLineMarkerInfo(element))
+                addMarker(element, references, "Included by ${references.size} entry point(s)", result)
             }
         }
+    }
+
+    // Une déclaration sans nom n'a aucune référence : la liste vide suffit à l'écarter.
+    private fun addMarker(
+        element: PsiElement,
+        references: List<PsiElement>,
+        tooltip: String,
+        result: MutableCollection<in RelatedItemLineMarkerInfo<*>>,
+    ) {
+        if (references.isEmpty()) return
+        val builder = NavigationGutterIconBuilder.create(AllIcons.Gutter.ImplementedMethod)
+            .setTargets(references)
+            .setTooltipText(tooltip)
+        result.add(builder.createLineMarkerInfo(element))
     }
 }

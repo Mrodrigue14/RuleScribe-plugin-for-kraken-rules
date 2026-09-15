@@ -8,7 +8,6 @@ import com.intellij.psi.AbstractElementManipulator
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
 import com.intellij.psi.PsiReferenceBase
-import com.intellij.psi.impl.source.tree.LeafElement
 import com.kraken.plugin.parser.KrakenTypes
 
 /**
@@ -35,12 +34,7 @@ class KrakenEpRef(node: ASTNode) : ASTWrapperPsiElement(node) {
     companion object {
         fun stringRangeInside(element: KrakenEpRef): TextRange? {
             val leaf = element.node.findChildByType(KrakenTypes.STRING) ?: return null
-            val start = leaf.startOffset - element.node.startOffset
-            return if (leaf.textLength >= 2) {
-                TextRange(start + 1, start + leaf.textLength - 1)
-            } else {
-                TextRange(start, start + leaf.textLength)
-            }
+            return KrakenPsiUtil.insideQuotes(leaf.startOffset - element.node.startOffset, leaf.textLength)
         }
     }
 }
@@ -61,11 +55,7 @@ class KrakenEntryPointReference(element: KrakenEpRef, range: TextRange) : PsiRef
 class KrakenEpRefManipulator : AbstractElementManipulator<KrakenEpRef>() {
 
     override fun handleContentChange(element: KrakenEpRef, range: TextRange, newContent: String): KrakenEpRef {
-        val leaf = element.node.findChildByType(KrakenTypes.STRING)
-        if (leaf is LeafElement) {
-            val quote = leaf.text.firstOrNull() ?: '"'
-            leaf.replaceWithText("$quote$newContent$quote")
-        }
+        KrakenPsiUtil.replaceQuoted(element.node.findChildByType(KrakenTypes.STRING), newContent)
         return element
     }
 

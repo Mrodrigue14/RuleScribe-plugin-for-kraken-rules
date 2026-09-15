@@ -1,6 +1,5 @@
 package com.kraken.plugin.refactoring
 
-import com.intellij.ide.util.TreeFileChooserFactory
 import com.intellij.lang.Language
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.command.WriteCommandAction
@@ -12,7 +11,6 @@ import com.intellij.psi.PsiReference
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.refactoring.move.MoveHandlerDelegate
 import com.kraken.plugin.lang.KrakenFile
-import com.kraken.plugin.lang.KrakenFileType
 import com.kraken.plugin.lang.KrakenLanguage
 import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.psi.KrakenRuleDecl
@@ -48,7 +46,7 @@ class KrakenMoveEntryPointHandler : MoveHandlerDelegate() {
     ): Boolean {
         val entryPoint = entryPointOf(element) ?: return false
         val source = entryPoint.containingFile as? KrakenFile ?: return false
-        val target = chooseTarget(project, source) ?: return true
+        val target = chooseMoveTarget(project, source, "Move EntryPoint to File") ?: return true
         if (target == source) return true
 
         val broken = KrakenMoveConflicts.brokenBy(entryPoint, target)
@@ -70,16 +68,6 @@ class KrakenMoveEntryPointHandler : MoveHandlerDelegate() {
         if (PsiTreeUtil.getParentOfType(element, KrakenRuleDecl::class.java, false) != null) return null
         return element as? KrakenEntryPointDecl
             ?: PsiTreeUtil.getParentOfType(element, KrakenEntryPointDecl::class.java, false)
-    }
-
-    private fun chooseTarget(project: Project, source: KrakenFile): KrakenFile? {
-        val chooser = TreeFileChooserFactory.getInstance(project).createFileChooser(
-            "Move EntryPoint to File",
-            source,
-            KrakenFileType,
-        ) { it is KrakenFile && it != source }
-        chooser.showDialog()
-        return chooser.selectedFile as? KrakenFile
     }
 
     /**

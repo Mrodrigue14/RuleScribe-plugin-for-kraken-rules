@@ -6,6 +6,7 @@ import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenFunctionDecl
 import com.kraken.plugin.psi.KrakenPathSegment
+import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRefExpr
 
 /**
@@ -101,10 +102,10 @@ object KrakenTypeInference {
             if (!leafType.isKnown) return KrakenType.Unknown
             return if (projectsOverACollection(element, last)) wrap(leafType) else leafType
         }
-        val head = significantChildren(element).firstOrNull() ?: return KrakenType.Unknown
+        val children = significantChildren(element)
+        val head = children.firstOrNull() ?: return KrakenType.Unknown
         // Un crochet réduit une collection à son élément.
-        val bracketed = significantChildren(element)
-            .any { it.node.elementType == KrakenTypes.BRACKET_ACCESS }
+        val bracketed = children.any { it.node.elementType == KrakenTypes.BRACKET_ACCESS }
         val headType = typeOf(head)
         return if (bracketed && headType is KrakenType.Array) headType.element else headType
     }
@@ -152,17 +153,15 @@ object KrakenTypeInference {
             // `Child Address` et `Child* Address` : le nom est le contexte, et
             // l'étoile en fait une collection.
             KrakenTypes.CHILD_DECL -> {
-                val name = identifiersOf(declaration).firstOrNull() ?: return KrakenType.Unknown
+                val name = KrakenPsiUtil.identifiersOf(declaration.node).firstOrNull() ?: return KrakenType.Unknown
                 val context = KrakenType.Context(name)
                 if (node.findChildByType(KrakenTypes.STAR) != null) KrakenType.Array(context) else context
             }
 
             KrakenTypes.FUNCTION_PARAM ->
-                identifiersOf(declaration).firstOrNull()
-                    ?.let { KrakenType.fromDslName(it + arraySuffix(declaration)) }
+                KrakenPsiUtil.identifiersOf(declaration.node).firstOrNull()
+                    ?.let { KrakenType.fromDslName(it) }
                     ?: KrakenType.Unknown
-
-            KrakenTypes.CONTEXT_DECL -> KrakenType.Unknown
 
             else -> KrakenType.Unknown
         }
@@ -170,34 +169,11 @@ object KrakenTypeInference {
 
     /** `Money limitAmount` → Money ; `Coverage* items` → Coverage[]. */
     private fun fieldType(field: PsiElement): KrakenType {
-        val names = identifiersOf(field)
+        val names = KrakenPsiUtil.identifiersOf(field.node)
         if (names.size < 2) return KrakenType.Unknown
         val base = KrakenType.fromDslName(names.first())
         return if (field.node.findChildByType(KrakenTypes.STAR) != null) KrakenType.Array(base) else base
     }
 
-    private fun arraySuffix(param: PsiElement): String = if (param.node.findChildByType(KrakenTypes.LBRACKET) != null) "[]" else ""
-
     private fun singleExpressionIn(group: PsiElement): PsiElement? = significantChildren(group).singleOrNull { it.node.elementType == KrakenTypes.EXPRESSION }
-
-    /** Identifiants d'une déclaration, en s'arrêtant avant la navigation `: …`. */
-    private fun identifiersOf(element: PsiElement): List<String> {
-        val names = mutableListOf<String>()
-        var child = element.node.firstChildNode
-        while (child != null) {
-            when {
-                child.elementType == KrakenTypes.COLON -> return names
-                child.elementType == KrakenTypes.ANNOTATION -> Unit
-                child.psi is com.intellij.psi.PsiWhiteSpace -> Unit
-                child.elementType == KrakenTypes.STAR -> Unit
-                child.elementType == KrakenTypes.LBRACKET -> Unit
-                child.elementType == KrakenTypes.RBRACKET -> Unit
-                child.elementType == KrakenTypes.CHILD_KW -> Unit
-                child.elementType == KrakenTypes.EXTERNAL_KW -> Unit
-                else -> child.text.trim().takeIf { it.isNotEmpty() }?.let { names += it }
-            }
-            child = child.treeNext
-        }
-        return names
-    }
 }

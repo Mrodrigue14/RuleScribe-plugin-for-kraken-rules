@@ -1,6 +1,5 @@
 package com.kraken.plugin.refactoring
 
-import com.intellij.ide.util.TreeFileChooserFactory
 import com.intellij.lang.Language
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.command.WriteCommandAction
@@ -12,7 +11,6 @@ import com.intellij.psi.PsiReference
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.refactoring.move.MoveHandlerDelegate
 import com.kraken.plugin.lang.KrakenFile
-import com.kraken.plugin.lang.KrakenFileType
 import com.kraken.plugin.lang.KrakenLanguage
 import com.kraken.plugin.psi.KrakenRuleDecl
 
@@ -49,7 +47,7 @@ class KrakenMoveRuleHandler : MoveHandlerDelegate() {
     ): Boolean {
         val rule = ruleOf(element) ?: return false
         val source = rule.containingFile as? KrakenFile ?: return false
-        val target = chooseTarget(project, source) ?: return true
+        val target = chooseMoveTarget(project, source, "Move Rule to File") ?: return true
         if (target == source) return true
 
         val broken = KrakenMoveConflicts.brokenBy(rule, target)
@@ -65,16 +63,6 @@ class KrakenMoveRuleHandler : MoveHandlerDelegate() {
     }
 
     private fun ruleOf(element: PsiElement): KrakenRuleDecl? = element as? KrakenRuleDecl ?: PsiTreeUtil.getParentOfType(element, KrakenRuleDecl::class.java, false)
-
-    private fun chooseTarget(project: Project, source: KrakenFile): KrakenFile? {
-        val chooser = TreeFileChooserFactory.getInstance(project).createFileChooser(
-            "Move Rule to File",
-            source,
-            KrakenFileType,
-        ) { it is KrakenFile && it != source }
-        chooser.showDialog()
-        return chooser.selectedFile as? KrakenFile
-    }
 
     /**
      * Le compte suffit : détailler chaque référence demanderait une vue de

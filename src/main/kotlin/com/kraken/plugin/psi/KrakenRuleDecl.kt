@@ -6,7 +6,6 @@ import com.intellij.navigation.ItemPresentation
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.StubBasedPsiElement
-import com.intellij.psi.impl.source.tree.LeafElement
 import com.intellij.psi.stubs.IStubElementType
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.stubs.KrakenRuleStub
@@ -43,11 +42,7 @@ class KrakenRuleDecl :
     }
 
     override fun setName(name: String): PsiElement {
-        val leaf = nameLeaf()
-        if (leaf is LeafElement) {
-            val quote = leaf.text.firstOrNull() ?: '"'
-            leaf.replaceWithText("$quote$name$quote")
-        }
+        KrakenPsiUtil.replaceQuoted(nameLeaf(), name)
         return this
     }
 
