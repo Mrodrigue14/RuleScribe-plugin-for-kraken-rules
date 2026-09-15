@@ -1,9 +1,5 @@
 package com.kraken.plugin
 
-import com.intellij.psi.util.PsiTreeUtil
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import com.kraken.plugin.lang.KrakenFile
-import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.refactoring.KrakenMoveConflicts
 
 /**
@@ -14,11 +10,7 @@ import com.kraken.plugin.refactoring.KrakenMoveConflicts
  * Move rule oublierait — un entry point posé dans un namespace qui ne voit pas
  * ses propres règles devient vide sans qu'une ligne bouge à l'intérieur.
  */
-class KrakenEntryPointMoveConflictsTest : BasePlatformTestCase() {
-
-    private fun file(name: String, text: String): KrakenFile = myFixture.addFileToProject(name, text) as KrakenFile
-
-    private fun epIn(file: KrakenFile, name: String): KrakenEntryPointDecl = PsiTreeUtil.findChildrenOfType(file, KrakenEntryPointDecl::class.java).first { it.name == name }
+class KrakenEntryPointMoveConflictsTest : KrakenMoveTestCase() {
 
     // ------------------------------------------------------------------
     // Sens entrant : qui référence l'EntryPoint déplacé

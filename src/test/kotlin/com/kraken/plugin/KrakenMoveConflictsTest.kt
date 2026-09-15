@@ -1,9 +1,5 @@
 package com.kraken.plugin
 
-import com.intellij.psi.util.PsiTreeUtil
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import com.kraken.plugin.lang.KrakenFile
-import com.kraken.plugin.psi.KrakenRuleDecl
 import com.kraken.plugin.refactoring.KrakenMoveConflicts
 
 /**
@@ -14,11 +10,7 @@ import com.kraken.plugin.refactoring.KrakenMoveConflicts
  * fichier, donc un déplacement ne modifie aucun texte de référence — il
  * modifie seulement si ces références trouvent encore leur cible.
  */
-class KrakenMoveConflictsTest : BasePlatformTestCase() {
-
-    private fun file(name: String, text: String): KrakenFile = myFixture.addFileToProject(name, text) as KrakenFile
-
-    private fun ruleIn(file: KrakenFile, name: String): KrakenRuleDecl = PsiTreeUtil.findChildrenOfType(file, KrakenRuleDecl::class.java).first { it.name == name }
+class KrakenMoveConflictsTest : KrakenMoveTestCase() {
 
     /** Même namespace : rien ne peut casser. */
     fun testMovingWithinTheSameNamespaceIsSafe() {
