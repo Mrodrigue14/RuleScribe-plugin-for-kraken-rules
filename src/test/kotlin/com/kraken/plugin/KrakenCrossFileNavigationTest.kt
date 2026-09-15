@@ -5,8 +5,8 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.psi.KrakenRuleDecl
 
 /**
- * Navigation et résolution entre fichiers : le cas d'usage réel où les
- * EntryPoints vivent dans un fichier séparé des déclarations de règles.
+ * Cross-file navigation and resolution: the real-world case where EntryPoints live in a
+ * different file from the rule declarations.
  */
 class KrakenCrossFileNavigationTest : BasePlatformTestCase() {
 

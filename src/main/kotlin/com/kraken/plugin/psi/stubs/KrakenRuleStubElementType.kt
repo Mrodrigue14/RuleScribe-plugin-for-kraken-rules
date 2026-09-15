@@ -10,8 +10,8 @@ import com.kraken.plugin.lang.KrakenLanguage
 import com.kraken.plugin.psi.KrakenRuleDecl
 
 /**
- * Type d'élément stubbé pour RULE_DECL. Instancié par le parser généré via
- * l'attribut elementTypeClass du BNF (règle rule_decl).
+ * Stub element type for RULE_DECL, instantiated by the generated parser through the
+ * `elementTypeClass` attribute of the BNF `rule_decl` rule.
  */
 class KrakenRuleStubElementType(debugName: String) : IStubElementType<KrakenRuleStub, KrakenRuleDecl>(debugName, KrakenLanguage) {
 

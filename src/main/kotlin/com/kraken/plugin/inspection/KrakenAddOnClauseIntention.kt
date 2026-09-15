@@ -8,9 +8,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenRuleDecl
 
-/**
- * Intention : ajoute une clause `On Context.field` manquante à une règle.
- */
+/** Adds a missing `On Context.field` clause to a rule. */
 class KrakenAddOnClauseIntention : PsiElementBaseIntentionAction() {
 
     override fun getFamilyName(): String = "Add missing 'On' clause"
@@ -28,8 +26,7 @@ class KrakenAddOnClauseIntention : PsiElementBaseIntentionAction() {
         if (editor == null) return
         val rule = PsiTreeUtil.getParentOfType(element, KrakenRuleDecl::class.java, false) ?: return
 
-        // Point d'insertion : après le nom de la règle s'il existe,
-        // sinon après le mot-clé Rule.
+        // Insert after the rule name when there is one, otherwise after the Rule keyword.
         val anchor = rule.node.findChildByType(KrakenTypes.RULE_NAME)
             ?: rule.node.findChildByType(KrakenTypes.RULE_KW)
             ?: return
@@ -38,7 +35,7 @@ class KrakenAddOnClauseIntention : PsiElementBaseIntentionAction() {
 
         editor.document.insertString(offset, placeholder)
 
-        // Sélectionne le placeholder pour que l'utilisateur puisse le remplacer
+        // Select the placeholder so the user can replace it.
         val start = offset + " On ".length
         editor.caretModel.moveToOffset(start)
         editor.selectionModel.setSelection(start, offset + placeholder.length)

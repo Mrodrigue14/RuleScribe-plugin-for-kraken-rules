@@ -38,10 +38,8 @@ class KrakenBlock(
     override fun getIndent(): Indent = indent
 
     override fun buildChildren(): List<Block> {
-        // Les expressions KEL n'ont pas encore de règles de mise en page :
-        // on les traite comme des blocs opaques pour que le formateur (et le
-        // "Reformat on paste" de l'IDE) préserve l'indentation manuelle de
-        // leurs lignes de continuation au lieu de les aplatir.
+        // KEL expressions have no layout rules yet. Treating them as opaque blocks keeps the
+        // manual indentation of continuation lines, including on paste, instead of flattening it.
         if (myNode.elementType == KrakenTypes.EXPRESSION) return emptyList()
         val blocks = mutableListOf<Block>()
         var child = myNode.firstChildNode

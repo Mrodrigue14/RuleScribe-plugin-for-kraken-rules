@@ -4,12 +4,10 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.kraken.plugin.refactoring.KrakenDeclarationMover
 
 /**
- * Le déplacement de règle bout en bout.
+ * Rule move, end to end.
  *
- * Ce qui est vérifié est la **résolution** après coup, pas le texte : une
- * référence Kraken nomme une règle, jamais un fichier, donc comparer des
- * chaînes ne dirait rien de ce qui compte. On contrôle aussi que les deux
- * fichiers parsent encore, puisque le déplacement passe par le document.
+ * Resolution is checked afterwards, not text: a Kraken reference names a rule, never a
+ * file. Both files must also still parse, since the move goes through the document.
  */
 class KrakenRuleMoveTest : KrakenMoveTestCase() {
 
@@ -25,12 +23,12 @@ class KrakenRuleMoveTest : KrakenMoveTestCase() {
 
         WriteCommandAction.runWriteCommandAction(project) { KrakenDeclarationMover.move(project, ruleIn(a, "Moved"), b) }
 
-        assertTrue("la règle doit être dans la destination", b.text.contains("""Rule "Moved""""))
-        assertFalse("et avoir quitté la source", a.text.contains("""Rule "Moved""""))
+        assertTrue("the rule must be in the destination", b.text.contains("""Rule "Moved""""))
+        assertFalse("and have left the source", a.text.contains("""Rule "Moved""""))
         assertParses(a, b)
     }
 
-    /** Le point qui compte : la référence n'a pas bougé et résout toujours. */
+    /** The reference is unchanged and still resolves. */
     fun testReferencesStillResolveWhenTheDestinationIsVisible() {
         val a = file(
             "a.rules",
@@ -48,16 +46,15 @@ class KrakenRuleMoveTest : KrakenMoveTestCase() {
             """.trimIndent(),
         )
 
-        assertNotNull("résout avant", ruleRefIn(ep, "Moved").reference.resolve())
+        assertNotNull("resolves before", ruleRefIn(ep, "Moved").reference.resolve())
         WriteCommandAction.runWriteCommandAction(project) { KrakenDeclarationMover.move(project, ruleIn(a, "Moved"), b) }
-        assertNotNull("doit résoudre après", ruleRefIn(ep, "Moved").reference.resolve())
+        assertNotNull("must resolve after", ruleRefIn(ep, "Moved").reference.resolve())
         assertParses(a, b, ep)
     }
 
     /**
-     * Et l'inverse, qui est le dommage que l'analyse de conflit sert à
-     * annoncer : le texte de la référence est intact, mais elle ne trouve
-     * plus rien.
+     * The damage conflict analysis announces: the reference text is intact, but it no
+     * longer finds anything.
      */
     fun testReferencesStopResolvingWhenTheDestinationIsOutOfSight() {
         val a = file(
@@ -76,13 +73,13 @@ class KrakenRuleMoveTest : KrakenMoveTestCase() {
             """.trimIndent(),
         )
 
-        assertNotNull("résout avant", ruleRefIn(ep, "Moved").reference.resolve())
+        assertNotNull("resolves before", ruleRefIn(ep, "Moved").reference.resolve())
         WriteCommandAction.runWriteCommandAction(project) { KrakenDeclarationMover.move(project, ruleIn(a, "Moved"), far) }
-        assertEquals("le texte de la référence est inchangé", "Moved", ruleRefIn(ep, "Moved").ruleName)
-        assertNull("mais elle ne résout plus", ruleRefIn(ep, "Moved").reference.resolve())
+        assertEquals("the reference text is unchanged", "Moved", ruleRefIn(ep, "Moved").ruleName)
+        assertNull("but it no longer resolves", ruleRefIn(ep, "Moved").reference.resolve())
     }
 
-    /** Après déplacement, l'index de stubs doit retrouver la règle chez elle. */
+    /** After the move, the stub index finds the rule in its new file. */
     fun testTheStubIndexFindsTheRuleInItsNewHome() {
         val a = file(
             "a.rules",
@@ -96,11 +93,11 @@ class KrakenRuleMoveTest : KrakenMoveTestCase() {
         WriteCommandAction.runWriteCommandAction(project) { KrakenDeclarationMover.move(project, ruleIn(a, "Moved"), b) }
 
         val found = com.kraken.plugin.psi.KrakenPsiUtil.findRulesVisible(b, "Moved")
-        assertEquals("une seule déclaration, dans la destination", 1, found.size)
+        assertEquals("a single declaration, in the destination", 1, found.size)
         assertEquals("b.rules", found.first().containingFile.name)
     }
 
-    /** Déplacer vers son propre fichier ne fait rien. */
+    /** Moving into the same file does nothing. */
     fun testMovingIntoTheSameFileIsARefusal() {
         val a = file(
             "a.rules",

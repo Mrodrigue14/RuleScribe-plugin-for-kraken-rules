@@ -10,9 +10,9 @@ import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
 
 /**
- * Recherche de références dédiée : la recherche standard d'IntelliJ passe par
- * l'index de mots et rate les noms multi-mots ("Policy code mandatory").
- * Ici on scanne directement les items d'EntryPoint par nom.
+ * Dedicated reference search: IntelliJ's default search goes through the word index and
+ * misses multi-word names ("Policy code mandatory"), so EntryPoint items are scanned by
+ * name.
  */
 class KrakenReferencesSearcher : QueryExecutorBase<PsiReference, ReferencesSearch.SearchParameters>(true) {
 

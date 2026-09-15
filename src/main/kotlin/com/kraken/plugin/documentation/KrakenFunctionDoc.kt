@@ -5,15 +5,12 @@ import com.kraken.plugin.functions.KelFunction
 import com.kraken.plugin.psi.KrakenFunctionDecl
 
 /**
- * Rendu de la doc rapide des fonctions.
+ * Quick documentation rendering for functions.
  *
- * Deux provenances, présentées de la même façon pour que l'utilisateur n'ait
- * pas à savoir laquelle il consulte : les natives viennent du catalogue
- * embarqué (métadonnées extraites des annotations Java du moteur), les
- * déclarées viennent de leur commentaire `/** … */`.
- *
- * Les balises reconnues dans un commentaire suivent `FunctionDoc.g4` du
- * moteur : `@since`, `@example`, `@result`, `@invalidExample`, `@parameter`.
+ * Natives come from the bundled catalogue (metadata extracted from the engine's Java
+ * annotations) and declared functions from their doc comment; both render the same
+ * way. Doc comment tags follow the engine's `FunctionDoc.g4`: `@since`, `@example`,
+ * `@result`, `@invalidExample`, `@parameter`.
  */
 internal object KrakenFunctionDoc {
 
@@ -46,8 +43,8 @@ internal object KrakenFunctionDoc {
         append("<b>Function</b> <code>").append(escape(declaration.signature())).append("</code>")
         append("<br/><i>").append(escape(declaration.containingFile.name))
         if (!declaration.hasBody()) {
-            // Une signature nue délègue au Java enregistré : le dire évite de
-            // chercher un corps KEL qui n'existe pas.
+            // A bare signature delegates to registered Java code; saying so saves looking for a
+            // KEL body.
             append(" — signature only, implemented in Java")
         }
         append("</i>")
@@ -77,7 +74,7 @@ internal object KrakenFunctionDoc {
         val examples: List<Pair<String, String?>>,
     )
 
-    /** Analyse un commentaire de doc selon les balises de `FunctionDoc.g4`. */
+    /** Parses a doc comment using the `FunctionDoc.g4` tags. */
     fun parse(text: String): DocComment {
         val body = text.removePrefix("/**").removeSuffix("*/")
             .lines()
@@ -116,7 +113,6 @@ internal object KrakenFunctionDoc {
 
                 trimmed.startsWith("@") -> Unit
 
-                // balise non reconnue : ignorée
                 else -> if (trimmed.isNotEmpty()) description.append(trimmed).append(' ')
             }
         }

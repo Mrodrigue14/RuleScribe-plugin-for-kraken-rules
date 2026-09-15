@@ -12,24 +12,19 @@ import com.kraken.plugin.functions.KrakenFunctionCatalog
 import com.kraken.plugin.parser.KrakenTypes
 
 /**
- * Appel de fonction dans une expression KEL : `Round(x, 2)`, `Limits(coverages)`.
+ * Function call in a KEL expression: `Round(x, 2)`, `Limits(coverages)`.
  *
- * Trois provenances possibles pour la cible, comme dans le moteur
- * (`kraken.model.project.scope.ScopeBuilder`) : une fonction native Java, une
- * `Function` déclarée avec un corps KEL, ou une signature `Function` sans corps.
- * Seules les deux dernières existent en PSI — les natives sont dans le
- * catalogue embarqué, sans source à ouvrir.
+ * As in the engine (`kraken.model.project.scope.ScopeBuilder`), the target is a native
+ * Java function, a `Function` with a KEL body, or a bodiless `Function` signature. Only
+ * the last two exist as PSI; natives live in the bundled catalogue.
  */
 class KrakenFunctionCall(node: ASTNode) : ASTWrapperPsiElement(node) {
 
-    /** Nom appelé, c'est-à-dire tout ce qui précède la liste d'arguments. */
+    /** Everything before the argument list. */
     val functionName: String
         get() = headRange()?.substring(text)?.trim().orEmpty()
 
-    /**
-     * Nombre d'arguments. Le moteur identifie une fonction par (nom, arité) :
-     * c'est cette valeur, et non les types, qui sélectionne la surcharge.
-     */
+    /** The engine identifies a function by (name, arity), so this, not the types, selects the overload. */
     val argumentCount: Int
         get() {
             val args = node.findChildByType(KrakenTypes.CALL_ARGS) ?: return 0
@@ -42,11 +37,11 @@ class KrakenFunctionCall(node: ASTNode) : ASTWrapperPsiElement(node) {
         return KrakenFunctionReference(this, range)
     }
 
-    /** Vrai si l'appel correspond à une fonction native ou déclarée et visible. */
+    /** True if a native function or a visible declared function matches this call. */
     fun isResolvable(): Boolean = KrakenFunctionCatalog.find(functionName, argumentCount) != null ||
         KrakenPsiUtil.findFunctionVisible(this, functionName, argumentCount) != null
 
-    /** Étendue du nom appelé, relative à l'élément. */
+    /** Range of the called name, relative to this element. */
     private fun headRange(): TextRange? {
         val args = node.findChildByType(KrakenTypes.CALL_ARGS) ?: return null
         return TextRange(0, args.startOffset - node.startOffset)
@@ -54,9 +49,8 @@ class KrakenFunctionCall(node: ASTNode) : ASTWrapperPsiElement(node) {
 }
 
 /**
- * Référence **souple** : une fonction native n'a pas de déclaration à ouvrir,
- * donc une résolution nulle est un cas normal, pas une erreur — voir
- * [KrakenFunctionCall.isResolvable] pour la même logique côté vérification.
+ * Soft reference: a native function has no declaration to open, so resolving to null
+ * is normal. [KrakenFunctionCall.isResolvable] applies the same logic.
  */
 class KrakenFunctionReference(element: KrakenFunctionCall, range: TextRange) : PsiReferenceBase<KrakenFunctionCall>(element, range, true) {
 
@@ -69,9 +63,8 @@ class KrakenFunctionReference(element: KrakenFunctionCall, range: TextRange) : P
 }
 
 /**
- * Renommer une `Function` doit réécrire ses appels : le nom appelé n'est pas un
- * nœud propre du BNF (`call_head` est une règle privée), donc c'est le token de
- * tête qu'il faut remplacer, pas l'élément entier.
+ * Renaming a `Function` rewrites its calls. The called name is not its own BNF node
+ * (`call_head` is private), so the head token is replaced, not the whole element.
  */
 class KrakenFunctionCallManipulator : AbstractElementManipulator<KrakenFunctionCall>() {
 

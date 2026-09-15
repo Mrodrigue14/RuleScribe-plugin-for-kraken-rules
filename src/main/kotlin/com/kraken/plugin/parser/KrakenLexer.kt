@@ -5,11 +5,10 @@ import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IElementType
 
 /**
- * Lexer manuscrit pour le DSL Kraken .rules.
+ * Hand-written lexer for the Kraken `.rules` DSL.
  *
- * Les mots-clés sont reconnus sans tenir compte de la casse, en cohérence
- * avec la grammaire ANTLR officielle (Common.g4) qui accepte par exemple
- * "rule", "Rule" et "RULE".
+ * Keywords are case-insensitive, like the official ANTLR grammar (Common.g4), which
+ * accepts "rule", "Rule" and "RULE".
  */
 class KrakenLexer : LexerBase() {
 
@@ -66,15 +65,12 @@ class KrakenLexer : LexerBase() {
 
             c == '*' && peek(1) == '*' -> twoCharToken(KrakenTypes.OP)
 
-            // Avant SINGLE_CHAR_TOKENS, qui rendrait sinon `<` puis `=`
-            // séparément : `>=` est un opérateur à part entière côté moteur
-            // (`OP_MORE_EQUALS` dans Common.g4), et le découper empêchait
-            // toute analyse de la comparaison.
+            // Checked before SINGLE_CHAR_TOKENS, which would split `>=` into `>` and `=`; `>=` is
+            // a single operator in the engine (`OP_MORE_EQUALS` in Common.g4).
             (c == '>' || c == '<') && peek(1) == '=' -> twoCharToken(KrakenTypes.OP)
 
-            // Même raison, en sens inverse : `|` figure dans la table des
-            // tokens simples (PIPE), qui est consultée avant les opérateurs à
-            // deux caractères. Sans ce cas, `||` se découperait en deux PIPE.
+            // Same reason: `|` is in the single-character table (PIPE), which is consulted before
+            // two-character operators, so `||` would otherwise become two PIPEs.
             c == '|' && peek(1) == '|' -> twoCharToken(KrakenTypes.OP)
 
             else -> scanSymbol(c)
@@ -98,7 +94,7 @@ class KrakenLexer : LexerBase() {
     }
 
     private fun scanBlockComment() {
-        // "/**..." = commentaire de documentation, sauf le cas limite "/**/"
+        // "/**" starts a doc comment, except in the empty comment "/**/".
         val isDoc = peek(2) == '*' && peek(3) != '/'
         var i = tokenStart + if (isDoc) 3 else 2
         var closed = false
@@ -126,8 +122,8 @@ class KrakenLexer : LexerBase() {
                 i++
                 break
             }
-            // NB : comme dans la grammaire ANTLR officielle, une chaîne peut
-            // s'étendre sur plusieurs lignes (messages template '${...}').
+            // As in the official ANTLR grammar, a string may span several lines (template
+            // messages with '${...}').
             i++
         }
         tokenEnd = i
@@ -135,7 +131,7 @@ class KrakenLexer : LexerBase() {
     }
 
     private fun scanNumber() {
-        // Littéraux date / datetime du KEL : 2020-01-01 ou 2020-01-01T10:00:00Z
+        // KEL date and datetime literals: 2020-01-01 or 2020-01-01T10:00:00Z
         val dateMatch = DATE_TIME_REGEX.matchAt(buffer, tokenStart)
         if (dateMatch != null) {
             tokenEnd = dateMatch.range.last + 1
@@ -164,11 +160,8 @@ class KrakenLexer : LexerBase() {
             currentToken = single
             return
         }
-        // Plus long opérateur réel d'abord, plutôt qu'une suite maximale de
-        // caractères d'opérateur : `a &|&~ b` se lexait en un seul `OP` que la
-        // grammaire acceptait sans broncher. En ne reconnaissant que les
-        // opérateurs de Common.g4, une faute de frappe devient une erreur
-        // précise, au bon offset.
+        // Only real operators, longest first, rather than any run of operator characters,
+        // which would accept `a &|&~ b` as one OP. A typo fails at the right offset instead.
         if ("$c${peek(1)}" in TWO_CHAR_OPERATORS) {
             twoCharToken(KrakenTypes.OP)
             return
@@ -184,12 +177,11 @@ class KrakenLexer : LexerBase() {
 
     companion object {
         /**
-         * Opérateurs de `Common.g4`, et rien d'autre. `^` et `~` n'y figurent
-         * pas, `&` seul non plus (seul `&&` existe) : les accepter revenait à
-         * laisser passer n'importe quelle suite de symboles.
+         * The operators of `Common.g4` and nothing else: `^`, `~` and a lone `&` are not
+         * operators.
          *
-         * `**`, `?.`, `?[`, `>=`, `<=` et `||` sont reconnus en amont, avant
-         * la table des tokens à un caractère.
+         * `**`, `?.`, `?[`, `>=`, `<=` and `||` are recognised earlier, before the
+         * single-character table.
          */
         private val TWO_CHAR_OPERATORS = setOf("!=", "==", "&&")
         private const val SINGLE_CHAR_OPERATORS = "+-=!?%"
@@ -213,9 +205,7 @@ class KrakenLexer : LexerBase() {
                 '<' to KrakenTypes.LT,
                 '>' to KrakenTypes.GT,
                 '/' to KrakenTypes.OP,
-                // `|` seul : token propre, parce qu'il sépare aussi les membres
-                // d'un type union. `||` est capté avant, comme OP à deux
-                // caractères.
+                // A lone `|` is its own token because it also separates union type members.
                 '|' to KrakenTypes.PIPE,
             )
         }

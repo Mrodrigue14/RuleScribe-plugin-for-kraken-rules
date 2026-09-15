@@ -4,16 +4,15 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.highlighter.KrakenSyntaxHighlighter
 
 /**
- * Appariement des accolades : profondeur et orphelines.
+ * Brace matching: depth and unmatched braces.
  *
- * Ces tests vérifient les plages émises, pas ce que l'utilisateur voit — la
- * lisibilité de la palette se contrôle dans `runIde`, pas ici. Ce qu'ils
- * verrouillent, c'est la logique de pile : quelle accolade est à quelle
- * profondeur, et laquelle n'a pas de partenaire.
+ * These tests check the emitted ranges, not what the user sees (palette readability is
+ * checked in `runIde`). They pin the stack logic: which brace sits at which depth, and
+ * which one has no partner.
  */
 class KrakenBracketColouringTest : BasePlatformTestCase() {
 
-    /** Caractère annoté → nom de la clé posée dessus. */
+    /** Annotated character → name of the key set on it. */
     private fun painted(source: String): List<Pair<String, String>> {
         myFixture.configureByText("brackets.rules", source)
         val text = myFixture.file.text
@@ -37,14 +36,14 @@ class KrakenBracketColouringTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         ).distinct()
-        // `{` niveau 0, `(` de Round niveau 1, `(` de Sum niveau 2.
+        // `{` at depth 0, the `(` of Round at depth 1, the `(` of Sum at depth 2.
         assertEquals(
             listOf(DEPTH[0], DEPTH[1], DEPTH[2]).sorted(),
             depths.sorted(),
         )
     }
 
-    /** Au-delà de la palette, les teintes se répètent plutôt que de manquer. */
+    /** Past the end of the palette, colours repeat instead of running out. */
     fun testDepthWrapsAroundThePalette() {
         val depths = depthsOf(
             """
@@ -53,7 +52,7 @@ class KrakenBracketColouringTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        assertTrue("le 4e niveau reprend la 1re teinte", depths.count { it == DEPTH[0] } >= 4)
+        assertTrue("the 4th level reuses the 1st colour", depths.count { it == DEPTH[0] } >= 4)
     }
 
     fun testBalancedBracketsAreNeverMarkedUnmatched() {
@@ -69,7 +68,7 @@ class KrakenBracketColouringTest : BasePlatformTestCase() {
         )
     }
 
-    /** `?[` ouvre un crochet : sans ça, le `]` passerait pour orphelin. */
+    /** `?[` opens a bracket; otherwise the `]` would look unmatched. */
     fun testNullSafeBracketCountsAsAnOpener() {
         assertEquals(
             emptyList<String>(),
@@ -101,9 +100,8 @@ class KrakenBracketColouringTest : BasePlatformTestCase() {
     }
 
     /**
-     * Appariement ambigu : la fermante ne correspond pas à l'ouvrante du
-     * dessus de pile. C'est le cas que le rouge doit couvrir au même titre
-     * qu'une orpheline franche.
+     * Ambiguous match: the closing brace does not match the opener on top of the stack.
+     * Red must cover this as well as a plainly unmatched brace.
      */
     fun testAMismatchedPairIsMarked() {
         val unmatched = unmatchedIn(
@@ -113,8 +111,8 @@ class KrakenBracketColouringTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        assertTrue("la fermante dépareillée est signalée : $unmatched", unmatched.contains("]"))
-        assertTrue("l'ouvrante restée seule aussi : $unmatched", unmatched.contains("("))
+        assertTrue("the mismatched closing bracket is marked: $unmatched", unmatched.contains("]"))
+        assertTrue("so is the opener left alone: $unmatched", unmatched.contains("("))
     }
 
     private companion object {

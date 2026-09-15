@@ -12,16 +12,14 @@ import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
 
 /**
- * Quick documentation (Ctrl+Q) pour les règles Kraken : nom, cible,
- * description, condition, payload et dimensions — et pour les fonctions,
- * qu'elles soient déclarées dans le projet ou natives au moteur.
+ * Quick documentation (Ctrl+Q) for Kraken rules (name, target, description,
+ * condition, payload, dimensions) and for functions, declared or native.
  */
 class KrakenDocumentationProvider : AbstractDocumentationProvider() {
 
     /**
-     * Une fonction native n'a aucune déclaration à résoudre : c'est l'appel
-     * lui-même qui porte la documentation. Sans ce point d'entrée, Ctrl+Q sur
-     * `Round(x)` n'afficherait rien.
+     * A native function has no declaration to resolve, so the call itself carries the
+     * documentation; without this, Ctrl+Q on `Round(x)` would show nothing.
      */
     override fun getCustomDocumentationElement(
         editor: com.intellij.openapi.editor.Editor,

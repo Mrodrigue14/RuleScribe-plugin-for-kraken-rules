@@ -10,9 +10,9 @@ import com.kraken.plugin.inspection.KrakenUnresolvedRuleRefInspection
 import com.kraken.plugin.inspection.KrakenUnusedRuleInspection
 
 /**
- * Sémantique des `Import Rule "X" From Ns` (miroir du moteur) : la règle
- * importée est traitée comme locale au namespace importateur, indépendamment
- * d'Include, et les quatre validations du moteur sont inspectées.
+ * `Import Rule "X" From Ns` semantics, mirroring the engine: the imported rule is local
+ * to the importing namespace regardless of Include, and the engine's four checks are
+ * inspected.
  */
 class KrakenRuleImportTest : BasePlatformTestCase() {
 

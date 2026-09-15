@@ -7,17 +7,15 @@ import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenScopeResolver
 
 /**
- * Portées des identifiants dans une expression KEL.
+ * Identifier scopes in a KEL expression.
  *
- * Le moteur empile deux portées pour une règle : une portée globale contenant
- * tous les contextes du projet, et une portée locale dont le type est le
- * contexte visé par `On`, ce qui rend ses champs accessibles sans préfixe
- * (`ScopeBuilder.doBuildScope`). Les variables déclarées dans l'expression —
- * `set`, `for`, `every`, `some` — s'empilent par-dessus et masquent le reste.
+ * For a rule the engine stacks a global scope holding every project context and a local
+ * scope typed as the `On` target, whose fields need no prefix
+ * (`ScopeBuilder.doBuildScope`). Expression variables (`set`, `for`, `every`, `some`)
+ * stack on top and shadow the rest.
  *
- * Ces tests verrouillent cet ordre, et surtout les cas où la résolution doit
- * *échouer* : sans inférence de types, résoudre à tort serait pire que ne rien
- * résoudre du tout.
+ * These tests pin that order, especially where resolution must fail: without type
+ * inference, resolving wrongly is worse than not resolving at all.
  */
 class KrakenScopeResolverTest : BasePlatformTestCase() {
 
@@ -41,7 +39,7 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
         }
     """.trimIndent()
 
-    /** Premier identifiant nu portant ce texte dans le corps de la règle. */
+    /** First bare identifier with this text in the rule body. */
     private fun refTo(name: String): PsiElement {
         val found = PsiTreeUtil.collectElements(myFixture.file) {
             it.node?.elementType == KrakenTypes.REF_EXPR && it.text.trim() == name
@@ -62,10 +60,6 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
     )
 
     private fun resolve(name: String): PsiElement? = KrakenScopeResolver.resolve(refTo(name), name)
-
-    // ------------------------------------------------------------------
-    // Portée locale : les champs du contexte visé par On
-    // ------------------------------------------------------------------
 
     fun testFieldOfTargetContextResolvesWithoutPrefix() {
         configureRule("Assert limitAmount > 0")
@@ -97,13 +91,8 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
         assertNull(resolve("notAField"))
     }
 
-    // ------------------------------------------------------------------
-    // Portée globale : les contextes par leur nom
-    // ------------------------------------------------------------------
-
     fun testContextNameResolvesToItsDeclaration() {
-        // Coverage n'est pas un enfant de Policy : le nom ne peut venir que de
-        // la portée globale, qui contient tous les contextes du projet.
+        // Coverage is not a child of Policy, so the name can only come from the global scope.
         configureRule("Assert Coverage != null")
         val target = resolve("Coverage")
         assertNotNull(target)
@@ -111,18 +100,13 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
     }
 
     /**
-     * `Policy` déclare `Child AddressInfo` : ce nom est donc un champ du
-     * contexte cible, et la portée locale du moteur passe avant la globale. Il
-     * résout vers l'enfant, pas vers la déclaration du contexte.
+     * `Policy` declares `Child AddressInfo`, so the name is a field of the target context
+     * and the local scope wins: it resolves to the child, not to the context declaration.
      */
     fun testChildShadowsTheContextOfTheSameName() {
         configureRule("Assert AddressInfo != null")
         assertEquals(KrakenTypes.CHILD_DECL, resolve("AddressInfo")!!.node.elementType)
     }
-
-    // ------------------------------------------------------------------
-    // Variables de l'expression, qui masquent le reste
-    // ------------------------------------------------------------------
 
     fun testIterationVariableOfForIsInScope() {
         configureRule("Assert (for c in coverages return c) != null")
@@ -144,9 +128,8 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
     }
 
     /**
-     * Une variable masque un champ homonyme — c'est l'ordre du moteur. Le nom
-     * déclaré après `every` n'est pas une référence, donc le seul REF_EXPR du
-     * fichier est bien celui du `satisfies`.
+     * A variable shadows a same-named field, as in the engine. The name after `every` is
+     * not a reference, so the only REF_EXPR in the file is the one in `satisfies`.
      */
     fun testVariableShadowsAFieldOfTheSameName() {
         configureRule("Assert every limitAmount in coverages satisfies limitAmount > 0")
@@ -158,10 +141,6 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
         )
     }
 
-    // ------------------------------------------------------------------
-    // Chaînes d'accès
-    // ------------------------------------------------------------------
-
     fun testContextNameDenotesItselfForTheNextSegment() {
         configureRule("Assert AddressInfo.postalCode != null")
         assertEquals("AddressInfo", KrakenScopeResolver.contextDenotedBy(refTo("AddressInfo"), "AddressInfo"))
@@ -169,50 +148,45 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
 
     fun testChildFieldDenotesItsContext() {
         configureRule("Assert AddressInfo.postalCode != null")
-        // `Child AddressInfo` dans Policy : le nom de l'enfant est le contexte.
+        // `Child AddressInfo` in Policy: the child name is the context.
         assertEquals(
             "AddressInfo",
             KrakenScopeResolver.contextDenotedBy(refTo("AddressInfo"), "AddressInfo"),
         )
     }
 
-    /** Un champ scalaire ne désigne aucun contexte : la chaîne s'arrête. */
+    /** A scalar field denotes no context, so the chain stops. */
     fun testScalarFieldDenotesNoContext() {
         configureRule("Assert policyCd != null")
         assertNull(KrakenScopeResolver.contextDenotedBy(refTo("policyCd"), "policyCd"))
     }
 
-    // ------------------------------------------------------------------
-    // Portée FILTER : collection[prédicat]
-    // ------------------------------------------------------------------
-
     /**
-     * Dans `Coverage[limit > 0]`, le prédicat s'évalue sur les champs d'un
-     * `Coverage` — c'est le `ScopeType.FILTER` du moteur. Cas relevé sur le
-     * corpus réel de kraken-rules, où il représentait la totalité des faux
-     * positifs de l'inspection.
+     * In `Coverage[limit > 0]` the predicate is evaluated on a `Coverage`'s fields: the
+     * engine's `ScopeType.FILTER`. Found on the real kraken-rules corpus, where it caused
+     * all of the inspection's false positives.
      */
     fun testFilterPredicateSeesTheItemFields() {
         configureRule("Assert Count(Coverage[limit > 0]) = 1")
         val target = resolve("limit")
-        assertNotNull("Le prédicat voit les champs de l'élément filtré", target)
+        assertNotNull("The predicate sees the filtered element's fields", target)
         assertEquals(KrakenTypes.FIELD_DECL, target!!.node.elementType)
     }
 
-    /** Le filtre le plus proche gagne, ce qui traite les imbrications. */
+    /** The nearest filter wins, which handles nesting. */
     fun testNestedFilterUsesTheNearestBracket() {
         configureRule("Assert Count(AddressInfo[postalCode = Count(Coverage[limit > 0])]) = 1")
         assertNotNull("postalCode vient d'AddressInfo", resolve("postalCode"))
         assertNotNull("limit vient de Coverage", resolve("limit"))
     }
 
-    /** Un crochet ne change pas le contexte : filtrer conserve le type. */
+    /** A bracket keeps the context: filtering preserves the type. */
     fun testChainContinuesAfterAFilter() {
         configureRule("Assert AddressInfo[postalCode != null].postalCode != null")
         assertNotNull(resolve("postalCode"))
     }
 
-    /** Tête inconnue : la portée du filtre est indéterminée, pas vide. */
+    /** Unknown head: the filter scope is undetermined, not empty. */
     fun testFilterOnAnUnknownHeadHasNoContext() {
         configureRule("Assert IsEmpty(context.additional.items[whatever = 1])")
         val ref = refTo("whatever")
@@ -220,15 +194,11 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
         assertNull(KrakenScopeResolver.filterContext(ref))
     }
 
-    // ------------------------------------------------------------------
-    // Complétion
-    // ------------------------------------------------------------------
-
     fun testVisibleNamesCoverVariablesFieldsAndContexts() {
         configureRule("Assert set tmp to 1 return tmp > 0")
         val names = KrakenScopeResolver.visibleNames(refTo("tmp"))
         assertTrue("variable", names.contains("tmp"))
-        assertTrue("champ du contexte cible", names.contains("policyCd"))
-        assertTrue("contexte visible", names.contains("AddressInfo"))
+        assertTrue("field of the target context", names.contains("policyCd"))
+        assertTrue("visible context", names.contains("AddressInfo"))
     }
 }

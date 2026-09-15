@@ -8,12 +8,11 @@ import com.kraken.plugin.types.KrakenType
 import com.kraken.plugin.types.KrakenTypeInference
 
 /**
- * Inférence de types KEL.
+ * KEL type inference.
  *
- * Ce qui compte autant que les types déduits, c'est [KrakenType.Unknown] :
- * il marque ce que le plugin ne sait pas typer, et c'est lui qui fait
- * s'abstenir les vérifications. Un Unknown rendu là où un type est attendu
- * est une occasion manquée ; un type inventé est un faux diagnostic.
+ * [KrakenType.Unknown] matters as much as the inferred types: it marks what the plugin
+ * cannot type and makes checks abstain. Unknown where a type is expected is a missed
+ * opportunity; an invented type is a false diagnostic.
  */
 class KrakenTypeInferenceTest : BasePlatformTestCase() {
 
@@ -55,16 +54,12 @@ class KrakenTypeInferenceTest : BasePlatformTestCase() {
             .first { it.referenceName == name },
     )
 
-    // ------------------------------------------------------------------
-    // Champs de contexte
-    // ------------------------------------------------------------------
-
     fun testPrimitiveFieldTypes() {
         configureRule("Assert policyCd != null")
         assertEquals(KrakenType.String, typeOfRef("policyCd"))
     }
 
-    /** `Integer` et `Decimal` du DSL sont tous deux des `Number` en KEL. */
+    /** DSL `Integer` and `Decimal` are both KEL `Number`. */
     fun testIntegerAndDecimalCollapseToNumber() {
         configureRule("Assert premium > 0 and termNo > 0")
         assertEquals(KrakenType.Number, typeOfRef("premium"))
@@ -87,10 +82,6 @@ class KrakenTypeInferenceTest : BasePlatformTestCase() {
         assertEquals(KrakenType.Context("AddressInfo"), typeOfRef("AddressInfo"))
         assertEquals(KrakenType.Array(KrakenType.Context("Coverage")), typeOfRef("Coverage"))
     }
-
-    // ------------------------------------------------------------------
-    // Appels de fonction
-    // ------------------------------------------------------------------
 
     fun testNativeFunctionReturnTypeComesFromTheCatalogue() {
         configureRule("Assert Today() != null")
@@ -118,11 +109,7 @@ class KrakenTypeInferenceTest : BasePlatformTestCase() {
         assertEquals(KrakenType.Money, KrakenTypeInference.typeOf(call))
     }
 
-    // ------------------------------------------------------------------
-    // Là où l'inférence doit renoncer
-    // ------------------------------------------------------------------
-
-    /** Une union `Date | DateTime` n'est pas modélisée : dynamique, pas faux. */
+    /** A `Date | DateTime` union is not modelled: dynamic, not wrong. */
     fun testUnionParameterTypeBecomesAny() {
         assertEquals(KrakenType.Any, KrakenType.fromDslName("Date | DateTime"))
     }
@@ -137,16 +124,12 @@ class KrakenTypeInferenceTest : BasePlatformTestCase() {
         assertEquals(KrakenType.Unknown, typeOfRef("whatIsThis"))
     }
 
-    // ------------------------------------------------------------------
-    // Règles d'assignabilité et de comparabilité
-    // ------------------------------------------------------------------
-
     fun testMoneyWidensToNumberOneWayOnly() {
         assertTrue(KrakenType.Number.isAssignableFrom(KrakenType.Money))
         assertFalse(KrakenType.Money.isAssignableFrom(KrakenType.Number))
     }
 
-    /** Le piège classique de KEL : Date et DateTime ne se comparent pas. */
+    /** The classic KEL trap: Date and DateTime do not compare. */
     fun testDateIsNotComparableWithDateTime() {
         assertFalse(KrakenType.Date.isComparableWith(KrakenType.DateTime))
         assertTrue(KrakenType.Date.isComparableWith(KrakenType.Date))

@@ -10,16 +10,14 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.parser.KrakenTypes
 
 /**
- * Déclaration `Function Nom(Type param) : TypeRetour { corps }`.
+ * `Function Name(Type param) : ReturnType { body }` declaration.
  *
- * Deux formes, toutes deux légitimes côté moteur :
- * - **avec corps** : l'implémentation est écrite en KEL ;
- * - **sans corps** : c'est une *signature*, qui déclare qu'une fonction Java
- *   correspondante est enregistrée. `KrakenProjectConverter` fait échouer la
- *   construction du projet si aucune ne correspond ([hasBody] renvoie faux).
+ * With a body, the implementation is KEL. Without one it is a signature declaring that
+ * a matching Java function is registered; `KrakenProjectConverter` fails the project
+ * build if none matches ([hasBody] returns false).
  *
- * Le nom seul ne suffit pas à identifier une fonction : le moteur l'indexe par
- * `(nom, nombre de paramètres)` — voir `FunctionHeader`. D'où [arity].
+ * The engine indexes functions by `(name, parameter count)` (`FunctionHeader`), hence
+ * [arity].
  */
 class KrakenFunctionDecl(node: ASTNode) :
     ASTWrapperPsiElement(node),
@@ -37,7 +35,7 @@ class KrakenFunctionDecl(node: ASTNode) :
 
     override fun getTextOffset(): Int = nameIdentifier?.textOffset ?: super.getTextOffset()
 
-    /** Nombre de paramètres déclarés — l'identité de la fonction avec le nom. */
+    /** Declared parameter count: together with the name, the function's identity. */
     val arity: Int
         get() = node.findChildByType(KrakenTypes.FUNCTION_PARAMS)
             ?.getChildren(null)
@@ -57,7 +55,7 @@ class KrakenFunctionDecl(node: ASTNode) :
             ?.text
             ?.trim()
 
-    /** Une borne `T is Number` de la liste `Function <…> Nom(…)`. */
+    /** A `T is Number` bound from `Function <…> Name(…)`. */
     data class GenericBound(
         val generic: String,
         val bound: String?,
@@ -65,7 +63,7 @@ class KrakenFunctionDecl(node: ASTNode) :
         val boundElement: PsiElement?,
     )
 
-    /** Un paramètre `Coverage[] coverages`, dont le nom est facultatif au parsing. */
+    /** A `Coverage[] coverages` parameter; the name is optional when parsing. */
     data class Parameter(
         val type: String?,
         val name: String?,
@@ -74,11 +72,10 @@ class KrakenFunctionDecl(node: ASTNode) :
     )
 
     /**
-     * Bornes génériques déclarées, dans l'ordre d'écriture.
+     * Declared generic bounds, in source order.
      *
-     * `generic_bound ::= id IS_KW type_ref` : `id` est une règle privée du BNF,
-     * donc le nom du générique est la première feuille du nœud, et sa borne le
-     * seul `TYPE_REF` qu'il contient.
+     * In `generic_bound ::= id IS_KW type_ref`, `id` is private in the BNF, so the generic
+     * name is the node's first leaf and the bound its only `TYPE_REF`.
      */
     val genericBounds: List<GenericBound>
         get() = node.findChildByType(KrakenTypes.GENERIC_BOUNDS)
@@ -91,7 +88,6 @@ class KrakenFunctionDecl(node: ASTNode) :
             }
             .orEmpty()
 
-    /** Paramètres déclarés, type et nom séparés. */
     val parameterList: List<Parameter>
         get() = node.findChildByType(KrakenTypes.FUNCTION_PARAMS)
             ?.getChildren(null)
@@ -103,13 +99,13 @@ class KrakenFunctionDecl(node: ASTNode) :
             }
             .orEmpty()
 
-    /** Le `TYPE_REF` de la clause `: Type`, pour ancrer un diagnostic dessus. */
+    /** The `TYPE_REF` of the `: Type` clause, to anchor diagnostics on. */
     val returnTypeElement: PsiElement?
         get() = node.findChildByType(KrakenTypes.RETURN_TYPE)
             ?.findChildByType(KrakenTypes.TYPE_REF)
             ?.psi
 
-    /** Faux pour une signature nue, qui délègue son implémentation à Java. */
+    /** False for a bare signature, whose implementation is in Java. */
     fun hasBody(): Boolean = node.findChildByType(KrakenTypes.FUNCTION_BODY) != null
 
     /** `Limits(Coverage[] coverages) : Number[]` */
@@ -118,7 +114,7 @@ class KrakenFunctionDecl(node: ASTNode) :
         return returnType?.let { "$head : $it" } ?: head
     }
 
-    /** Commentaire de doc qui précède immédiatement la déclaration, s'il y en a un. */
+    /** Doc comment immediately preceding the declaration, if any. */
     fun docComment(): PsiElement? = PsiTreeUtil.skipWhitespacesBackward(this)
         ?.takeIf { it.node.elementType == KrakenTypes.DOC_COMMENT }
 
@@ -129,9 +125,9 @@ class KrakenFunctionDecl(node: ASTNode) :
     )
 
     /**
-     * Le nom est le dernier token avant la parenthèse ouvrante : `id` est une
-     * règle privée du BNF, elle ne produit donc pas de nœud propre, et les
-     * bornes génériques (`Function <T is X> Nom(…)`) s'intercalent avant lui.
+     * The name is the last token before the opening parenthesis: `id` is private in the
+     * BNF, so it has no node, and generic bounds (`Function <T is X> Name(…)`) come before
+     * it.
      */
     private fun nameLeaf(): ASTNode? {
         val paren = node.findChildByType(KrakenTypes.LPAREN) ?: return null
@@ -143,11 +139,10 @@ class KrakenFunctionDecl(node: ASTNode) :
     }
 
     /**
-     * Premier enfant signifiant d'un nœud, éventuellement après l'un d'eux.
+     * First meaningful child of [parent], optionally after [after].
      *
-     * Les sous-règles de type sont privées dans le BNF : `id` ne produit pas de
-     * nœud, si bien que le nom cherché est un token frère du `TYPE_REF` plutôt
-     * qu'un sous-arbre. Les deux appelants s'appuient sur cette forme.
+     * Type sub-rules are private in the BNF, so `id` produces no node and the name is a
+     * sibling token of `TYPE_REF` rather than a subtree.
      */
     private fun firstMeaningfulChild(parent: ASTNode, after: ASTNode? = null): ASTNode? {
         var child = after?.treeNext ?: parent.firstChildNode

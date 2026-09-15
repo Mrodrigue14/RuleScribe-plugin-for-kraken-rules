@@ -4,12 +4,11 @@ import com.intellij.psi.tree.IElementType
 import org.jetbrains.annotations.NonNls
 
 /**
- * Le nom d'un token tel qu'il apparaît dans les erreurs de syntaxe.
+ * Token name as shown in syntax errors.
  *
- * Le gabarit Grammar-Kit redéfinit `toString()` pour préfixer le nom par celui
- * de la classe — utile au débogage du parseur, illisible pour qui lit le
- * message : une erreur listant quinze tokens attendus portait quinze fois
- * « KrakenTokenType. ». On garde donc le comportement d'[IElementType], qui
- * rend le nom seul ; c'est la plateforme qui l'entoure de guillemets.
+ * The Grammar-Kit template overrides `toString()` to prefix the class name. That helps
+ * when debugging the parser, but an error listing fifteen expected tokens then repeated
+ * "KrakenTokenType." fifteen times. This keeps [IElementType]'s behaviour: the bare
+ * name, which the platform quotes.
  */
 class KrakenTokenType(@NonNls debugName: String) : IElementType(debugName, KrakenLanguage)

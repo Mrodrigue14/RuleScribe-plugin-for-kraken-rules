@@ -7,9 +7,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.kraken.plugin.parser.KrakenTypes
 
-/**
- * Déclaration `EntryPoint "nom" { ... }`.
- */
+/** `EntryPoint "name" { ... }` declaration. */
 class KrakenEntryPointDecl(node: ASTNode) :
     ASTWrapperPsiElement(node),
     PsiNameIdentifierOwner {
@@ -18,7 +16,6 @@ class KrakenEntryPointDecl(node: ASTNode) :
 
     override fun getName(): String? = nameLeaf()?.text?.let(KrakenPsiUtil::unquote)
 
-    /** Cible de la navigation référence -> declaration (voir KrakenRuleDecl). */
     override fun getPresentation(): ItemPresentation = KrakenPresentations.of(
         this,
         KrakenPresentations.declarationText(this, name, "EntryPoint"),

@@ -8,24 +8,17 @@ import java.io.File
 import java.util.jar.JarFile
 
 /**
- * Garantit — de façon vérifiable, pas déclarative — que le plugin ne peut pas
- * exfiltrer de données : ses propres classes ne référencent AUCUNE API réseau.
+ * Verifies that the plugin cannot exfiltrate data: its own classes reference no network
+ * API.
  *
- * Ce n'est pas « il n'a pas appelé le réseau pendant ce test » (un état de run,
- * fragile) mais « le code compilé livré ne contient pas la moindre référence à
- * une API d'ouverture de connexion » (une propriété statique du bytecode). Une
- * régression — quelqu'un ajoute un client HTTP, de la télémétrie, un
- * phone-home — casse ce test avant d'atteindre une release.
- *
- * Argument direct pour un adoptant sensible aux données (p. ex. une institution
- * financière) : aucun egress réseau possible, contrôlé à chaque build.
+ * This is a static property of the shipped bytecode, not "no network call happened
+ * during this run". Adding an HTTP client, telemetry or a phone-home breaks this test
+ * before it reaches a release.
  */
 class KrakenNoNetworkEgressTest {
 
-    // APIs d'INITIATION de connexion réseau. On ne bannit pas java/net/URL ni
-    // java/net/URI : ils servent aux ressources du classpath (getResource) et
-    // n'ouvrent rien par eux-mêmes. On cible ce qui envoie effectivement des
-    // octets sur le réseau, y compris les clients HTTP tiers courants.
+    // APIs that open network connections. java/net/URL and java/net/URI are allowed: they
+    // serve classpath resources and open nothing by themselves.
     private val forbidden = listOf(
         "java/net/Socket",
         "java/net/ServerSocket",
@@ -48,59 +41,51 @@ class KrakenNoNetworkEgressTest {
         val roots = pluginClassRoots()
         val ourClasses = roots.flatMap { collectClassBytes(it) }
         assertTrue(
-            "Aucune classe du plugin trouvée (racines : $roots) — le test ne scanne rien.",
+            "No plugin class found (roots: $roots), so the test scans nothing.",
             ourClasses.isNotEmpty(),
         )
 
         val violations = mutableListOf<String>()
         for ((name, bytes) in ourClasses) {
-            // ISO-8859-1 préserve chaque octet 1:1 : les références de classes
-            // du pool de constantes (UTF-8, séparateur '/') sont retrouvables
-            // par simple recherche de sous-chaîne.
+            // ISO-8859-1 maps bytes 1:1, so constant pool class references (UTF-8, '/' separators)
+            // can be found with a substring search.
             val text = String(bytes, Charsets.ISO_8859_1)
             for (api in forbidden) {
                 if (text.contains(api)) {
-                    violations += "$name référence $api"
+                    violations += "$name references $api"
                 }
             }
         }
 
         if (violations.isNotEmpty()) {
             fail(
-                "Le plugin référence des API réseau — l'affirmation « aucun " +
-                    "egress réseau » ne tient plus :\n  " +
+                "The plugin references network APIs, so the \"no network " +
+                    "egress\" claim no longer holds:\n  " +
                     violations.joinToString("\n  "),
             )
         }
     }
 
     /**
-     * Racines du classpath contenant nos classes. Le chargement de ressource
-     * (getResources) fonctionne sous n'importe quel classloader — y compris
-     * celui du framework de test IntelliJ, où `codeSource.location` est null.
+     * Classpath roots containing plugin classes. `getResources` works under any class
+     * loader, including the IntelliJ test framework's, where `codeSource.location` is null.
      *
-     * Deux formes de racine coexistent. Un répertoire, pour les classes
-     * compilées d'un source-set. Et le **jar du sandbox**
-     * (`jar:file:/…/rulescribe-X.Y.Z.jar!/com/kraken/plugin`), qui est
-     * l'archive réellement livrée : c'est sous cette forme que le plugin
-     * Gradle 2.x présente le code de production au classpath de test. Ne
-     * garder que `file:` reviendrait à ne rien scanner du tout.
+     * Two root forms exist: a directory of compiled classes, and the sandbox jar
+     * (`jar:file:/…/rulescribe-X.Y.Z.jar!/com/kraken/plugin`), the shipped archive, which is
+     * how the Gradle 2.x plugin exposes production code to tests. Keeping only `file:` roots
+     * would scan nothing.
      *
-     * On ne scanne QUE le code livré. Les sources de TEST apparaissent dans
-     * plusieurs racines (`.../test`, et aussi le `.../instrumentTestCode`
-     * produit par le plugin IntelliJ), et contiennent ce test lui-même : les
-     * littéraux de [forbidden] y seraient un faux positif. Le filtre porte sur
-     * le dernier segment, donc sur le nom du source-set ou du jar, ce qui
-     * laisse passer un chemin dont un dossier parent contient « test » — le
-     * jar vit sous `plugins-test/`, et un utilisateur peut s'appeler
-     * « tester ».
+     * Only shipped code is scanned. Test sources appear in several roots (`.../test`,
+     * `.../instrumentTestCode`) and contain this test, whose [forbidden] literals would be
+     * false positives. The filter checks the last path segment (source set or jar name), so
+     * a parent folder containing "test" still passes: the jar lives under `plugins-test/`.
      */
     private fun pluginClassRoots(): List<File> {
         val pkg = "com/kraken/plugin"
         return KrakenFileType::class.java.classLoader.getResources(pkg).toList()
             .mapNotNull { url ->
                 when (url.protocol) {
-                    // <racine>/com/kraken/plugin → remonter de 3 niveaux.
+                    // <root>/com/kraken/plugin: go up three levels.
                     "file" -> File(url.toURI()).parentFile.parentFile.parentFile
 
                     "jar" -> jarOf(url)
@@ -112,12 +97,12 @@ class KrakenNoNetworkEgressTest {
             .distinct()
     }
 
-    /** `jar:file:/…/x.jar!/com/kraken/plugin` → le fichier `x.jar`. */
+    /** `jar:file:/…/x.jar!/com/kraken/plugin` → the `x.jar` file. */
     private fun jarOf(url: java.net.URL): File? = runCatching {
         File(java.net.URI(url.path.substringBefore("!/")))
     }.getOrNull()
 
-    /** Nos classes uniquement (com/kraken/plugin), depuis un répertoire ou un jar. */
+    /** Plugin classes only (com/kraken/plugin), from a directory or a jar. */
     private fun collectClassBytes(root: File): List<Pair<String, ByteArray>> {
         val prefix = "com/kraken/plugin/"
         if (root.isDirectory) {

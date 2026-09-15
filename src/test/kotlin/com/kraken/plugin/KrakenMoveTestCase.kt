@@ -9,7 +9,7 @@ import com.kraken.plugin.psi.KrakenEpRef
 import com.kraken.plugin.psi.KrakenRuleDecl
 import com.kraken.plugin.psi.KrakenRuleRef
 
-/** Fixtures communes aux tests de déplacement de règles et d'entry points. */
+/** Fixtures shared by the rule and entry point move tests. */
 abstract class KrakenMoveTestCase : BasePlatformTestCase() {
 
     protected fun file(name: String, text: String): KrakenFile = myFixture.addFileToProject(name, text) as KrakenFile
@@ -22,12 +22,12 @@ abstract class KrakenMoveTestCase : BasePlatformTestCase() {
 
     protected fun epRefIn(file: KrakenFile, name: String): KrakenEpRef = PsiTreeUtil.findChildrenOfType(file, KrakenEpRef::class.java).first { it.entryPointName == name }
 
-    /** Le déplacement passe par le document : les deux fichiers doivent encore parser. */
+    /** The move goes through the document, so both files must still parse. */
     protected fun assertParses(vararg files: KrakenFile) {
         for (f in files) {
             val errors = PsiTreeUtil.findChildrenOfType(f, PsiErrorElement::class.java)
             assertEquals(
-                "${f.name} ne parse plus :\n${f.text}",
+                "${f.name} no longer parses:\n${f.text}",
                 emptyList<String>(),
                 errors.map { it.errorDescription },
             )

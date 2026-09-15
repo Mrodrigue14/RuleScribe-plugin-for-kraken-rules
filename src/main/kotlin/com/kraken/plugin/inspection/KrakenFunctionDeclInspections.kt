@@ -10,24 +10,18 @@ import com.kraken.plugin.psi.KrakenFunctionDecl
 import com.kraken.plugin.types.KrakenTypeToken
 
 /**
- * Validation d'une déclaration `Function`, miroir de `FunctionValidator` et de
- * `FunctionSignatureValidator` côté moteur.
+ * Validates a `Function` declaration, mirroring the engine's `FunctionValidator` and
+ * `FunctionSignatureValidator`.
  *
- * **Portée délibérément syntaxique.** Le moteur valide un `KrakenProject`
- * résolu : il connaît tous les types du modèle, ce qui lui permet aussi de
- * signaler un type inconnu (`kvf006`, `kvf009`) ou un corps dont le type ne
- * correspond pas au retour (`kvf011`). RuleScribe ne reprend pas ces
- * vérifications-là : une inspection « ce type n'existe pas » se déclenche sur
- * une *absence*, et une absence n'est concluante que si l'inventaire est
- * complet. C'est très exactement ce qui a coulé la découverte de fonctions des
- * v0.10.1–v0.10.3. Les vérifications ci-dessous se déclenchent au contraire sur
- * une *présence* — un `|` et un `<T>` dans le même type, deux bornes du même
- * nom, un paramètre redéclaré — ce qui reste juste même avec une connaissance
- * partielle du projet.
+ * The scope is deliberately syntactic. The engine validates a resolved `KrakenProject`
+ * and knows every model type, so it can also report unknown types (`kvf006`, `kvf009`)
+ * or a body that does not match the return type (`kvf011`). Those checks fire on an
+ * absence, which is only conclusive when the type inventory is complete. The checks
+ * below fire on a presence (a `|` and a `<T>` in one type, two bounds with the same
+ * name, a redeclared parameter), which stays correct with partial project knowledge.
  *
- * **Le corps choisit le code.** Une `Function` sans corps est une
- * `FunctionSignature` pour le moteur, validée par une autre classe avec
- * d'autres codes ; voir la KDoc de [KrakenDiagnostic].
+ * A `Function` without a body is a `FunctionSignature` for the engine, validated with
+ * other codes; see [KrakenDiagnostic].
  */
 private abstract class KrakenFunctionDeclVisitor(
     private val holder: ProblemsHolder,
@@ -40,18 +34,18 @@ private abstract class KrakenFunctionDeclVisitor(
     abstract fun check(function: KrakenFunctionDecl)
 }
 
-/** Le code du moteur dépend de la présence d'un corps : signature ou fonction. */
+/** The engine code depends on whether the function has a body. */
 private fun pick(signature: Boolean, forSignature: KrakenDiagnostic, forFunction: KrakenDiagnostic): KrakenDiagnostic = if (signature) forSignature else forFunction
 
-/** Un doublon se signale à partir de la deuxième occurrence : c'est celle à supprimer. */
+/** Duplicates are reported from the second occurrence on: that is the one to remove. */
 private fun <T> Iterable<T>.afterFirstOccurrenceOf(key: (T) -> String?): List<T> {
     val seen = mutableSetOf<String>()
     return filter { item -> key(item)?.let { !seen.add(it) } ?: false }
 }
 
 /**
- * Bornes génériques invalides : deux bornes pour le même générique
- * (`kvf004`/`kvf017`), ou une borne elle-même générique (`kvf005`/`kvf018`).
+ * Invalid generic bounds: two bounds for the same generic (`kvf004`/`kvf017`), or a
+ * bound that is itself generic (`kvf005`/`kvf018`).
  */
 class KrakenFunctionGenericBoundInspection : LocalInspectionTool() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor(holder) {
@@ -72,9 +66,8 @@ class KrakenFunctionGenericBoundInspection : LocalInspectionTool() {
             for (bound in bounds) {
                 val element = bound.boundElement ?: continue
                 val text = bound.bound ?: continue
-                // Le moteur résout la borne sans environnement de bornes
-                // (`resolveTypeOf` à un seul argument) : une borne ne peut
-                // donc pas se référer à un autre générique.
+                // The engine resolves a bound without a bounds environment (single-argument
+                // `resolveTypeOf`), so a bound cannot refer to another generic.
                 if (KrakenTypeToken.parse(text)?.isGeneric != true) continue
                 val diagnostic = pick(signature, KrakenDiagnostic.SIGNATURE_GENERIC_BOUND_IS_ITSELF_GENERIC, KrakenDiagnostic.FUNCTION_GENERIC_BOUND_IS_ITSELF_GENERIC)
                 holder.registerProblem(
@@ -88,8 +81,8 @@ class KrakenFunctionGenericBoundInspection : LocalInspectionTool() {
 }
 
 /**
- * Type mêlant union et générique — `<T> | String` — que le moteur refuse en
- * position de retour (`kvf007`/`kvf020`) comme de paramètre (`kvf010`/`kvf021`).
+ * A type mixing union and generic, such as `<T> | String`, which the engine rejects as a
+ * return type (`kvf007`/`kvf020`) and as a parameter type (`kvf010`/`kvf021`).
  */
 class KrakenFunctionTypeUnionGenericMixInspection : LocalInspectionTool() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor(holder) {
@@ -132,12 +125,10 @@ class KrakenFunctionTypeUnionGenericMixInspection : LocalInspectionTool() {
 }
 
 /**
- * Deux paramètres du même nom (`kvf008`).
+ * Two parameters with the same name (`kvf008`).
  *
- * Réservé aux fonctions *avec* corps : une signature nue ne nomme pas ses
- * paramètres côté moteur (`functionSignatureParameter : type`), donc la
- * question ne s'y pose pas — la grammaire de RuleScribe est seulement plus
- * tolérante sur ce point.
+ * Only for functions with a body: the engine does not name signature parameters
+ * (`functionSignatureParameter : type`); RuleScribe's grammar is just more lenient.
  */
 class KrakenFunctionParameterDuplicateInspection : LocalInspectionTool() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor(holder) {
@@ -156,15 +147,13 @@ class KrakenFunctionParameterDuplicateInspection : LocalInspectionTool() {
 }
 
 /**
- * Une fonction implémentée en KEL qui porte le nom d'une native (`kvf003`).
+ * A KEL-implemented function named like a native one (`kvf003`).
  *
- * Le test est un *appariement* contre le catalogue embarqué, pas une absence :
- * il ne peut donc rien affirmer d'une fonction que RuleScribe ne connaîtrait
- * pas. Le moteur compare sur le seul nom, sans l'arité.
+ * This matches against the bundled catalogue, so it says nothing about functions
+ * RuleScribe does not know. The engine compares names only, ignoring arity.
  *
- * Une déclaration sans corps est épargnée : c'est précisément ainsi qu'on
- * déclare au DSL qu'une fonction Java existe, et `FunctionSignatureValidator`
- * ne fait pas cette vérification.
+ * Bodiless declarations are exempt: that is how the DSL declares a Java function, and
+ * `FunctionSignatureValidator` does not run this check.
  */
 class KrakenFunctionNativeDuplicateInspection : LocalInspectionTool() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor(holder) {

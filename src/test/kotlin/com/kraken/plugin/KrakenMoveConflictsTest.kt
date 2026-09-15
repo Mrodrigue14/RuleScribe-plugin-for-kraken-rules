@@ -3,16 +3,15 @@ package com.kraken.plugin
 import com.kraken.plugin.refactoring.KrakenMoveConflicts
 
 /**
- * L'analyse qui décide si déplacer une règle casse quelque chose.
+ * The analysis that decides whether moving a rule breaks something.
  *
- * Les assertions portent sur la **résolution**, jamais sur le texte : c'est
- * tout l'intérêt du calcul. Une référence Kraken nomme une règle, pas un
- * fichier, donc un déplacement ne modifie aucun texte de référence — il
- * modifie seulement si ces références trouvent encore leur cible.
+ * Assertions are about resolution, never text: a Kraken reference names a rule, not a
+ * file, so a move changes no reference text, only whether references still find their
+ * target.
  */
 class KrakenMoveConflictsTest : KrakenMoveTestCase() {
 
-    /** Même namespace : rien ne peut casser. */
+    /** Same namespace: nothing can break. */
     fun testMovingWithinTheSameNamespaceIsSafe() {
         val a = file(
             "a.rules",
@@ -33,7 +32,7 @@ class KrakenMoveConflictsTest : KrakenMoveTestCase() {
         assertEquals(emptyList<Any>(), KrakenMoveConflicts.brokenBy(ruleIn(a, "Shared"), b))
     }
 
-    /** Le cas qui motive l'analyse : la destination sort de la portée du référent. */
+    /** The case behind the analysis: the destination leaves the referrer's scope. */
     fun testMovingOutOfSightIsReported() {
         val a = file(
             "a.rules",
@@ -52,11 +51,11 @@ class KrakenMoveConflictsTest : KrakenMoveTestCase() {
         )
 
         val broken = KrakenMoveConflicts.brokenBy(ruleIn(a, "Shared"), far)
-        assertEquals("la référence de l'EntryPoint doit être signalée", 1, broken.size)
+        assertEquals("the EntryPoint reference must be reported", 1, broken.size)
         assertEquals("Shared", broken.first().ruleName)
     }
 
-    /** Un `Include` vers la destination suffit à préserver la résolution. */
+    /** An `Include` of the destination is enough to keep resolution. */
     fun testIncludingTheDestinationKeepsItResolving() {
         val a = file(
             "a.rules",
@@ -79,8 +78,8 @@ class KrakenMoveConflictsTest : KrakenMoveTestCase() {
     }
 
     /**
-     * `Import Rule` est un axe distinct d'`Include`. Un import qui nomme déjà
-     * le namespace de destination reste valide après le déplacement.
+     * `Import Rule` is a separate axis from `Include`: an import that already names the
+     * destination namespace stays valid after the move.
      */
     fun testAnImportNamingTheDestinationKeepsItResolving() {
         val a = file(
@@ -104,9 +103,8 @@ class KrakenMoveConflictsTest : KrakenMoveTestCase() {
     }
 
     /**
-     * L'inverse, et c'est le piège : un import qui nomme l'**ancien**
-     * namespace pointe, après le déplacement, vers un namespace qui ne
-     * contient plus la règle.
+     * The trap: an import naming the old namespace points, after the move, to a namespace
+     * that no longer contains the rule.
      */
     fun testAnImportNamingTheOldNamespaceBreaks() {
         val a = file(
@@ -130,7 +128,7 @@ class KrakenMoveConflictsTest : KrakenMoveTestCase() {
         assertEquals("l'import pointe vers l'ancien namespace : $broken", 1, broken.size)
     }
 
-    /** Une règle que personne ne référence se déplace sans risque. */
+    /** A rule that nobody references moves safely. */
     fun testAnUnreferencedRuleHasNoConflicts() {
         val a = file(
             "a.rules",

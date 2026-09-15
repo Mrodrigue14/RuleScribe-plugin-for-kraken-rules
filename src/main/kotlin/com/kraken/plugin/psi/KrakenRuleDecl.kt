@@ -11,11 +11,11 @@ import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.stubs.KrakenRuleStub
 
 /**
- * Déclaration `Rule "nom" On Contexte.champ { ... }`.
+ * `Rule "name" On Context.field { ... }` declaration.
  *
- * Élément stubbé : quand le fichier n'est pas ouvert, le nom vient du stub
- * (index) sans charger l'AST. L'interface [StubBasedPsiElement] doit être
- * implémentée explicitement : c'est elle que DefaultStubBuilder vérifie.
+ * Stub-based: when the file is not open, the name comes from the stub index without
+ * loading the AST. [StubBasedPsiElement] must be implemented explicitly because
+ * DefaultStubBuilder checks for it.
  */
 class KrakenRuleDecl :
     StubBasedPsiElementBase<KrakenRuleStub>,
@@ -49,9 +49,8 @@ class KrakenRuleDecl :
     override fun getTextOffset(): Int = nameIdentifier?.textOffset ?: super.getTextOffset()
 
     /**
-     * Cible de la navigation référence → déclaration. Le nom seul ne suffit
-     * pas quand une règle importée existe dans plusieurs namespaces : la
-     * localisation lève l'ambiguïté.
+     * The name alone is ambiguous when an imported rule exists in several namespaces;
+     * the location resolves it.
      */
     override fun getPresentation(): ItemPresentation = KrakenPresentations.of(
         this,

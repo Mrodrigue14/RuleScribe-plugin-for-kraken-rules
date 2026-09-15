@@ -12,11 +12,10 @@ import com.kraken.plugin.lang.KrakenLanguage
 import javax.swing.Icon
 
 /**
- * Implémente [RainbowColorSettingsPage] pour obtenir la case « Rainbow » que
- * la plateforme gère elle-même, plutôt qu'un réglage maison :
- * [KrakenBracketAnnotator] la lit via `RainbowHighlighter.isRainbowEnabled`.
- * Elle ne commande que les teintes de profondeur — le rouge des accolades
- * orphelines reste affiché, puisqu'il signale une erreur.
+ * Implements [RainbowColorSettingsPage] to get the platform-managed "Rainbow"
+ * checkbox instead of a custom setting; [KrakenBracketAnnotator] reads it through
+ * `RainbowHighlighter.isRainbowEnabled`. It only controls the depth colours: the red
+ * of unmatched braces always shows, since it reports an error.
  */
 class KrakenColorSettingsPage :
     ColorSettingsPage,
@@ -31,11 +30,11 @@ class KrakenColorSettingsPage :
     override fun getHighlighter(): SyntaxHighlighter = KrakenSyntaxHighlighter()
 
     override fun getDemoText(): String = """
-        // Exemple de fichier Kraken .rules
+        // Sample Kraken .rules file
         Namespace Policy
 
         /**
-         * Contexte racine.
+         * Root context.
          */
         Root Context Policy {
             String policyCd
@@ -45,7 +44,7 @@ class KrakenColorSettingsPage :
         Dimension "state" : String
 
         /**
-         * Limites de toutes les garanties.
+         * Limits of all coverages.
          * @since 1.0.0
          */
         Function Limits(Coverage[] coverages) : Number[] {
@@ -54,7 +53,7 @@ class KrakenColorSettingsPage :
 
         @Dimension("state", "CA")
         Rule "Set AddressInfo.postalCode to state name" On AddressInfo.postalCode {
-            Description "Force le code postal en Californie"
+            Description "Forces the California postal code"
             Priority 10
             When Policy.policyCd != null and <nativeFn>Count</nativeFn>(Policy.riskItems) > 0
             Reset To "CA"
@@ -62,7 +61,7 @@ class KrakenColorSettingsPage :
 
         Rule "Assert effective date" On Policy.effectiveDate {
             Assert effectiveDate < <nativeFn>Today</nativeFn>()
-            Error "code" : "La date doit être dans le passé"
+            Error "code" : "The date must be in the past"
             Overridable
         }
 
@@ -77,9 +76,9 @@ class KrakenColorSettingsPage :
     """.trimIndent()
 
     /**
-     * Les couleurs de fonction sont posées par [KrakenFunctionAnnotator], pas
-     * par le highlighter lexical : l'aperçu de cette page ne les verrait donc
-     * pas. Ces balises les rendent visibles dans le texte de démonstration.
+     * Function colours are applied by [KrakenFunctionAnnotator], not by the lexical
+     * highlighter, so the preview would not show them. These tags make them visible in
+     * the demo text.
      */
     override fun getAdditionalHighlightingTagToDescriptorMap(): Map<String, TextAttributesKey> = mapOf(
         "nativeFn" to KrakenSyntaxHighlighter.NATIVE_FUNCTION,

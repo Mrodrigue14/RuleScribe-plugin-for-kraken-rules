@@ -4,11 +4,10 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.inspection.KrakenUnresolvedIdentifierInspection
 
 /**
- * L'inspection des identifiants inconnus.
+ * The unresolved identifier inspection.
  *
- * Sans inférence de types, le risque n'est pas de rater une erreur mais d'en
- * inventer une. La majorité de ces tests vérifient donc que l'inspection **se
- * tait** — c'est le comportement le plus coûteux à casser.
+ * Without type inference the risk is inventing errors, not missing them, so most of
+ * these tests check that the inspection stays silent.
  */
 class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
 
@@ -45,24 +44,19 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
     }
 
     /**
-     * Le nom appelé n'est pas une référence à résoudre.
-     *
-     * `isCallHead` est ce qui l'écarte, et rien ne le vérifiait : Qodana a
-     * signalé la condition comme « toujours fausse », ce qui rendrait la
-     * protection inopérante et ferait signaler `Round` comme introuvable. Le
-     * diagnostic vient d'un modèle où `KrakenTypes` n'est pas résolu, mais
-     * l'affirmation méritait d'être fixée plutôt que discutée.
+     * A called name is not a reference to resolve. `isCallHead` excludes it, and Qodana
+     * reported that condition as always false, so this pins the real behaviour.
      */
     fun testNativeCallHeadIsNotReported() {
         assertEquals(emptyList<String>(), problems("Assert Round(Policy.policyCd) > 0"))
     }
 
-    /** Même chose pour un nom que rien ne déclare : les appels ne sont pas vérifiés. */
+    /** Same for a name nothing declares: calls are not checked. */
     fun testUnknownCallHeadIsNotReported() {
         assertEquals(emptyList<String>(), problems("Assert Inconnue(Policy.policyCd) > 0"))
     }
 
-    /** Le garde ne doit pas déborder : un argument introuvable reste signalé. */
+    /** The guard must not overreach: an unknown argument is still reported. */
     fun testArgumentOfACallIsStillChecked() {
         assertEquals(
             listOf("[kvr049] Reference 'absent' not found."),
@@ -70,17 +64,9 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
         )
     }
 
-    // ------------------------------------------------------------------
-    // Ce qui doit être signalé
-    // ------------------------------------------------------------------
-
     fun testUnknownIdentifierIsReported() {
         assertEquals(listOf("[kvr049] Reference 'notAThing' not found."), problems("Assert notAThing > 0"))
     }
-
-    // ------------------------------------------------------------------
-    // Ce qui ne doit PAS l'être
-    // ------------------------------------------------------------------
 
     fun testFieldOfTheTargetContextIsAccepted() {
         assertEquals(emptyList<String>(), problems("Assert policyCd != null"))
@@ -101,7 +87,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
         assertEquals(emptyList<String>(), problems("Assert set t to policyCd return t != null"))
     }
 
-    /** Sans les types, un segment de chaîne n'est pas jugeable. */
+    /** Without types, a chain segment cannot be judged. */
     fun testPathSegmentsAreNeverReported() {
         assertEquals(emptyList<String>(), problems("Assert AddressInfo.whateverThisIs != null"))
     }
@@ -111,9 +97,8 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
     }
 
     /**
-     * Les prédicats de filtre voyaient tous leurs identifiants signalés : c'est
-     * ce que la sonde contre le corpus réel de kraken-rules a révélé, et c'était
-     * la totalité de ses faux positifs.
+     * Filter predicate fields resolve against the filtered element. Found on the real
+     * kraken-rules corpus, where it caused all of the inspection's false positives.
      */
     fun testFilterPredicateFieldsAreAccepted() {
         assertEquals(
@@ -123,8 +108,8 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
     }
 
     /**
-     * Filtre sur une tête inconnue — typiquement le contexte externe, dynamique :
-     * la portée est indéterminée, donc on s'abstient au lieu de tout signaler.
+     * Filter on an unknown head, typically the dynamic external context: the scope is
+     * undetermined, so the inspection abstains.
      */
     fun testFilterOnADynamicHeadIsNotJudged() {
         assertEquals(
@@ -133,12 +118,12 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
         )
     }
 
-    /** `context` vit dans la portée globale du moteur, jamais déclaré en DSL. */
+    /** `context` lives in the engine's global scope and is never declared in the DSL. */
     fun testExternalContextRootIsAccepted() {
         assertEquals(emptyList<String>(), problems("Assert context != null"))
     }
 
-    /** Sans cible `On` résoluble, il n'y a pas de portée de référence. */
+    /** Without a resolvable `On` target there is no reference scope. */
     fun testRuleWithUnknownTargetIsNotJudged() {
         myFixture.configureByText(
             "unknown-target.rules",
@@ -158,11 +143,8 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
     }
 
     /**
-     * Plusieurs fichiers visibles peuvent déclarer un contexte homonyme — un
-     * dépôt qui héberge plusieurs produits, ou de simples fixtures à côté du
-     * code. Le champ cherché peut n'exister que dans l'une d'elles ; n'en
-     * consulter qu'une, au hasard de l'ordre des fichiers, produisait un faux
-     * positif sur du code parfaitement valide. Cas signalé en usage réel.
+     * Several visible files can declare the same context, and the field may exist in only
+     * one of them. Checking just one, by file order, reported valid code.
      */
     fun testFieldIsFoundAcrossHomonymousContextDeclarations() {
         myFixture.addFileToProject(
@@ -194,7 +176,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
             .mapNotNull { it.description }
             .filter { it.startsWith("[kvr049] Reference ") }
         assertEquals(
-            "Le champ n'existe que dans l'une des déclarations homonymes",
+            "The field only exists in one of the same-named declarations",
             emptyList<String>(),
             reported,
         )
@@ -215,6 +197,6 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
         val reported = myFixture.doHighlighting()
             .mapNotNull { it.description }
             .filter { it.startsWith("[kvr049] Reference ") }
-        assertEquals("Un paramètre de fonction est en portée", emptyList<String>(), reported)
+        assertEquals("A function parameter is in scope", emptyList<String>(), reported)
     }
 }

@@ -131,7 +131,7 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
             "test.rules",
             """
             Rule "Documented" On Policy.state {
-                Description "Une règle documentée"
+                Description "A documented rule"
                 Assert state != null
             }
             """.trimIndent(),
@@ -140,7 +140,7 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
         val doc = KrakenDocumentationProvider().generateDoc(rule, null)
         assertNotNull(doc)
         assertTrue("Doc should contain the name: $doc", doc!!.contains("Documented"))
-        assertTrue("Doc should contain the description: $doc", doc.contains("Une règle documentée"))
+        assertTrue("Doc should contain the description: $doc", doc.contains("A documented rule"))
     }
 
     fun testNamespaceScopedResolution() {
@@ -166,7 +166,6 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
         )
         val reference = myFixture.file.findReferenceAt(myFixture.caretOffset)
         assertNotNull(reference)
-        // "Other" n'est pas inclus par "Mine" : la référence ne doit pas résoudre
         assertNull("Rule from a non-included namespace should not resolve", reference!!.resolve())
     }
 }

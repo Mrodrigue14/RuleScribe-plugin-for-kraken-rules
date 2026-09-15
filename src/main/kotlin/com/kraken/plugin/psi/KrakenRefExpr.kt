@@ -9,11 +9,10 @@ import com.intellij.psi.PsiReferenceBase
 import com.kraken.plugin.parser.KrakenTypes
 
 /**
- * Identifiant nu dans une expression KEL : `limitAmount`, `Policy`, `total`.
+ * Bare identifier in a KEL expression: `limitAmount`, `Policy`, `total`.
  *
- * Il peut désigner une variable déclarée par l'expression, un champ du contexte
- * visé par la clause `On`, ou un contexte du projet — [KrakenScopeResolver]
- * tranche, dans l'ordre du moteur.
+ * It can denote an expression variable, a field of the `On` target context, or a
+ * project context; [KrakenScopeResolver] decides, in engine order.
  */
 class KrakenRefExpr(node: ASTNode) : ASTWrapperPsiElement(node) {
 
@@ -24,15 +23,14 @@ class KrakenRefExpr(node: ASTNode) : ASTWrapperPsiElement(node) {
 }
 
 /**
- * Segment d'une chaîne d'accès : le `postalCode` de `AddressInfo.postalCode`.
+ * Segment of an access chain: `postalCode` in `AddressInfo.postalCode`.
  *
- * Ne résout que si le segment précédent désigne un contexte connu. Sans
- * inférence de types, une tête dont le type est inconnu arrête la chaîne : on
- * préfère ne pas résoudre plutôt que de deviner.
+ * Resolves only when the previous segment denotes a known context. Without type
+ * inference, a head of unknown type stops the chain instead of guessing.
  */
 class KrakenPathSegment(node: ASTNode) : ASTWrapperPsiElement(node) {
 
-    /** Un segment suivi d'arguments est un appel de méthode, pas un champ. */
+    /** A segment followed by arguments is a method call, not a field. */
     val isCall: Boolean
         get() = node.findChildByType(KrakenTypes.CALL_ARGS) != null
 
@@ -42,11 +40,10 @@ class KrakenPathSegment(node: ASTNode) : ASTWrapperPsiElement(node) {
     override fun getReference(): PsiReference? = if (isCall || segmentName.isEmpty()) null else KrakenPathSegmentReference(this)
 
     /**
-     * Contexte auquel appartient ce segment, déduit du maillon précédent.
+     * Context this segment belongs to, derived from the previous link.
      *
-     * La chaîne vit dans un `postfix_expr` : `primary_expr` puis une suite de
-     * `dot_access`. On repart de la tête et on avance segment par segment,
-     * chacun devant désigner un contexte pour que le suivant soit résoluble.
+     * The chain lives in a `postfix_expr`: a `primary_expr` followed by `dot_access` nodes.
+     * Walking from the head, each segment must denote a context for the next to resolve.
      */
     fun owningContext(): String? {
         val access = parent?.takeIf { it.node.elementType == KrakenTypes.DOT_ACCESS } ?: return null

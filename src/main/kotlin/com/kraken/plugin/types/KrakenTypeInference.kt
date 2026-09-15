@@ -10,12 +10,11 @@ import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRefExpr
 
 /**
- * Déduit le type d'une expression KEL.
+ * Infers the type of a KEL expression.
  *
- * Volontairement partielle. Le moteur type tout parce qu'il possède le modèle
- * résolu ; ici, chaque cas non couvert renvoie [KrakenType.Unknown], et les
- * vérifications qui le rencontrent s'abstiennent. C'est la même discipline
- * qu'en v0.9.0 : ne rien affirmer plutôt qu'affirmer à tort.
+ * Deliberately partial. The engine types everything because it has the resolved model;
+ * here every uncovered case returns [KrakenType.Unknown], and checks that meet it
+ * abstain rather than assert something wrong.
  */
 object KrakenTypeInference {
 
@@ -34,8 +33,7 @@ object KrakenTypeInference {
 
             KrakenTypes.STRING -> KrakenType.String
 
-            // Le lexer range les littéraux de date sous NUMBER_LIT : c'est le
-            // texte qui les distingue, pas le type de token.
+            // The lexer files date literals under NUMBER_LIT; only the text tells them apart.
             KrakenTypes.NUMBER_LIT -> literalType(element.text)
 
             KrakenTypes.TRUE_KW, KrakenTypes.FALSE_KW -> KrakenType.Boolean
@@ -56,20 +54,18 @@ object KrakenTypeInference {
     private val DATETIME_LITERAL = Regex("""\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z?""")
 
     /**
-     * Une chaîne de valeurs n'a un type sûr que si elle ne contient **aucun**
-     * opérateur : sinon il faudrait modéliser chaque opérateur, ce que cette
-     * version ne fait pas.
+     * A chain of values only has a safe type when it contains no operator; otherwise each
+     * operator would need to be modelled.
      */
     private fun typeOfChain(element: PsiElement): KrakenType {
-        // On parcourt les nœuds AST, pas `children` : celui-ci exclut les
-        // feuilles, donc les opérateurs et les littéraux y seraient invisibles
-        // — une chaîne `policyCd + 1` passerait pour un simple String.
+        // Walk AST nodes, not `children`, which excludes leaves: operators and literals would be
+        // invisible, and `policyCd + 1` would look like a plain String.
         val parts = significantChildren(element)
         if (parts.any { isOperator(it) }) return KrakenType.Unknown
         return parts.singleOrNull()?.let { typeOf(it) } ?: KrakenType.Unknown
     }
 
-    /** Enfants AST utiles : ni blancs, ni commentaires. */
+    /** Meaningful AST children: neither whitespace nor comments. */
     fun significantChildren(element: PsiElement): List<PsiElement> = element.node.getChildren(null)
         .filter { it.psi !is com.intellij.psi.PsiWhiteSpace && it.psi !is com.intellij.psi.PsiComment }
         .map { it.psi }
@@ -85,15 +81,12 @@ object KrakenTypeInference {
     }
 
     /**
-     * `a.b.c` : le type est celui du dernier segment résolu — mais projeté sur
-     * une collection, il devient lui-même une collection. En KEL,
-     * `coverages.limitAmount` sur `Coverage[]` vaut `Money[]`, pas `Money`.
+     * `a.b.c`: the type of the last resolved segment, but projected over a collection it
+     * becomes a collection. In KEL, `coverages.limitAmount` on `Coverage[]` is `Money[]`.
      */
     private fun typeOfPostfix(element: PsiElement): KrakenType {
-        // Segments **directs** de cette chaîne seulement. findChildrenOfType
-        // descend récursivement : il ramènerait aussi les segments situés dans
-        // les arguments d'un appel, et `Count(Vehicle.model)` prendrait alors le
-        // type de `model` au lieu du type de retour de `Count`.
+        // Direct segments of this chain only. findChildrenOfType is recursive and would also
+        // return segments inside call arguments, typing `Count(Vehicle.model)` as `model`.
         val segments = directSegments(element)
         if (segments.isNotEmpty()) {
             val last = segments.last()
@@ -104,7 +97,7 @@ object KrakenTypeInference {
         }
         val children = significantChildren(element)
         val head = children.firstOrNull() ?: return KrakenType.Unknown
-        // Un crochet réduit une collection à son élément.
+        // A bracket reduces a collection to its element.
         val bracketed = children.any { it.node.elementType == KrakenTypes.BRACKET_ACCESS }
         val headType = typeOf(head)
         return if (bracketed && headType is KrakenType.Array) headType.element else headType
@@ -113,8 +106,8 @@ object KrakenTypeInference {
     private fun wrap(type: KrakenType): KrakenType = if (type is KrakenType.Array) type else KrakenType.Array(type)
 
     /**
-     * Vrai si un maillon **avant** [last] désigne une collection : la chaîne
-     * est alors une projection, et son résultat est une collection.
+     * True if a link before [last] denotes a collection: the chain is then a projection and
+     * its result a collection.
      */
     private fun projectsOverACollection(chain: PsiElement, last: KrakenPathSegment): Boolean {
         val head = significantChildren(chain).firstOrNull()
@@ -124,7 +117,7 @@ object KrakenTypeInference {
                 .any { !it.isCall && typeOfDeclaration(it.reference?.resolve()) is KrakenType.Array }
     }
 
-    /** Segments d'accès appartenant à cette chaîne, sans descendre dans les appels. */
+    /** Access segments of this chain, without descending into calls. */
     private fun directSegments(chain: PsiElement): List<KrakenPathSegment> = significantChildren(chain)
         .filter { it.node.elementType == KrakenTypes.DOT_ACCESS }
         .mapNotNull { access ->
@@ -141,17 +134,17 @@ object KrakenTypeInference {
     }
 
     /**
-     * Type d'une déclaration ciblée par une référence : champ de contexte,
-     * enfant, paramètre de fonction. Une variable d'expression (`set`, `for`)
-     * n'est pas typée ici — il faudrait remonter à l'expression source.
+     * Type of a declaration targeted by a reference: context field, child, or function
+     * parameter. Expression variables (`set`, `for`) are not typed here, since that would
+     * require following the source expression.
      */
     fun typeOfDeclaration(declaration: PsiElement?): KrakenType {
         val node = declaration?.node ?: return KrakenType.Unknown
         return when (node.elementType) {
             KrakenTypes.FIELD_DECL -> fieldType(declaration)
 
-            // `Child Address` et `Child* Address` : le nom est le contexte, et
-            // l'étoile en fait une collection.
+            // `Child Address` and `Child* Address`: the name is the context, and the star makes it
+            // a collection.
             KrakenTypes.CHILD_DECL -> {
                 val name = KrakenPsiUtil.identifiersOf(declaration.node).firstOrNull() ?: return KrakenType.Unknown
                 val context = KrakenType.Context(name)
@@ -167,7 +160,7 @@ object KrakenTypeInference {
         }
     }
 
-    /** `Money limitAmount` → Money ; `Coverage* items` → Coverage[]. */
+    /** `Money limitAmount` → Money; `Coverage* items` → Coverage[]. */
     private fun fieldType(field: PsiElement): KrakenType {
         val names = KrakenPsiUtil.identifiersOf(field.node)
         if (names.size < 2) return KrakenType.Unknown

@@ -15,20 +15,13 @@ import com.kraken.plugin.lang.KrakenLanguage
 import com.kraken.plugin.psi.KrakenRuleDecl
 
 /**
- * Déplace une déclaration `Rule` vers un autre fichier `.rules` (Maj+F6 → F6).
+ * Moves a `Rule` declaration to another `.rules` file (F6).
  *
- * On passe par [MoveHandlerDelegate.tryToMove] plutôt que par `doMove` : la
- * plateforme n'a aucun conteneur de destination naturel à proposer pour une
- * règle, donc ce handler prend la main sur tout le flux, choisit la
- * destination et fait le déplacement.
+ * Uses [MoveHandlerDelegate.tryToMove] rather than `doMove`: the platform has no
+ * natural destination container for a rule, so this handler runs the whole flow.
  *
- * **Le déplacement ne réécrit aucune référence, et c'est voulu** : elles sont
- * par nom (voir [KrakenMoveConflicts]). Ce qui change est leur résolution, et
- * c'est pourquoi l'utilisateur est averti avant, pas après.
- *
- * Le texte est manipulé au niveau du document faute de fabrique d'éléments
- * PSI, et dans l'ordre insertion-puis-suppression : si la seconde opération
- * échouait, la règle existerait en double plutôt que nulle part.
+ * The move rewrites no reference, on purpose: references are by name (see
+ * [KrakenMoveConflicts]). Their resolution changes, so the user is warned beforehand.
  */
 class KrakenMoveRuleHandler : MoveHandlerDelegate() {
 
@@ -53,9 +46,8 @@ class KrakenMoveRuleHandler : MoveHandlerDelegate() {
         val broken = KrakenMoveConflicts.brokenBy(rule, target)
         if (broken.isNotEmpty() && !confirm(project, rule.name, broken.size)) return true
 
-        // WriteCommandAction et pas WriteAction : modifier un document hors
-        // commande est refusé par la plateforme, et c'est la commande qui
-        // rend le déplacement annulable — indispensable pour un refactoring.
+        // WriteCommandAction, not WriteAction: the platform refuses document changes outside a
+        // command, and the command makes the move undoable.
         WriteCommandAction.runWriteCommandAction(project, "Move Rule", null, {
             KrakenDeclarationMover.move(project, rule, target)
         })
@@ -65,9 +57,8 @@ class KrakenMoveRuleHandler : MoveHandlerDelegate() {
     private fun ruleOf(element: PsiElement): KrakenRuleDecl? = element as? KrakenRuleDecl ?: PsiTreeUtil.getParentOfType(element, KrakenRuleDecl::class.java, false)
 
     /**
-     * Le compte suffit : détailler chaque référence demanderait une vue de
-     * conflits, alors que la décision tient à « est-ce que j'accepte de les
-     * casser ». Répondre non annule sans rien modifier.
+     * The count is enough, since the decision is whether to accept breaking those
+     * references. Answering no cancels without changing anything.
      */
     private fun confirm(project: Project, name: String?, count: Int): Boolean {
         val what = name?.let { "'$it'" } ?: "this rule"

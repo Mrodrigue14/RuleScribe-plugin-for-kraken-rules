@@ -37,9 +37,8 @@ class KrakenSyntaxHighlighter : SyntaxHighlighterBase() {
         val OPERATOR: TextAttributesKey =
             createTextAttributesKey("KRAKEN_OPERATOR", DefaultLanguageHighlighterColors.OPERATION_SIGN)
 
-        // Les appels de fonction ne sont pas distinguables au niveau lexical —
-        // un nom appelé et une variable sont tous deux IDENTIFIER. C'est
-        // KrakenFunctionAnnotator, qui voit le PSI, qui pose ces deux clés.
+        // A called name and a variable are both IDENTIFIER, so calls cannot be told apart
+        // lexically: KrakenFunctionAnnotator sets these two keys from the PSI.
         val NATIVE_FUNCTION: TextAttributesKey =
             createTextAttributesKey(
                 "KRAKEN_NATIVE_FUNCTION",
@@ -51,10 +50,7 @@ class KrakenSyntaxHighlighter : SyntaxHighlighterBase() {
                 DefaultLanguageHighlighterColors.FUNCTION_CALL,
             )
 
-        // Même raison que ci-dessus, un cran plus loin : un nom résolu et un
-        // nom inconnu sont tous deux IDENTIFIER. KrakenReferenceAnnotator ne
-        // pose ces clés que sur ce qui se résout réellement — colorer un nom
-        // inconnu reviendrait à affirmer qu'il désigne quelque chose.
+        // Set by KrakenReferenceAnnotator, only on names that actually resolve.
         val CONTEXT_REFERENCE: TextAttributesKey =
             createTextAttributesKey(
                 "KRAKEN_CONTEXT_REFERENCE",
@@ -73,13 +69,11 @@ class KrakenSyntaxHighlighter : SyntaxHighlighterBase() {
             createTextAttributesKey("KRAKEN_BRACKETS", DefaultLanguageHighlighterColors.BRACKETS)
 
         /**
-         * Profondeur d'imbrication des accolades, parenthèses et crochets.
-         * Trois teintes qui se répètent : au-delà, distinguer les niveaux à
-         * l'œil ne marche plus de toute façon.
+         * Nesting depth of braces, parentheses and brackets. Three colours repeat; beyond
+         * that, levels cannot be told apart by eye anyway.
          *
-         * **Le rouge en est exclu**, et réservé à [UNMATCHED_BRACKET]. Une
-         * couleur qui signifie « erreur » ne peut pas être en même temps une
-         * teinte de l'arc-en-ciel, sinon elle ne signifie plus rien.
+         * Red is excluded and reserved for [UNMATCHED_BRACKET]: a colour that means "error"
+         * cannot also be a depth colour.
          */
         val BRACKET_DEPTH: List<TextAttributesKey> = listOf(
             createTextAttributesKey("KRAKEN_BRACKET_DEPTH_1"),
@@ -87,7 +81,7 @@ class KrakenSyntaxHighlighter : SyntaxHighlighterBase() {
             createTextAttributesKey("KRAKEN_BRACKET_DEPTH_3"),
         )
 
-        /** Accolade sans partenaire, ou dont l'appariement est ambigu. */
+        /** Brace without a partner, or whose match is ambiguous. */
         val UNMATCHED_BRACKET: TextAttributesKey =
             createTextAttributesKey("KRAKEN_UNMATCHED_BRACKET")
 

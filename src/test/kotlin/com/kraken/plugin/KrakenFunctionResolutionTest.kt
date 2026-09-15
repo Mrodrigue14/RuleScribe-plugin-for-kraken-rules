@@ -7,26 +7,21 @@ import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenFunctionDecl
 
 /**
- * Reconnaissance des fonctions dans le corps des règles.
+ * Function recognition in rule bodies.
  *
- * Le moteur identifie une fonction par `(nom, nombre de paramètres)` — jamais
- * par les types (`kraken.el.functionregistry.FunctionHeader`). Ces tests
- * verrouillent cette sémantique côté plugin, pour les trois provenances :
- * native Java, `Function` avec corps KEL, signature `Function` sans corps.
+ * The engine identifies a function by `(name, parameter count)`, never by types
+ * (`kraken.el.functionregistry.FunctionHeader`). These tests pin that for all three
+ * origins: native Java, `Function` with a KEL body, bodiless `Function` signature.
  */
 class KrakenFunctionResolutionTest : BasePlatformTestCase() {
 
     private inline fun <reified T : com.intellij.psi.PsiElement> allOf(): List<T> = PsiTreeUtil.findChildrenOfType(myFixture.file, T::class.java).toList()
 
-    // ------------------------------------------------------------------
-    // Catalogue natif
-    // ------------------------------------------------------------------
-
     fun testCatalogueIsLoadedFromResources() {
-        assertEquals("55 fonctions natives générées depuis le moteur", 55, KrakenFunctionCatalog.functions.size)
+        assertEquals("55 native functions generated from the engine", 55, KrakenFunctionCatalog.functions.size)
         assertEquals(9, KrakenFunctionCatalog.libraries.size)
         assertTrue(
-            "Chaque fonction porte une description",
+            "Every function has a description",
             KrakenFunctionCatalog.functions.all { !it.description.isNullOrBlank() },
         )
     }
@@ -38,19 +33,15 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
         assertNotNull(two)
         assertEquals("Round(Number number) : Number", one!!.signature())
         assertEquals("Round(Number number, Number scale) : Number", two!!.signature())
-        assertNull("Aucune surcharge à 3 paramètres", KrakenFunctionCatalog.find("Round", 3))
+        assertNull("No overload with 3 parameters", KrakenFunctionCatalog.find("Round", 3))
     }
 
     fun testCatalogueKeepsEngineTypeTokens() {
-        // Types portés par @ParameterType/@ReturnType, donc non déduits du Java.
+        // Types come from @ParameterType/@ReturnType, not inferred from the Java signature.
         assertEquals("Date | DateTime", KrakenFunctionCatalog.find("GetDay", 1)!!.parameters[0].type)
         assertEquals("<T>[]", KrakenFunctionCatalog.find("Distinct", 1)!!.returnType)
         assertEquals("Number[]", KrakenFunctionCatalog.find("Sum", 1)!!.parameters[0].type)
     }
-
-    // ------------------------------------------------------------------
-    // PSI
-    // ------------------------------------------------------------------
 
     fun testFunctionDeclarationExposesNameArityAndReturnType() {
         myFixture.configureByText(
@@ -70,7 +61,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
         assertEquals("Limits(Coverage[] coverages) : Number[]", declaration.signature())
     }
 
-    /** Signature nue : l'implémentation vit côté Java, il n'y a pas de corps. */
+    /** Bare signature: implemented in Java, so there is no body. */
     fun testSignatureWithoutBodyIsRecognised() {
         myFixture.configureByText(
             "signature.rules",
@@ -82,7 +73,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
         val declaration = allOf<KrakenFunctionDecl>().single()
         assertEquals("GetPolicyCd", declaration.name)
         assertEquals(1, declaration.arity)
-        assertFalse("Une signature n'a pas de corps", declaration.hasBody())
+        assertFalse("A signature has no body", declaration.hasBody())
     }
 
     fun testGenericBoundsAreNotMistakenForTheName() {
@@ -112,7 +103,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
         assertEquals(setOf("Round", "Sum"), calls.keys)
         assertEquals(2, calls["Round"]!!.argumentCount)
         assertEquals(1, calls["Sum"]!!.argumentCount)
-        assertTrue("Round et Sum sont des natives", calls.values.all { it.isResolvable() })
+        assertTrue("Round and Sum are natives", calls.values.all { it.isResolvable() })
     }
 
     fun testCallWithoutArgumentsHasZeroArity() {
@@ -130,10 +121,6 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
         assertEquals(0, call.argumentCount)
         assertTrue(call.isResolvable())
     }
-
-    // ------------------------------------------------------------------
-    // Navigation
-    // ------------------------------------------------------------------
 
     fun testCallResolvesToDeclaredFunction() {
         myFixture.configureByText(
@@ -153,7 +140,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
         assertSame(allOf<KrakenFunctionDecl>().single(), target)
     }
 
-    /** L'arité fait partie de l'identité : un appel mal arité ne résout pas. */
+    /** Arity is part of the identity: a call with the wrong arity does not resolve. */
     fun testCallWithWrongArityDoesNotResolve() {
         myFixture.configureByText(
             "arity.rules",
@@ -170,7 +157,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
 
         val call = allOf<KrakenFunctionCall>().single()
         assertNull(call.reference?.resolve())
-        assertFalse("Ni native, ni déclarée avec cette arité", call.isResolvable())
+        assertFalse("Neither native nor declared with this arity", call.isResolvable())
     }
 
     fun testDeclaredFunctionIsNotVisibleFromAnotherNamespace() {
@@ -196,17 +183,16 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
         )
 
         val call = allOf<KrakenFunctionCall>().single()
-        assertNull("Consumer n'inclut pas Library", call.reference?.resolve())
+        assertNull("Consumer does not include Library", call.reference?.resolve())
         assertFalse(call.isResolvable())
     }
 
     /**
-     * `KrakenReferencesSearcher` ne traite que les règles et les EntryPoints,
-     * dont les noms vivent dans des chaînes que le scanner de mots n'indexe
-     * pas. Un nom de fonction est un identifiant ordinaire : la recherche par
-     * défaut le trouve, puis filtre par `resolve()` — qui est déjà conscient
-     * des namespaces. Ce test vérifie que ce chemin-là suffit, puisque c'est
-     * lui qui alimente la popup d'usages et l'inlay « N usages ».
+     * `KrakenReferencesSearcher` only handles rules and EntryPoints, whose names live in
+     * strings the word scanner does not index. A function name is a plain identifier: the
+     * default search finds it and filters with `resolve()`, which already knows about
+     * namespaces. This checks that this path is enough, since it feeds the usages popup and
+     * the "N usages" inlay.
      */
     fun testFunctionUsagesAreFoundWithoutADedicatedSearcher() {
         myFixture.addFileToProject(
@@ -219,9 +205,8 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        // Un namespace explicite est nécessaire : un fichier qui n'en déclare
-        // aucun est visible depuis partout, et l'appel « Elsewhere » compterait
-        // alors légitimement.
+        // An explicit namespace is needed: a file without one is visible from everywhere, and
+        // the "Elsewhere" call would then legitimately count.
         val file = myFixture.configureByText(
             "local.rules",
             """
@@ -243,7 +228,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
 
         val declaration = allOf<KrakenFunctionDecl>().single()
         val usages = myFixture.findUsages(declaration)
-        assertEquals("L'appel du namespace Elsewhere ne compte pas", 2, usages.size)
+        assertEquals("The call from namespace Elsewhere does not count", 2, usages.size)
         assertTrue(usages.all { it.file?.name == "local.rules" })
         assertEquals(
             "2 usages",

@@ -6,21 +6,17 @@ import com.intellij.psi.PsiElement
 import com.kraken.plugin.lang.KrakenFile
 
 /**
- * Le déplacement proprement dit, séparé du handler pour être testable sans
- * dialogue.
+ * Performs a move, separately from the handlers so that it can be tested without a
+ * dialog.
  *
- * Une déclaration quelconque, pas seulement une `Rule` : le déplacement ne lit
- * de son argument que son étendue et son fichier, si bien qu'un EntryPoint
- * suit le même chemin. Ce qui diffère d'un cas à l'autre est ce que le
- * déplacement casse, et cela se décide dans [KrakenMoveConflicts].
+ * It works for any declaration: it only reads the element's range and file, so an
+ * EntryPoint takes the same path. What a move breaks depends on the kind of declaration
+ * and is decided in [KrakenMoveConflicts].
  *
- * Le texte est manipulé au niveau du document : le plugin n'a pas de fabrique
- * d'éléments PSI, et en créer une pour déplacer un bloc coûterait plus que ça
- * ne rapporte — même raison que pour les correctifs d'inspection.
+ * Text is edited through the document because the plugin has no PSI element factory.
  *
- * Insertion **puis** suppression, dans cet ordre : si la seconde échouait, la
- * déclaration existerait en double, ce qu'une inspection signale déjà pour une
- * règle, plutôt que nulle part, ce que rien ne rattraperait.
+ * Insert first, then delete: if the deletion failed, the declaration would exist twice
+ * (which an inspection reports for rules) rather than nowhere.
  */
 object KrakenDeclarationMover {
 

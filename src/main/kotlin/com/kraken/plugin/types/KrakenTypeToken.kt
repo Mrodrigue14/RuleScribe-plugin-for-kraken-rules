@@ -1,27 +1,23 @@
 package com.kraken.plugin.types
 
 /**
- * Forme syntaxique d'un type écrit dans le DSL, portée de la production `type`
- * de `Value.g4` : `identifier`, `( type )`, `type[]`, `type | type`, `<identifier>`.
+ * Syntactic shape of a DSL type, ported from the `type` production of `Value.g4`:
+ * `identifier`, `( type )`, `type[]`, `type | type`, `<identifier>`.
  *
- * [KrakenType] répond « quel type est-ce » et abandonne dès que la question est
- * dure — une union et un générique y deviennent tous deux `Any`. Ici la
- * question est différente et purement structurelle : *de quoi ce type est-il
- * fait*. Le moteur la pose exactement ainsi, via `Type.isUnion()` et
- * `Type.isGeneric()`, pour refuser les signatures de fonction qui mélangent les
- * deux (`kvf007`, `kvf010`).
+ * [KrakenType] answers "which type is this" and gives up on hard cases (unions and
+ * generics both become `Any`). This answers "what is the type made of", which the engine
+ * asks through `Type.isUnion()` and `Type.isGeneric()` to reject function signatures
+ * mixing both (`kvf007`, `kvf010`).
  *
- * On travaille sur le **texte** du type plutôt que sur l'arbre PSI, pour deux
- * raisons. Le moteur fait de même — `FunctionValidator` lit
- * `function.getReturnType()`, une chaîne, et la donne à `ScopeBuilder.toType`.
- * Et surtout `union_type`, `array_type` et `atom_type` sont des règles privées
- * du BNF : elles ne produisent aucun nœud, si bien que `TYPE_REF` est une suite
- * de tokens à plat où `<T>` et `Foo<T>` ne se distinguent que par ce qui précède
- * le chevron. Reparser la chaîne coûte moins cher que de deviner cela.
+ * It works on the type's text rather than the PSI tree. The engine does the same
+ * (`FunctionValidator` passes `function.getReturnType()`, a string, to
+ * `ScopeBuilder.toType`), and `union_type`, `array_type` and `atom_type` are private BNF
+ * rules, so `TYPE_REF` is a flat run of tokens where `<T>` and `Foo<T>` only differ by
+ * what precedes the angle bracket.
  */
 sealed class KrakenTypeToken {
 
-    /** `Number`, `Policy` — et `Foo<A, B>`, que le moteur ne connaît pas (voir [parse]). */
+    /** `Number`, `Policy`, and `Foo<A, B>`, which the engine does not know (see [parse]). */
     data class Plain(val name: String) : KrakenTypeToken()
 
     /** `<T>` — `#GenericType`. */
@@ -33,7 +29,7 @@ sealed class KrakenTypeToken {
     /** `A | B` — `#UnionType`. */
     data class Union(val left: KrakenTypeToken, val right: KrakenTypeToken) : KrakenTypeToken()
 
-    /** `ArrayType.isGeneric` délègue à son élément, `UnionType` à ses deux membres. */
+    /** `ArrayType.isGeneric` delegates to its element, `UnionType` to both members. */
     val isGeneric: Boolean
         get() = when (this) {
             is Generic -> true
@@ -43,13 +39,12 @@ sealed class KrakenTypeToken {
         }
 
     /**
-     * `ArrayType.isUnion` délègue à son élément : `(A | B)[]` est une union.
+     * `ArrayType.isUnion` delegates to its element: `(A | B)[]` is a union.
      *
-     * `GenericType.isUnion` délègue, lui, à sa **borne** — `<T>` déclaré
-     * `T is Date | DateTime` est une union pour le moteur. On ne le reproduit
-     * pas : cela demanderait de résoudre l'environnement des bornes, et aucun
-     * test du moteur ne fixe ce cas. Signaler moins que le moteur laisse passer
-     * du code qu'il refusera ; signaler plus condamnerait du code valide.
+     * `GenericType.isUnion` delegates to its bound, so `<T>` declared `T is Date | DateTime`
+     * is a union for the engine. That is not reproduced: it needs the bounds environment,
+     * and no engine test pins the case. Reporting less lets through code the engine rejects;
+     * reporting more would condemn valid code.
      */
     val isUnion: Boolean
         get() = when (this) {
@@ -61,14 +56,12 @@ sealed class KrakenTypeToken {
     companion object {
 
         /**
-         * Analyse le texte d'un type, ou renvoie `null` s'il n'a pas la forme
-         * attendue — auquel cas l'appelant s'abstient plutôt que de deviner.
+         * Parses a type's text, or returns `null` when it does not have the expected shape, in
+         * which case the caller abstains.
          *
-         * `Foo<A, B>` n'existe pas dans `Value.g4` mais la grammaire de
-         * RuleScribe l'accepte depuis toujours, délibérément plus permissive que
-         * le moteur. Ses arguments sont analysés puis ignorés : ils ne rendent
-         * pas `Foo` générique, puisque le moteur n'a aucune sémantique pour
-         * cette forme.
+         * `Foo<A, B>` does not exist in `Value.g4`, but RuleScribe's grammar accepts it. Its
+         * arguments are parsed and ignored: they do not make `Foo` generic, since the engine has
+         * no semantics for this form.
          */
         fun parse(raw: String): KrakenTypeToken? {
             val tokens = tokenize(raw) ?: return null
@@ -104,10 +97,7 @@ sealed class KrakenTypeToken {
             return tokens.takeIf { it.isNotEmpty() }
         }
 
-        /**
-         * Descente récursive sur les trois niveaux du BNF, dans l'ordre qui
-         * donne les priorités : `[]` lie plus fort que `|`.
-         */
+        /** Recursive descent over the three BNF levels, in precedence order: `[]` binds tighter than `|`. */
         private class Parser(private val tokens: List<String>) {
             private var pos = 0
 
@@ -145,7 +135,7 @@ sealed class KrakenTypeToken {
                 }
             }
 
-            /** `Foo<A, B>` : consommés pour avancer, puis oubliés. */
+            /** `Foo<A, B>`: consumed to move forward, then discarded. */
             private fun typeArguments(): Unit? {
                 do {
                     union() ?: return null

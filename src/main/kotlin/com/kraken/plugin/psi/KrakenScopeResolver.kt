@@ -5,34 +5,31 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.parser.KrakenTypes
 
 /**
- * Résolution des identifiants nus dans une expression KEL.
+ * Resolves bare identifiers in a KEL expression.
  *
- * Reproduit *structurellement* le modèle de portées du moteur
- * (`kraken.model.project.scope.ScopeBuilder`), sans les types. Le moteur
- * empile deux portées pour une règle :
+ * Mirrors the structure of the engine's scope model
+ * (`kraken.model.project.scope.ScopeBuilder`), without types. For a rule the engine
+ * stacks two scopes:
  *
- * - une portée **GLOBALE** dont la table des symboles contient tous les
- *   contextes du projet, chacun référençable par son nom (référence
- *   inter-contextes) ;
- * - une portée **LOCALE** imbriquée dedans, dont le type est le contexte visé
- *   par la clause `On` — ce qui rend ses champs accessibles sans préfixe.
+ * - a global scope holding every project context, each referable by name;
+ * - a nested local scope typed as the `On` target context, which makes its fields
+ *   accessible without a prefix.
  *
- * `AstBuilder` ajoute par-dessus les variables déclarées dans l'expression :
- * `set x to …` et les variables d'itération de `for` / `every` / `some`. Elles
- * masquent les champs, d'où l'ordre de [resolve].
+ * `AstBuilder` adds the variables declared in the expression on top (`set x to …` and
+ * the iteration variables of `for`, `every`, `some`). They shadow fields, hence the
+ * order in [resolve].
  *
- * Sans inférence de types, ce résolveur s'arrête là où le moteur continue :
- * il suit une chaîne `a.b.c` tant que chaque maillon désigne un contexte
- * connu, et renonce dès qu'il faudrait connaître le type d'une expression.
- * C'est volontaire — mieux vaut ne pas résoudre que résoudre à tort.
+ * Without type inference this stops where the engine goes on: it follows `a.b.c` while
+ * each link denotes a known context and gives up as soon as an expression type is
+ * needed. Not resolving is better than resolving wrongly.
  */
 object KrakenScopeResolver {
 
     /**
-     * Déclaration désignée par [name] à l'endroit de [reference], ou null.
+     * Declaration denoted by [name] at [reference], or null.
      *
-     * L'ordre suit celui du moteur : les variables de l'expression masquent les
-     * champs du contexte cible, qui masquent les noms de contextes.
+     * Engine order: expression variables shadow fields of the target context, which shadow
+     * context names.
      */
     fun resolve(reference: PsiElement, name: String): PsiElement? {
         declaredVariable(reference, name)?.let { return it }
@@ -47,13 +44,11 @@ object KrakenScopeResolver {
     }
 
     /**
-     * Contexte de l'élément filtré, quand la référence est dans un prédicat
-     * `collection[…]`.
+     * Context of the filtered element when [reference] is inside a `collection[…]`
+     * predicate.
      *
-     * C'est le `ScopeType.FILTER` du moteur : dans `Vehicle[model = "P01"]`, le
-     * prédicat s'évalue sur les champs d'un `Vehicle`. On retient le crochet
-     * **le plus proche**, ce qui donne gratuitement le bon comportement pour
-     * les filtres imbriqués.
+     * This is the engine's `ScopeType.FILTER`: in `Vehicle[model = "P01"]` the predicate
+     * is evaluated on a `Vehicle`. The nearest bracket wins, which handles nested filters.
      */
     fun filterContext(reference: PsiElement): String? {
         var current: PsiElement? = reference
@@ -69,12 +64,11 @@ object KrakenScopeResolver {
     }
 
     /**
-     * Vrai si la référence se trouve dans un prédicat `collection[…]`.
+     * True if [reference] is inside a `collection[…]` predicate.
      *
-     * Combiné à [filterContext] qui renvoie null, cela distingue « la portée du
-     * filtre est vide » de « on ignore le type de l'élément filtré » — le second
-     * cas correspond aux portées dynamiques du moteur (`Scope.isDynamic`), où
-     * toute référence est acceptée.
+     * Together with a null [filterContext], this separates "the filter scope is empty" from
+     * "the element type is unknown". The latter matches the engine's dynamic scopes
+     * (`Scope.isDynamic`), where any reference is accepted.
      */
     fun isInFilterPredicate(reference: PsiElement): Boolean {
         var current: PsiElement? = reference
@@ -86,12 +80,11 @@ object KrakenScopeResolver {
     }
 
     /**
-     * Contexte désigné par le début d'une chaîne d'accès, jusqu'à [stopAt] exclu.
+     * Context denoted by the start of an access chain, up to [stopAt] excluded.
      *
-     * Un crochet ne change pas le contexte : filtrer ou indexer une collection
-     * sélectionne des éléments du même type. Un point, lui, fait avancer d'un
-     * maillon — et la chaîne s'interrompt dès qu'un maillon ne désigne aucun
-     * contexte connu.
+     * A bracket keeps the context, since filtering or indexing selects elements of the same
+     * type. A dot advances one link, and the chain stops at the first link that denotes no
+     * known context.
      */
     fun contextBefore(chain: PsiElement, stopAt: PsiElement): String? {
         val head = PsiTreeUtil.findChildOfType(chain, KrakenRefExpr::class.java) ?: return null
@@ -107,10 +100,9 @@ object KrakenScopeResolver {
     }
 
     /**
-     * Paramètre de la `Function` englobante. Le moteur construit une portée
-     * dédiée au corps d'une fonction (`ScopeBuilder.buildFunctionScope`), dont
-     * les symboles sont ses paramètres — il n'y a ni contexte cible ni champ
-     * accessible sans préfixe là-dedans.
+     * Parameter of the enclosing `Function`. The engine builds a dedicated scope for a
+     * function body (`ScopeBuilder.buildFunctionScope`) whose symbols are its parameters,
+     * with no target context.
      */
     private fun functionParameter(reference: PsiElement, name: String): PsiElement? {
         val function = PsiTreeUtil.getParentOfType(reference, KrakenFunctionDecl::class.java, false)
@@ -122,10 +114,10 @@ object KrakenScopeResolver {
             ?.psi
     }
 
-    /** `Coverage[] coverages` → `coverages`. Le nom est facultatif au parsing. */
+    /** `Coverage[] coverages` → `coverages`; the name is optional when parsing. */
     private fun parameterName(param: com.intellij.lang.ASTNode): String? = KrakenPsiUtil.identifiersOf(param).takeIf { it.size >= 2 }?.last()
 
-    /** Ce que [resolve] proposerait ici, pour la complétion. */
+    /** What [resolve] would accept here, for completion. */
     fun visibleNames(reference: PsiElement): List<String> {
         val names = LinkedHashSet<String>()
         variableScopes(reference).mapNotNullTo(names) { variableNameOf(it) }
@@ -142,9 +134,9 @@ object KrakenScopeResolver {
     }
 
     /**
-     * Contexte désigné par une tête de chaîne d'accès, pour résoudre le segment
-     * suivant. `Policy` désigne le contexte Policy ; un champ `Child Address`
-     * désigne le contexte Address ; un champ scalaire ne désigne rien.
+     * Context denoted by the head of an access chain, to resolve the next segment. `Policy`
+     * denotes Policy, a `Child Address` field denotes Address, a scalar field denotes
+     * nothing.
      */
     fun contextDenotedBy(reference: PsiElement, name: String): String? {
         targetContextName(reference)?.let { target ->
@@ -154,7 +146,7 @@ object KrakenScopeResolver {
         return null
     }
 
-    /** Nom du contexte visé par la clause `On` de la règle englobante. */
+    /** Context named by the `On` clause of the enclosing rule. */
     fun targetContextName(element: PsiElement): String? {
         val rule = PsiTreeUtil.getParentOfType(element, KrakenRuleDecl::class.java, false) ?: return null
         val target = rule.node.findChildByType(KrakenTypes.RULE_TARGET) ?: return null
@@ -171,12 +163,10 @@ object KrakenScopeResolver {
         return null
     }
 
-    /** Déclaration du champ [field] de [context], héritage `Is` compris. */
+    /** Declaration of [field] in [context], including fields inherited through `Is`. */
     fun findField(from: PsiElement, context: String, field: String, depth: Int = 0): PsiElement? {
         if (depth > 4) return null
-        // Toutes les déclarations homonymes sont candidates : un même nom de
-        // contexte peut être déclaré dans plusieurs fichiers visibles, et le
-        // champ cherché n'exister que dans l'une d'elles.
+        // Every same-named declaration is a candidate: the field may exist in only one of them.
         for (decl in KrakenPsiUtil.findContextDecls(from.containingFile, context)) {
             var child = decl.node.firstChildNode
             while (child != null) {
@@ -203,24 +193,22 @@ object KrakenScopeResolver {
     }
 
     /**
-     * Contexte désigné par le champ [name] de [context], le cas échéant :
-     * `Child Address` désigne Address, `Address address` aussi, un champ
-     * scalaire ne désigne rien. C'est ce qui permet d'avancer d'un maillon
-     * dans une chaîne `a.b.c`.
+     * Context denoted by field [name] of [context], if any: `Child Address` and
+     * `Address address` both denote Address, a scalar field denotes nothing. This is how an
+     * `a.b.c` chain advances one link.
      */
     fun contextOfField(from: PsiElement, context: String, name: String): String? {
         val field = findField(from, context, name) ?: return null
-        // `Child Address` : le nom de l'enfant EST le nom du contexte.
+        // `Child Address`: the child name is the context name.
         if (field.node.elementType == KrakenTypes.CHILD_DECL) return name
-        // `Address address` : le premier identifiant est le type.
+        // `Address address`: the first identifier is the type.
         val type = fieldDeclType(field.node) ?: return null
         return type.takeIf { KrakenPsiUtil.findContextDecl(from.containingFile, it) != null }
     }
 
     /**
-     * Variable déclarée par un `set`, un `for` ou un quantificateur englobant.
-     * On remonte l'arbre : une variable n'est visible que dans l'expression qui
-     * la déclare, ce que la structure de l'arbre exprime déjà.
+     * Variable declared by an enclosing `set`, `for` or quantifier. A variable is only
+     * visible inside the expression that declares it, which the tree already encodes.
      */
     private fun declaredVariable(reference: PsiElement, name: String): PsiElement? = variableScopes(reference).firstOrNull { variableNameOf(it) == name }?.let { scope ->
         variableLeaf(scope)
@@ -234,7 +222,7 @@ object KrakenScopeResolver {
             if (type == KrakenTypes.FOR_EXPR || type == KrakenTypes.QUANTIFIER_EXPR) {
                 scopes += current
             }
-            // Un `set x to …` précédent dans le même bloc reste visible après.
+            // A preceding `set x to …` in the same block stays visible afterwards.
             var sibling = current.prevSibling
             while (sibling != null) {
                 if (sibling.node?.elementType == KrakenTypes.SET_VAR) scopes += sibling
@@ -245,7 +233,7 @@ object KrakenScopeResolver {
         return scopes
     }
 
-    /** Le nom déclaré est le premier identifiant après le mot-clé introducteur. */
+    /** Keywords introducing an expression variable, whose name is the first identifier after them. */
     private val VARIABLE_KEYWORDS = setOf(
         KrakenTypes.SET_KW,
         KrakenTypes.FOR_KW,
@@ -269,7 +257,7 @@ object KrakenScopeResolver {
 
     private fun variableNameOf(scope: PsiElement): String? = variableLeaf(scope)?.text?.trim()?.takeIf { it.isNotEmpty() }
 
-    /** `String policyCd` → `policyCd` : le nom est le second identifiant. */
+    /** `String policyCd` → `policyCd`: the name is the last identifier. */
     private fun fieldDeclName(field: com.intellij.lang.ASTNode): String? = KrakenPsiUtil.identifiersOf(field).lastOrNull()
 
     private fun fieldDeclType(field: com.intellij.lang.ASTNode): String? = KrakenPsiUtil.identifiersOf(field).takeIf { it.size >= 2 }?.first()

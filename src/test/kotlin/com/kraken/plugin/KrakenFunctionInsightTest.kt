@@ -8,24 +8,18 @@ import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenFunctionDecl
 
 /**
- * Complétion et documentation autour des fonctions KEL.
+ * Completion and documentation for KEL functions.
  *
- * [KrakenFunctionResolutionTest] couvre la résolution ; ici on vérifie ce que
- * l'utilisateur voit réellement dans l'éditeur. Il n'y a plus d'inspection
- * « unknown function » (voir ROADMAP.md : nécessiterait un projet propriétaire
- * pour être vérifiée fiablement contre de vraies bibliothèques Java).
+ * [KrakenFunctionResolutionTest] covers resolution; this checks what the user actually
+ * sees in the editor.
  */
 class KrakenFunctionInsightTest : BasePlatformTestCase() {
 
-    // ------------------------------------------------------------------
-    // Complétion
-    // ------------------------------------------------------------------
-
     /**
-     * Le préfixe frappé filtre la liste, on interroge donc chaque source
-     * séparément. Quand un seul candidat subsiste, la plateforme l'insère au
-     * lieu d'ouvrir la popup et `lookupElementStrings` vaut null : on vérifie
-     * alors le texte obtenu, parenthèse comprise.
+     * The typed prefix filters the list, so each source is queried separately. When a
+     * single candidate remains, the platform inserts it instead of opening the popup and
+     * `lookupElementStrings` is null, so the resulting text is checked, parenthesis
+     * included.
      */
     private fun completesInRuleBody(prefix: String, expected: String): Boolean {
         myFixture.configureByText(
@@ -46,11 +40,11 @@ class KrakenFunctionInsightTest : BasePlatformTestCase() {
     }
 
     fun testNativeFunctionsAreCompletedInRuleBodies() {
-        assertTrue("Round est une native", completesInRuleBody("Ro", "Round"))
+        assertTrue("Round is native", completesInRuleBody("Ro", "Round"))
     }
 
     fun testDeclaredFunctionsAreCompletedInRuleBodies() {
-        assertTrue("Limits est déclarée dans le fichier", completesInRuleBody("Li", "Limits"))
+        assertTrue("Limits is declared in the file", completesInRuleBody("Li", "Limits"))
     }
 
     fun testFunctionsAreNotSuggestedInsideEntryPointBlocks() {
@@ -69,15 +63,11 @@ class KrakenFunctionInsightTest : BasePlatformTestCase() {
 
         val suggestions = myFixture.completeBasic().map { it.lookupString }
         assertFalse(
-            "Un EntryPoint liste des règles, pas des fonctions",
+            "An EntryPoint lists rules, not functions",
             suggestions.contains("Round"),
         )
         assertTrue(suggestions.contains("\"Some rule\""))
     }
-
-    // ------------------------------------------------------------------
-    // Documentation
-    // ------------------------------------------------------------------
 
     private fun docAtCall(): String? {
         val call = PsiTreeUtil.findChildOfType(myFixture.file, KrakenFunctionCall::class.java)
@@ -97,8 +87,8 @@ class KrakenFunctionInsightTest : BasePlatformTestCase() {
         val doc = docAtCall()
         assertNotNull(doc)
         assertTrue("Signature", doc!!.contains("Round(Number number) : Number"))
-        assertTrue("Bibliothèque d'origine", doc.contains("Math (built-in)"))
-        assertTrue("Exemple documenté", doc.contains("Round(1.5)"))
+        assertTrue("Library of origin", doc.contains("Math (built-in)"))
+        assertTrue("Documented example", doc.contains("Round(1.5)"))
     }
 
     fun testQuickDocOnDeclaredFunctionUsesItsDocComment() {
@@ -106,9 +96,9 @@ class KrakenFunctionInsightTest : BasePlatformTestCase() {
             "declared.rules",
             """
             /**
-             * Limites de toutes les garanties.
+             * Limits of all coverages.
              * @since 1.2.0
-             * @parameter coverages - garanties à parcourir
+             * @parameter coverages - coverages to iterate
              */
             Function Limits(Coverage[] coverages) : Number[] {
                 coverages.limitAmount
@@ -120,12 +110,12 @@ class KrakenFunctionInsightTest : BasePlatformTestCase() {
         val doc = KrakenDocumentationProvider().generateDoc(declaration, null)
         assertNotNull(doc)
         assertTrue(doc!!.contains("Limits(Coverage[] coverages) : Number[]"))
-        assertTrue(doc.contains("Limites de toutes les garanties."))
+        assertTrue(doc.contains("Limits of all coverages."))
         assertTrue(doc.contains("Since 1.2.0"))
-        assertTrue(doc.contains("garanties à parcourir"))
+        assertTrue(doc.contains("coverages to iterate"))
     }
 
-    /** Une signature nue doit annoncer qu'il n'y a pas de corps KEL à chercher. */
+    /** A bare signature must say there is no KEL body to look for. */
     fun testQuickDocFlagsSignatureOnlyFunctions() {
         myFixture.configureByText(
             "signature.rules",
@@ -143,20 +133,20 @@ class KrakenFunctionInsightTest : BasePlatformTestCase() {
         val parsed = KrakenFunctionDoc.parse(
             """
             /**
-             * Description sur
-             * deux lignes.
+             * Description on
+             * two lines.
              * @since 1.0.0
              * @example Limits(coverages)
              * @result {100, 200}
-             * @parameter coverages - les garanties
-             * @unknownTag ignoré
+             * @parameter coverages - the coverages
+             * @unknownTag ignored
              */
             """.trimIndent(),
         )
 
-        assertEquals("Description sur deux lignes.", parsed.description)
+        assertEquals("Description on two lines.", parsed.description)
         assertEquals("1.0.0", parsed.since)
-        assertEquals(listOf("coverages" to "les garanties"), parsed.parameters)
+        assertEquals(listOf("coverages" to "the coverages"), parsed.parameters)
         assertEquals(listOf("Limits(coverages)" to "{100, 200}"), parsed.examples)
     }
 }

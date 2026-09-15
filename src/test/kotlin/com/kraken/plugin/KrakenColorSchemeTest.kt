@@ -4,22 +4,17 @@ import junit.framework.TestCase
 import javax.xml.parsers.DocumentBuilderFactory
 
 /**
- * Les couleurs par défaut livrées via `additionalTextAttributes`.
+ * Default colours shipped through `additionalTextAttributes`.
  *
- * Sans ce fichier, les clés de profondeur existent mais ne peignent rien : la
- * fonctionnalité serait invisible à l'installation, et aucun test sur les
- * plages émises ne le révélerait. On vérifie donc l'artefact lui-même.
- *
- * L'invariant qui compte est celui que la roadmap pose : **le rouge est
- * réservé** aux accolades orphelines. Une couleur qui veut dire « erreur » ne
- * peut pas être aussi une teinte de profondeur, sinon elle ne veut plus rien
- * dire.
+ * Without that file the depth keys exist but paint nothing, and no test on emitted
+ * ranges would notice, so this checks the artifact itself. The invariant that matters:
+ * red is reserved for unmatched braces.
  */
 class KrakenColorSchemeTest : TestCase() {
 
     private fun foregrounds(resource: String): Map<String, String> {
         val stream = javaClass.getResourceAsStream(resource)
-            ?: error("$resource absent des ressources")
+            ?: error("$resource is missing from the resources")
         val doc = stream.use { DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(it) }
         val result = mutableMapOf<String, String>()
         val options = doc.getElementsByTagName("option")
@@ -38,7 +33,7 @@ class KrakenColorSchemeTest : TestCase() {
         return result
     }
 
-    /** Rouge dominant : composante R nettement au-dessus de V et B. */
+    /** Red-dominant: the R component is clearly above G and B. */
     private fun isRed(hex: String): Boolean {
         val r = hex.substring(0, 2).toInt(16)
         val g = hex.substring(2, 4).toInt(16)
@@ -50,16 +45,16 @@ class KrakenColorSchemeTest : TestCase() {
         val colors = foregrounds(resource)
         for (depth in 1..3) {
             val key = "KRAKEN_BRACKET_DEPTH_$depth"
-            val value = colors[key] ?: fail("$key n'a pas de couleur dans $resource").let { return }
+            val value = colors[key] ?: fail("$key has no colour in $resource").let { return }
             assertFalse(
-                "$resource : le rouge est réservé aux orphelines, $key vaut $value",
+                "$resource: red is reserved for unmatched brackets, but $key is $value",
                 isRed(value),
             )
         }
         val unmatched = colors["KRAKEN_UNMATCHED_BRACKET"]
-            ?: fail("KRAKEN_UNMATCHED_BRACKET n'a pas de couleur dans $resource").let { return }
+            ?: fail("KRAKEN_UNMATCHED_BRACKET has no colour in $resource").let { return }
         assertTrue(
-            "$resource : une accolade orpheline doit être rouge, pas $unmatched",
+            "$resource: an unmatched bracket must be red, not $unmatched",
             isRed(unmatched),
         )
     }
@@ -68,7 +63,6 @@ class KrakenColorSchemeTest : TestCase() {
 
     fun testDarculaScheme() = checkScheme("/colorSchemes/KrakenDarcula.xml")
 
-    /** Les trois profondeurs doivent se distinguer entre elles. */
     fun testDepthColoursAreDistinct() {
         for (resource in listOf("/colorSchemes/KrakenDefault.xml", "/colorSchemes/KrakenDarcula.xml")) {
             val depths = (1..3).mapNotNull { foregrounds(resource)["KRAKEN_BRACKET_DEPTH_$it"] }

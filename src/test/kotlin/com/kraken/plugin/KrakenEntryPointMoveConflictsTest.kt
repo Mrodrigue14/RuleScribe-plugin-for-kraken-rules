@@ -3,20 +3,15 @@ package com.kraken.plugin
 import com.kraken.plugin.refactoring.KrakenMoveConflicts
 
 /**
- * L'analyse qui décide si déplacer un EntryPoint casse quelque chose.
+ * The analysis that decides whether moving an EntryPoint breaks something.
  *
- * Une règle n'a qu'une direction : qui la référence. Un EntryPoint en a deux,
- * parce qu'il référence lui-même, et c'est la seconde qu'un portage naïf de
- * Move rule oublierait — un entry point posé dans un namespace qui ne voit pas
- * ses propres règles devient vide sans qu'une ligne bouge à l'intérieur.
+ * A rule has one direction (who references it); an EntryPoint has two, because it
+ * references others. The second is what a naive port of Move Rule would miss: an entry
+ * point placed where its own rules are invisible becomes empty.
  */
 class KrakenEntryPointMoveConflictsTest : KrakenMoveTestCase() {
 
-    // ------------------------------------------------------------------
-    // Sens entrant : qui référence l'EntryPoint déplacé
-    // ------------------------------------------------------------------
-
-    /** Même namespace : rien ne peut casser, dans aucun des deux sens. */
+    /** Same namespace: nothing can break, in either direction. */
     fun testMovingWithinTheSameNamespaceIsSafe() {
         val a = file(
             "a.rules",
@@ -36,10 +31,10 @@ class KrakenEntryPointMoveConflictsTest : KrakenMoveTestCase() {
         )
 
         val broken = KrakenMoveConflicts.brokenBy(epIn(a, "Inner"), b)
-        assertTrue("aucun conflit attendu, obtenu $broken", broken.isEmpty)
+        assertTrue("expected no conflict, got $broken", broken.isEmpty)
     }
 
-    /** Un `EntryPoint "Inner"` ailleurs cesse de voir la déclaration déplacée. */
+    /** An `EntryPoint "Inner"` elsewhere stops seeing the moved declaration. */
     fun testIncomingReferenceThatLosesSightIsReported() {
         val a = file(
             "a.rules",
@@ -62,7 +57,7 @@ class KrakenEntryPointMoveConflictsTest : KrakenMoveTestCase() {
         assertEquals(emptyList<Any>(), broken.outgoing)
     }
 
-    /** La destination reste visible via `Include` : rien à signaler. */
+    /** The destination stays visible through `Include`: nothing to report. */
     fun testIncludeKeepsTheIncomingReferenceAlive() {
         val a = file(
             "a.rules",
@@ -82,14 +77,10 @@ class KrakenEntryPointMoveConflictsTest : KrakenMoveTestCase() {
         )
 
         val broken = KrakenMoveConflicts.brokenBy(epIn(a, "Inner"), shared)
-        assertTrue("Include devrait suffire, obtenu $broken", broken.isEmpty)
+        assertTrue("Include should be enough, got $broken", broken.isEmpty)
     }
 
-    // ------------------------------------------------------------------
-    // Sens sortant : ce que l'EntryPoint déplacé référence
-    // ------------------------------------------------------------------
-
-    /** Le cas qu'une règle n'a pas : l'entry point part sans ses propres règles. */
+    /** The case a rule does not have: the entry point leaves without its own rules. */
     fun testOwnRuleItemThatStopsResolvingIsReported() {
         val a = file(
             "a.rules",
@@ -106,10 +97,7 @@ class KrakenEntryPointMoveConflictsTest : KrakenMoveTestCase() {
         assertEquals(1, broken.outgoing.size)
     }
 
-    /**
-     * La branche qu'une implémentation plus simple rate : un `Import Rule` du
-     * namespace de **destination** rattrape l'item.
-     */
+    /** An `Import Rule` in the destination namespace rescues the item. */
     fun testImportAtTheDestinationRescuesTheOwnItem() {
         val a = file(
             "a.rules",
@@ -128,10 +116,10 @@ class KrakenEntryPointMoveConflictsTest : KrakenMoveTestCase() {
         )
 
         val broken = KrakenMoveConflicts.brokenBy(epIn(a, "Moving"), far)
-        assertTrue("l'import de destination devrait sauver l'item, obtenu $broken", broken.isEmpty)
+        assertTrue("the destination import should rescue the item, got $broken", broken.isEmpty)
     }
 
-    /** Un item imbriqué n'a que l'axe de visibilité, aucun import ne le rattrape. */
+    /** A nested item only has the visibility axis, so no import rescues it. */
     fun testOwnNestedEntryPointItemThatStopsResolvingIsReported() {
         val a = file(
             "a.rules",
@@ -147,7 +135,7 @@ class KrakenEntryPointMoveConflictsTest : KrakenMoveTestCase() {
         assertEquals(1, broken.outgoing.size)
     }
 
-    /** Un item qui ne résolvait déjà pas n'est cassé par personne. */
+    /** An item that already failed to resolve is not counted. */
     fun testItemThatAlreadyFailsToResolveIsNotCounted() {
         val a = file(
             "a.rules",
@@ -162,7 +150,7 @@ class KrakenEntryPointMoveConflictsTest : KrakenMoveTestCase() {
         assertEquals(emptyList<Any>(), broken.outgoing)
     }
 
-    /** Les deux sens se comptent séparément, parce qu'ils ne s'arbitrent pas pareil. */
+    /** Both directions are counted separately. */
     fun testBothDirectionsAreCountedApart() {
         val a = file(
             "a.rules",

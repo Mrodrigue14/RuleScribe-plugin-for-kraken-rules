@@ -12,26 +12,23 @@ import com.kraken.plugin.types.KrakenType
 import com.kraken.plugin.types.KrakenTypeInference
 
 /**
- * Signale les incompatibilités de types que l'inférence sait établir avec
- * certitude, sur les trois cas que `AstValidatingVisitor` distingue.
+ * Reports type mismatches that inference can establish with certainty, in the three
+ * cases `AstValidatingVisitor` distinguishes.
  *
- * **Ordre impossible** (`<`, `>`, `<=`, `>=`). `validateBinaryComparison` du
- * moteur exige `Type.isComparableWith` : les numériques entre eux, les dates
- * entre elles, les date-heures entre elles. `Date` contre `DateTime` est le
- * piège classique de KEL, et deux `String` ne sont pas ordonnables non plus.
+ * Ordering (`<`, `>`, `<=`, `>=`): the engine's `validateBinaryComparison` requires
+ * `Type.isComparableWith`, which holds for numbers, dates, and date-times among
+ * themselves. `Date` against `DateTime` is the classic KEL trap, and two `String`s
+ * cannot be ordered either.
  *
- * **Égalité entre types différents** (`=`, `!=`). `validateTypeCompatibility`
- * applique un critère plus large — chaque côté doit être assignable à l'autre
- * — parce que comparer deux `String` est parfaitement légitime là où les
- * ordonner ne l'est pas. Confondre les deux critères, comme le faisait la
- * v0.10.x, laissait passer `a < b` sur deux `String`.
+ * Equality (`=`, `!=`): `validateTypeCompatibility` is broader, requiring each side to
+ * be assignable to the other, since comparing two `String`s is legitimate where
+ * ordering them is not.
  *
- * **Argument de fonction mal typé.** Le catalogue des natives porte les types
- * KEL réels de chaque paramètre, donc la vérification est directe.
+ * Function arguments: the native catalogue has each parameter's real KEL type, so the
+ * check is direct.
  *
- * Comme en v0.9.0, tout ce qui touche à [KrakenType.Unknown] ou
- * [KrakenType.Any] est laissé passer : le plugin ne type pas tout, et un
- * diagnostic inventé coûte plus cher qu'un diagnostic manqué.
+ * Anything involving [KrakenType.Unknown] or [KrakenType.Any] passes: the plugin does
+ * not type everything, and an invented diagnostic costs more than a missed one.
  */
 class KrakenTypeMismatchInspection : LocalInspectionTool() {
 
@@ -44,10 +41,9 @@ class KrakenTypeMismatchInspection : LocalInspectionTool() {
         }
     }
 
-    /** `effectiveDate < createdOn` : Date contre DateTime, refusé par le moteur. */
+    /** `effectiveDate < createdOn`: Date against DateTime, rejected by the engine. */
     private fun checkComparison(chain: PsiElement, holder: ProblemsHolder) {
-        // Nœuds AST : `children` de PSI exclut les feuilles, donc l'opérateur
-        // lui-même n'y figure pas.
+        // AST nodes: PSI `children` excludes leaves, so the operator would be missing.
         val children = KrakenTypeInference.significantChildren(chain)
         for ((index, child) in children.withIndex()) {
             val operator = operatorName(child) ?: continue
@@ -56,15 +52,12 @@ class KrakenTypeMismatchInspection : LocalInspectionTool() {
             val leftType = KrakenTypeInference.typeOf(left)
             val rightType = KrakenTypeInference.typeOf(right)
             if (!leftType.isKnown || !rightType.isKnown) continue
-            // Le caractère « collection » d'une expression dépend de la
-            // sémantique de projection et d'aplatissement de KEL, que cette
-            // version ne modélise qu'en partie : on s'abstient dès qu'un côté
-            // en est une.
+            // Whether an expression is a collection depends on KEL projection and flattening,
+            // which is only partly modelled, so skip when either side is one.
             if (leftType is KrakenType.Array || rightType is KrakenType.Array) continue
 
             val message = if (operator in EQUALITY_NAMES) {
-                // Assignable dans un sens ou dans l'autre, comme
-                // `areVersusAssignable` du moteur.
+                // Assignable either way, like the engine's `areVersusAssignable`.
                 if (leftType.isAssignableFrom(rightType) || rightType.isAssignableFrom(leftType)) continue
                 KrakenDiagnostic.NOT_SAME_TYPE.format(
                     operator,
@@ -85,9 +78,8 @@ class KrakenTypeMismatchInspection : LocalInspectionTool() {
     }
 
     /**
-     * Nom du nœud tel que le moteur l'imprime dans ses messages (`NodeType`
-     * rend son `name`, pas le symbole), ou null si l'élément n'est pas un
-     * opérateur de comparaison.
+     * Node name as the engine prints it in messages (`NodeType` renders its `name`, not the
+     * symbol), or null if [element] is not a comparison operator.
      */
     private fun operatorName(element: PsiElement): String? = when (element.node?.elementType) {
         KrakenTypes.LT -> "LessThan"
@@ -97,10 +89,9 @@ class KrakenTypeMismatchInspection : LocalInspectionTool() {
     }
 
     /**
-     * Seules les natives sont vérifiées : leurs types de paramètres viennent du
-     * catalogue, donc du moteur. Une `Function` du projet déclare ses types en
-     * DSL, mais un argument y est souvent une expression que l'inférence ne
-     * couvre pas encore — la vérifier produirait surtout du bruit.
+     * Only natives are checked, since their parameter types come from the engine
+     * catalogue. Arguments to project `Function`s are often expressions inference does not
+     * cover yet, so checking them would mostly produce noise.
      */
     private fun checkArguments(call: KrakenFunctionCall, holder: ProblemsHolder) {
         val signature = KrakenFunctionCatalog.find(call.functionName, call.argumentCount) ?: return
@@ -114,8 +105,7 @@ class KrakenTypeMismatchInspection : LocalInspectionTool() {
             val expected = KrakenType.fromDslName(parameter.type)
             val actual = KrakenTypeInference.typeOf(argument)
             if (!actual.isKnown || expected.isDynamic) continue
-            // Même raison : un paramètre tableau met en jeu la projection, que
-            // l'inférence ne couvre pas assez pour trancher.
+            // Same reason: an array parameter involves projection, which inference cannot decide.
             if (expected is KrakenType.Array || actual is KrakenType.Array) continue
             if (expected.isAssignableFrom(actual)) continue
             holder.registerProblem(
@@ -132,7 +122,7 @@ class KrakenTypeMismatchInspection : LocalInspectionTool() {
     }
 
     private companion object {
-        /** Symbole KEL → nom du `NodeType` correspondant côté moteur. */
+        /** KEL symbol → engine `NodeType` name. */
         val OPERATOR_NAMES = mapOf(
             "<=" to "LessThanOrEquals",
             ">=" to "MoreThanOrEquals",
@@ -141,7 +131,7 @@ class KrakenTypeMismatchInspection : LocalInspectionTool() {
             "!=" to "NotEquals",
         )
 
-        /** Ceux qui relèvent de l'assignabilité, pas de l'ordre. */
+        /** Operators judged by assignability rather than ordering. */
         val EQUALITY_NAMES = setOf("Equals", "NotEquals")
     }
 }

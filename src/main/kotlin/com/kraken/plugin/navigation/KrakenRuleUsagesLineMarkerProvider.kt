@@ -12,8 +12,8 @@ import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
 
 /**
- * Icône de gouttière sur chaque déclaration de règle référencée par au moins
- * un item d'EntryPoint, avec navigation vers ces références.
+ * Gutter icon on each rule or entry point declaration that is referenced at least once,
+ * navigating to the references.
  */
 class KrakenRuleUsagesLineMarkerProvider : RelatedItemLineMarkerProvider() {
 
@@ -21,7 +21,7 @@ class KrakenRuleUsagesLineMarkerProvider : RelatedItemLineMarkerProvider() {
         element: PsiElement,
         result: MutableCollection<in RelatedItemLineMarkerInfo<*>>,
     ) {
-        // Le marqueur est posé sur la feuille STRING du nom (règle ou entry point)
+        // The marker sits on the name's STRING leaf.
         if (element.node?.elementType != KrakenTypes.STRING) return
         when (element.parent?.node?.elementType) {
             KrakenTypes.RULE_NAME -> {
@@ -38,7 +38,7 @@ class KrakenRuleUsagesLineMarkerProvider : RelatedItemLineMarkerProvider() {
         }
     }
 
-    // Une déclaration sans nom n'a aucune référence : la liste vide suffit à l'écarter.
+    // A declaration without a name has no references, so the empty list skips it.
     private fun addMarker(
         element: PsiElement,
         references: List<PsiElement>,

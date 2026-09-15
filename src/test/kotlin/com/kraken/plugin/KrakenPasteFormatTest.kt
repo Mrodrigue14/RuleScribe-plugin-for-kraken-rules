@@ -6,10 +6,7 @@ import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import java.awt.datatransfer.StringSelection
 
-/**
- * Reproduit le bug de copier-coller : le collage dans un fichier .rules
- * ne doit pas détruire l'indentation du texte collé.
- */
+/** Pasting into a `.rules` file must keep the pasted text's indentation. */
 class KrakenPasteFormatTest : BasePlatformTestCase() {
 
     private val pastedRule = """

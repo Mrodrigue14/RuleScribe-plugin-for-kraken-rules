@@ -10,10 +10,7 @@ import com.intellij.psi.PsiReference
 import com.intellij.psi.PsiReferenceBase
 import com.kraken.plugin.parser.KrakenTypes
 
-/**
- * Item `EntryPoint "nom"` à l'intérieur d'un autre EntryPoint :
- * référence navigable vers la déclaration correspondante.
- */
+/** Nested `EntryPoint "name"` item, referencing that entry point's declaration. */
 class KrakenEpRef(node: ASTNode) : ASTWrapperPsiElement(node) {
 
     val entryPointName: String?
@@ -24,7 +21,7 @@ class KrakenEpRef(node: ASTNode) : ASTWrapperPsiElement(node) {
         return KrakenEntryPointReference(this, range)
     }
 
-    /** Même besoin que [KrakenRuleRef] : distinguer des références identiques. */
+    /** Tells identical references apart in navigation popups. */
     override fun getPresentation(): ItemPresentation = KrakenPresentations.of(
         this,
         KrakenPresentations.containerText(this, entryPointName?.let { "\"$it\"" }),

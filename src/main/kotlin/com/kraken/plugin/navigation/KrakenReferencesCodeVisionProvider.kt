@@ -11,17 +11,14 @@ import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
 
 /**
- * Inlay « N usages » au-dessus des déclarations, cliquable.
+ * Clickable "N usages" inlay above declarations.
  *
- * [ReferencesCodeVisionProvider] fournit déjà le clic — il ouvre la popup
- * standard d'usages, groupée par fichier et avec l'aperçu du code — ainsi que
- * le libellé et le groupe de réglages. Il ne reste donc que le décompte.
+ * [ReferencesCodeVisionProvider] already provides the click (the standard usages
+ * popup), the label and the settings group, so only the count is left.
  *
- * Ce décompte passe par [KrakenPsiUtil], donc par le modèle de visibilité mis
- * en cache : une référence dont le namespace ne voit pas la déclaration n'est
- * pas un usage, exactement comme pour Find Usages et l'inspection de règle
- * inutilisée. Les trois affichent le même nombre parce qu'ils appellent les
- * mêmes fonctions.
+ * The count goes through [KrakenPsiUtil] and its cached visibility model: a reference
+ * whose namespace cannot see the declaration is not a usage, exactly as in Find Usages
+ * and the unused rule inspection.
  */
 class KrakenReferencesCodeVisionProvider : ReferencesCodeVisionProvider() {
 
@@ -45,7 +42,7 @@ class KrakenReferencesCodeVisionProvider : ReferencesCodeVisionProvider() {
 
     override val id: String = ID
 
-    /** Seul inlay du plugin : l'ordre relatif n'a rien à départager. */
+    /** The plugin's only inlay, so there is no relative order to set. */
     override val relativeOrderings: List<CodeVisionRelativeOrdering> = emptyList()
 
     companion object {
