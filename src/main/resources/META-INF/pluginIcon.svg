@@ -1,36 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
   <!--
-    RuleScribe — un parchemin tenu par un kraken hors-champ, et une plume.
+    RuleScribe: a scroll held by an off-frame kraken, and a quill.
 
-    Fond transparent : l'icône doit tenir sur thème clair comme sombre. D'où le
-    liseré du parchemin (#C9AE7C) et le cerne froid de la plume (#8A9AAD) —
-    sans eux, le crème et le blanc cassé se dissolvent sur un fond blanc.
+    Transparent background: the icon must work on light and dark themes, hence the
+    scroll's edge (#C9AE7C) and the quill's cool outline (#8A9AAD); without them,
+    the cream and off-white fade into a white background.
 
-    Le bras long est peint APRÈS le parchemin (il passe devant), le bras court
-    AVANT (il passe derrière) : c'est ce chevauchement qui crée l'enlacement.
-    Aucune origine n'est visible — la créature reste hors du cadre.
+    The long arm is painted AFTER the scroll (it passes in front) and the short arm
+    BEFORE it (it passes behind): that overlap creates the wrap.
+    No origin is visible; the creature stays out of frame.
 
-    Ni `id` ni `clipPath` : le fichier doit rester autonome, l'IDE pouvant
-    inliner plusieurs SVG dans un même document.
+    No `id` and no `clipPath`: the file must stay self-contained, since the IDE may
+    inline several SVGs into one document.
 
-    Ce dessin est partagé avec icons/kraken.svg ; seules les dimensions
-    déclarées diffèrent. Toute retouche doit être reportée dans les deux.
+    This drawing is shared with icons/kraken.svg; only the declared dimensions
+    differ. Any change must be made in both.
   -->
 
-  <!-- bras court, derrière le parchemin -->
+  <!-- short arm, behind the scroll -->
   <g fill="none" stroke="#5836B8" stroke-linecap="round">
     <path d="M32 22.5C34.8 23 37.2 24.6 38.4 26.8" stroke-width="2.7"/>
     <path d="M38.4 26.8C39.1 28.2 38.5 29.4 37.3 29.3" stroke-width="1.8"/>
     <path d="M37.3 29.3C36.5 29.2 36.3 28.5 36.7 28.1" stroke-width="1.1"/>
   </g>
 
-  <!-- parchemin, centré sur (20,20) : marges 5,5 / 5,5 / 6 / 6 -->
+  <!-- scroll, centred on (20,20): margins 5.5 / 5.5 / 6 / 6 -->
   <rect x="5.5" y="6" width="29" height="3.8" rx="1.9" fill="#DCC08A" stroke="#C9AE7C" stroke-width=".35"/>
   <rect x="7" y="9.8" width="26" height="20.4" fill="#F7EAD0" stroke="#C9AE7C" stroke-width=".35"/>
   <rect x="5.5" y="30.2" width="29" height="3.8" rx="1.9" fill="#DCC08A" stroke="#C9AE7C" stroke-width=".35"/>
   <path d="M10 14h16M10 18.5h12M10 23h7" stroke="#C6AE7E" stroke-width="1.6" stroke-linecap="round"/>
 
-  <!-- bras long, devant le parchemin : segments d'épaisseur décroissante -->
+  <!-- long arm, in front of the scroll: segments of decreasing thickness -->
   <g fill="none" stroke="#6B3FD4" stroke-linecap="round">
     <path d="M0.5 23C3.2 24.2 6.4 25.2 10 25.9" stroke-width="4"/>
     <path d="M10 25.9C15 26.9 20.4 27.3 25.2 26.6" stroke-width="3.5"/>
@@ -46,8 +46,8 @@
   <circle cx="31.6" cy="23.6" r=".6" fill="#F7EAD0"/>
   <circle cx="36.4" cy="25.4" r=".62" fill="#F0EAFA"/>
 
-  <!-- plume : barbe, barbules, hampe, puis bec construit sur la tangente de la
-       hampe (112°) afin de rester exactement dans son axe -->
+  <!-- quill: vane, barbs, shaft, then a nib built on the shaft's tangent (112°)
+       so it stays exactly on its axis -->
   <path d="M36 3C31.4 6 28.4 10.6 27.2 16C30.2 15 34.1 10.6 36 3Z" fill="#FFFBF2" stroke="#8A9AAD" stroke-width=".5"/>
   <path d="M33.9 6.7L31.5 8.7M32.7 9.9L30.4 11.8M31.6 12.9L29.5 14.5" stroke="#B4BFCC" stroke-width=".62" stroke-linecap="round"/>
   <path d="M36 3C32.8 7.5 29.9 12.3 28 17" stroke="#8A9AAD" stroke-width="1" fill="none" stroke-linecap="round"/>

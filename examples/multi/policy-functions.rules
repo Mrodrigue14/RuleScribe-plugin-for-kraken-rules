@@ -1,23 +1,23 @@
-// Fonctions du namespace Policy.
+// Functions of the Policy namespace.
 //
-// Kraken résout un appel sur trois sources, dans cet ordre de précédence
-// croissante (cf. ScopeBuilder du moteur) : les fonctions natives Java, une
-// Function avec corps KEL, une Function sans corps. Une fonction est
-// identifiée par son NOM et son NOMBRE DE PARAMÈTRES — jamais par les types.
+// Kraken resolves a call against three sources, in increasing order of
+// precedence (see the engine's ScopeBuilder): native Java functions, a
+// Function with a KEL body, a Function without a body. A function is
+// identified by its NAME and PARAMETER COUNT, never by types.
 //
-// À tester ici :
-//  - Ctrl+Espace dans un corps de règle → natives + fonctions du projet
-//  - Ctrl+Q sur "Round" ailleurs → doc, exemples et version, depuis le moteur
-//  - Ctrl+Q sur "TotalLimit" → le commentaire ci-dessous
-//  - Ctrl+P dans les parenthèses d'un appel → les signatures disponibles
-//  - Ctrl+B sur "TotalLimit" depuis policy-rules.rules → atterrit ici
-//  - les natives et les fonctions du projet ont deux couleurs distinctes
+// To try here:
+//  - Ctrl+Space in a rule body → natives + project functions
+//  - Ctrl+Q on "Round" elsewhere → docs, examples and version from the engine
+//  - Ctrl+Q on "TotalLimit" → the comment below
+//  - Ctrl+P inside a call's parentheses → the available signatures
+//  - Ctrl+B on "TotalLimit" from policy-rules.rules → lands here
+//  - natives and project functions have two distinct colours
 Namespace Policy
 
 /**
- * Somme des limites de toutes les garanties de la police.
+ * Sum of the limits of all the policy's coverages.
  * @since 1.0.0
- * @parameter coverages - les garanties à additionner
+ * @parameter coverages - the coverages to add up
  * @example TotalLimit(Policy.Coverage)
  * @result 3000
  */
@@ -25,6 +25,6 @@ Function TotalLimit(Coverage[] coverages) : Number {
     Sum(coverages.limitAmount)
 }
 
-// Sans corps : déclare qu'une implémentation Java enregistrée existe. Le
-// moteur fait échouer la construction du projet si ce n'est pas le cas.
+// Without a body: declares that a registered Java implementation exists. The
+// engine fails the project build otherwise.
 Function ResolvePlanCd(PackageDetails) : String

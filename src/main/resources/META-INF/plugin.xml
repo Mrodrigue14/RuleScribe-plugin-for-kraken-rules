@@ -465,15 +465,14 @@
         <gotoDeclarationHandler
                 implementation="com.kraken.plugin.navigation.KrakenGotoDeclarationHandler"/>
 
-        <!-- Inlay « N usages » au-dessus des déclarations. Le clic ouvre la popup
-             standard d'usages ; c'est aussi elle que Ctrl+B affiche désormais
-             quand le curseur est sur une déclaration. -->
+        <!-- "N usages" inlay above declarations. Clicking it opens the standard
+             usages popup, which Ctrl+B also shows on a declaration. -->
         <codeInsight.daemonBoundCodeVisionProvider
                 implementation="com.kraken.plugin.navigation.KrakenReferencesCodeVisionProvider"/>
 
-        <!-- Inlay « auteur, date ». VcsCodeVisionProvider fait tout le travail
-             VCS ; ce contexte lui dit seulement quels éléments d'un .rules
-             méritent un inlay et où s'arrête leur bloc. -->
+        <!-- "Author, date" inlay. VcsCodeVisionProvider does the VCS work; this
+             context only tells it which elements of a .rules file get an inlay
+             and where their block ends. -->
         <vcs.codeVisionLanguageContext
                 language="Kraken"
                 implementationClass="com.kraken.plugin.navigation.KrakenVcsCodeVisionContext"/>
@@ -493,45 +492,41 @@
                 forClass="com.kraken.plugin.psi.KrakenFunctionCall"
                 implementationClass="com.kraken.plugin.psi.KrakenFunctionCallManipulator"/>
 
-        <!-- Les appels de fonction ne sont pas reconnaissables au niveau lexical
-             (un nom appelé est un IDENTIFIER comme un autre) : c'est un
-             Annotator, qui voit le PSI, qui les colore. -->
-        <!-- Déplacement d'une règle vers un autre fichier (F6). Passe par
-             tryToMove : la plateforme n'a pas de conteneur de destination
-             naturel à proposer pour une règle. -->
+        <!-- Moves a rule to another file (F6) through tryToMove: the platform has
+             no natural destination container for a rule. -->
         <refactoring.moveHandler
                 implementation="com.kraken.plugin.refactoring.KrakenMoveRuleHandler"/>
 
-        <!-- Idem pour un EntryPoint. Handler distinct plutôt qu'un seul qui
-             traite les deux : un EntryPoint casse dans les deux sens, il
-             référence autant qu'il est référencé, et le dialogue ne dit pas la
-             même chose. `canMove` les sépare, une Rule imbriquée dans un bloc
-             Rules restant au handler de règles. -->
+        <!-- Same for an EntryPoint, with its own handler: an EntryPoint breaks in
+             both directions and its dialog says something different. `canMove`
+             keeps a Rule nested in a Rules block with the rule handler. -->
         <refactoring.moveHandler
                 implementation="com.kraken.plugin.refactoring.KrakenMoveEntryPointHandler"/>
 
+        <!-- Function calls cannot be recognised lexically (a called name is a plain
+             IDENTIFIER), so an Annotator colours them from the PSI. -->
         <annotator
                 language="Kraken"
                 implementationClass="com.kraken.plugin.highlighter.KrakenFunctionAnnotator"/>
 
-        <!-- Même raison : un nom résolu et un nom inconnu sont deux IDENTIFIER
-             pour le lexer. Seule la résolution de portée les sépare. -->
+        <!-- Same reason: a resolved name and an unknown name are both IDENTIFIER
+             for the lexer; only scope resolution tells them apart. -->
         <annotator
                 language="Kraken"
                 implementationClass="com.kraken.plugin.highlighter.KrakenReferenceAnnotator"/>
 
-        <!-- Profondeur d'imbrication et accolades orphelines. L'appariement
-             est une propriété d'arbre, que PairedBraceMatcher n'expose pas. -->
+        <!-- Nesting depth and unmatched brackets. Matching is a tree property,
+             which PairedBraceMatcher does not expose. -->
         <annotator
                 language="Kraken"
                 implementationClass="com.kraken.plugin.highlighter.KrakenBracketAnnotator"/>
 
-        <!-- Couleurs par défaut, sans lesquelles les clés ne peignent rien. -->
+        <!-- Default colours, without which the keys paint nothing. -->
         <additionalTextAttributes scheme="Default" file="colorSchemes/KrakenDefault.xml"/>
         <additionalTextAttributes scheme="Darcula" file="colorSchemes/KrakenDarcula.xml"/>
 
-        <!-- Orthographe des chaînes et commentaires : ces messages finissent
-             affichés à l'utilisateur final. -->
+        <!-- Spellchecking of strings and comments: these messages end up in front
+             of end users. -->
         <spellchecker.support
                 language="Kraken"
                 implementationClass="com.kraken.plugin.lang.KrakenSpellcheckingStrategy"/>

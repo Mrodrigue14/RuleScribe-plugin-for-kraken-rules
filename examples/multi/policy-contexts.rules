@@ -1,5 +1,5 @@
-// Contextes et dimensions du namespace Policy.
-// "Include Base" rend les règles du namespace Base visibles ici.
+// Contexts and dimensions of the Policy namespace.
+// "Include Base" makes the rules of the Base namespace visible here.
 Namespace Policy
 
 Include Base
@@ -12,8 +12,8 @@ Root Context Policy Is BaseEntity {
     Child* Coverage
 }
 
-// Cardinalité multiple (Child*) : Policy.Coverage désigne une collection,
-// ce que TotalLimit attend dans policy-functions.rules.
+// Multiple cardinality (Child*): Policy.Coverage denotes a collection, which
+// TotalLimit expects in policy-functions.rules.
 Context Coverage {
     Money limitAmount
 }

@@ -1,32 +1,32 @@
-// Fichier volontairement déséquilibré, pour vérifier à l'œil que le rouge
-// tombe sur la bonne accolade. Ne pas "corriger".
+// Deliberately unbalanced file, to check by eye that red lands on the right
+// bracket. Do not "fix" it.
 
 Root Context Policy {
     String state
     Money limit
 }
 
-// 1. Imbrication saine : trois profondeurs qui doivent se distinguer.
+// 1. Healthy nesting: three depths that must look different.
 Rule "Nested" On Policy.state {
     Assert Round(Sum(Count(limit))) > 0
 }
 
-// 2. Parenthèse jamais refermée.
+// 2. Parenthesis never closed.
 Rule "Unclosed paren" On Policy.state {
     Assert Round(limit > 0
 }
 
-// 3. Fermante en trop.
+// 3. Extra closing parenthesis.
 Rule "Stray close" On Policy.state {
     Assert limit) > 0
 }
 
-// 4. Paire dépareillée : l'appariement devient ambigu.
+// 4. Mismatched pair: the match becomes ambiguous.
 Rule "Mismatched" On Policy.state {
     Assert Round(limit] > 0
 }
 
-// 5. Crochet null-safe, qui doit rester vert (pas orphelin).
+// 5. Null-safe bracket, which must not turn red (it is not unmatched).
 Rule "Null safe" On Policy.state {
     Assert Count(Coverage?[limit > 0]) = 1
 }

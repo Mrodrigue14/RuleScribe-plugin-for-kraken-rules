@@ -1,11 +1,11 @@
-// Fichier de démonstration du plugin Kraken Rules
-// Ouvre-le avec le plugin installé pour voir la coloration,
-// la complétion (Ctrl+Espace), les inspections et la navigation (Ctrl+B).
+// Demo file for the Kraken Rules plugin.
+// Open it with the plugin installed to see highlighting, completion
+// (Ctrl+Space), inspections and navigation (Ctrl+B).
 
 Namespace Policy
 
 /**
- * Contexte racine de la police.
+ * Root context of the policy.
  */
 Root Context Policy {
     String policyCd
@@ -27,27 +27,27 @@ Rule "Set AddressInfo.postalCode to state name" On AddressInfo.postalCode {
 
 Rule "Policy code is mandatory" On Policy.policyCd {
     Set Mandatory
-    Error "policy_cd_mandatory": "Le code de la police est obligatoire"
+    Error "policy_cd_mandatory": "The policy code is mandatory"
 }
 
 Rule "Effective date in the past" On Policy.effectiveDate {
-    Description "La date d'effet doit être passée"
+    Description "The effective date must be in the past"
     Priority 10
     When Policy
     Assert effectiveDate < Today()
-    Error "date_code" : "La date doit être dans le passé"
+    Error "date_code" : "The date must be in the past"
     Overridable
 }
 
-// Ctrl+B sur les noms ci-dessous pour naviguer vers les règles.
-// Une référence inconnue est soulignée par l'inspection.
+// Ctrl+B on the names below navigates to the rules.
+// An unknown reference is underlined by the inspection.
 EntryPoint "Validation" {
     "Policy code is mandatory",
     "Effective date in the past"
 }
 
-// Sans cet EntryPoint, la règle "Set AddressInfo..." serait signalée
-// « not referenced » : une règle jamais listée n'est jamais évaluée.
+// Without this EntryPoint, the rule "Set AddressInfo..." would be reported as
+// "not referenced": a rule that is never listed is never evaluated.
 EntryPoint "Defaults" {
     "Set AddressInfo.postalCode to state name"
 }

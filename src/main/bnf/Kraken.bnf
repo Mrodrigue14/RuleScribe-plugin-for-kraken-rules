@@ -1,13 +1,12 @@
 /*
- * Grammaire Grammar-Kit pour le DSL Kraken .rules
+ * Grammar-Kit grammar for the Kraken .rules DSL
  * (https://github.com/eisgroup/kraken-rules)
  *
- * Basée sur KrakenDSL.g4 / Common.g4 / Value.g4 (ANTLR), volontairement
- * plus tolérante : le nom de la règle et la clause "On" sont optionnels
- * (les inspections signalent leur absence), et les expressions KEL sont
- * analysées de manière permissive (suite de tokens équilibrés).
+ * Based on KrakenDSL.g4 / Common.g4 / Value.g4 (ANTLR), deliberately more
+ * lenient: the rule name and the "On" clause are optional (inspections
+ * report their absence), and KEL expressions are parsed permissively.
  *
- * Le lexer est écrit à la main : com.kraken.plugin.parser.KrakenLexer
+ * The lexer is hand-written: com.kraken.plugin.parser.KrakenLexer
  */
 {
   parserClass="com.kraken.plugin.parser.KrakenParser"
@@ -30,10 +29,9 @@
     STAR='*'
     LT='<'
     GT='>'
-    // `|` seul. Distinct de OP parce qu'il sépare aussi les membres d'un type
-    // union (`Date | DateTime`), position où la grammaire doit pouvoir le
-    // reconnaître sans accepter n'importe quel opérateur. Même découpage que
-    // OP_PIPE dans Common.g4. `||` reste un OP à deux caractères.
+    // A lone `|`, distinct from OP because it also separates union type members
+    // (`Date | DateTime`), where the grammar must accept it without accepting any
+    // operator. Same split as OP_PIPE in Common.g4; `||` stays a two-character OP.
     PIPE='|'
 
     NAMESPACE_KW='Namespace'
@@ -104,8 +102,8 @@
     FALSE_KW='false'
     NULL_KW='null'
 
-    // Opérateurs de Common.g4 uniquement. Le lexer écrit à la main fait foi ;
-    // cette déclaration doit rester en accord avec lui.
+    // Common.g4 operators only. The hand-written lexer is authoritative, and this
+    // declaration must stay in line with it.
     OP='regexp:\*\*|>=|<=|!=|==|&&|\|\||[-+/%=!?|]'
     IDENTIFIER='regexp:[a-zA-Z_][a-zA-Z0-9_]*'
     STRING='regexp:("[^"]*")|(\x27[^\x27]*\x27)'
@@ -129,7 +127,7 @@ private model_item ::= contexts_block
                      | dimension_decl
                      | function_decl
 
-// ---------- En-tête de fichier ----------
+// ---------- File header ----------
 
 namespace_decl ::= NAMESPACE_KW qualified_name {pin=1}
 private import_decl ::= include_decl | rule_import_decl
@@ -160,7 +158,7 @@ private context_member ::= child_decl | field_decl
 child_decl ::= annotation* CHILD_KW STAR? id (COLON nav_value)? {pin=2}
 field_decl ::= annotation* EXTERNAL_KW? id STAR? id (COLON nav_value)?
 path_expr ::= id (DOT id)*
-// Cible de navigation : chemin simple ou ensemble de chemins entre accolades
+// Navigation target: a single path or a set of paths in braces
 private nav_value ::= collection_lit | path_expr
 
 external_context_decl ::= EXTERNAL_CONTEXT_KW LBRACE external_context_items? RBRACE {pin=1}
@@ -224,9 +222,9 @@ step_bound ::= STEP_KW signed_number {pin=1}
 in_assert ::= IN_KW value_list assert_suffix?
 expr_assert ::= expression assert_suffix?
 private assert_suffix ::= payload_message override_clause? | override_clause
-// PAS de pin ici : payload_message sert aussi de lookahead négatif dans les
-// expressions (sev_ref). Un pin transformerait la sonde en erreur quand
-// Info/Error/Warn est une référence ("Assert Info.additionalInfo = ...").
+// NO pin here: payload_message is also a negative lookahead in expressions
+// (sev_ref). A pin would turn the probe into an error when Info/Error/Warn is a
+// reference ("Assert Info.additionalInfo = ...").
 payload_message ::= message_severity STRING (COLON STRING)?
 private message_severity ::= ERROR_KW | WARN_KW | INFO_KW
 override_clause ::= OVERRIDABLE_KW STRING? {pin=1}
@@ -247,7 +245,7 @@ private entry_point_item ::= ep_ref | rule_ref
 ep_ref ::= ENTRYPOINT_KW STRING {pin=1}
 rule_ref ::= STRING
 
-// ---------- Dimensions et fonctions ----------
+// ---------- Dimensions and functions ----------
 
 dimension_decl ::= DIMENSION_KW STRING COLON id {pin=1}
 
@@ -257,30 +255,29 @@ generic_bound ::= id IS_KW type_ref {pin=2}
 function_params ::= function_param (COMMA function_param)*
 function_param ::= type_ref id?
 return_type ::= COLON type_ref {pin=1}
-// Type Kraken, repris de la production `type` de Value.g4 :
+// Kraken type, from the `type` production of Value.g4:
 //   identifier | ( type ) | type[] | type '|' type | <identifier>
-// Grammar-Kit descend récursivement, donc la récursion à gauche du `|` et du
-// `[]` est déroulée en trois niveaux. L'ordre donne la précédence : `[]` lie
-// plus fort que `|`, comme dans la grammaire officielle.
+// Grammar-Kit parses by recursive descent, so the left recursion of `|` and `[]`
+// is unrolled into three levels. The order gives precedence: `[]` binds tighter
+// than `|`, as in the official grammar.
 type_ref ::= union_type
 private union_type ::= array_type (PIPE array_type)*
 private array_type ::= atom_type (LBRACKET RBRACKET)*
-// `Name<A, B>` n'existe pas dans Value.g4 mais était accepté depuis toujours :
-// on le garde par tolérance, le parseur étant volontairement plus permissif
-// que le moteur.
+// `Name<A, B>` does not exist in Value.g4 but has always been accepted; it is
+// kept because the parser is deliberately more lenient than the engine.
 private atom_type ::= LPAREN type_ref RPAREN
                     | LT id GT
                     | id (LT type_ref (COMMA type_ref)* GT)?
 function_body ::= LBRACE expression RBRACE {pin=1}
 
-// ---------- Expressions KEL (structurées, v0.3) ----------
-// Portées depuis Value.g4 : valueBlock = variable* RETURN? value?
+// ---------- KEL expressions ----------
+// Ported from Value.g4: valueBlock = variable* RETURN? value?
 
 expression ::= variable_block | return_block | value_chain
 private variable_block ::= set_var+ (RETURN_KW value_chain)?
 private return_block ::= RETURN_KW value_chain
-// "set x to y" est une expression KEL, mais "Set Mandatory/Hidden/Disabled"
-// reste un payload : lookahead négatif.
+// "set x to y" is a KEL expression, but "Set Mandatory/Hidden/Disabled" stays a
+// payload: negative lookahead.
 set_var ::= !(SET_KW set_kind) SET_KW id TO_KW? value_chain {pin=2}
 
 value_chain ::= expr_operand (binary_op expr_operand)*
@@ -317,18 +314,18 @@ private primary_expr ::= literal
                        | collection_lit
 private literal ::= STRING | NUMBER_LIT | TRUE_KW | FALSE_KW | NULL_KW
 function_call ::= call_head call_args
-// Info/Error/Warn peuvent aussi être des noms de fonctions ("Warn(x)")
+// Info/Error/Warn can also be function names ("Warn(x)")
 private call_head ::= expr_id | message_severity
 call_args ::= LPAREN (expression (COMMA expression)*)? RPAREN {pin=1}
-// "Info.additionalInfo" est une expression valide, mais "Info \"code\"" est un
-// message de payload : lookahead négatif.
+// "Info.additionalInfo" is a valid expression, but "Info \"code\"" is a payload
+// message: negative lookahead.
 private sev_ref ::= !payload_message message_severity
 ref_expr ::= expr_id
 group_expr ::= LPAREN expression? RPAREN {pin=1}
 collection_lit ::= LBRACE (expression (COMMA expression)*)? RBRACE {pin=1}
 
-// Identifiant "élargi" : mots-clés Kraken utilisables comme identifiants
-// (aligné sur krakenModelReservedWord de la grammaire ANTLR)
+// Widened identifier: Kraken keywords usable as identifiers
+// (matches krakenModelReservedWord in the ANTLR grammar)
 private expr_id ::= IDENTIFIER
                    | ON_KW
                   | FROM_KW
@@ -356,8 +353,8 @@ private expr_id ::= IDENTIFIER
                   | INCLUDE_KW
                   | NAMESPACE_KW
 
-// Dans les positions de déclaration (champs, chemins, cibles On), les mots
-// de sévérité sont aussi des identifiants valides ("String info", "On Info.x")
+// In declaration positions (fields, paths, On targets), severity words are also
+// valid identifiers ("String info", "On Info.x")
 private id ::= expr_id
              | ERROR_KW
              | WARN_KW
