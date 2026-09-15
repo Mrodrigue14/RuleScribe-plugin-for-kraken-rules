@@ -79,5 +79,19 @@ class KrakenParserDefinition : ParserDefinition {
 
         @JvmField
         val STRINGS: TokenSet = TokenSet.create(KrakenTypes.STRING)
+
+        /** Nœuds délimités par des accolades : repliables, et indentés à l'intérieur. */
+        @JvmField
+        val BRACE_BLOCKS: TokenSet = TokenSet.create(
+            KrakenTypes.RULE_BODY,
+            KrakenTypes.CONTEXT_DECL,
+            KrakenTypes.CONTEXTS_BLOCK,
+            KrakenTypes.RULES_BLOCK,
+            KrakenTypes.ENTRY_POINT_DECL,
+            KrakenTypes.ENTRY_POINTS_BLOCK,
+            KrakenTypes.EXTERNAL_CONTEXT_DECL,
+            KrakenTypes.EXTERNAL_ENTITY_DECL,
+            KrakenTypes.FUNCTION_BODY,
+        )
     }
 }

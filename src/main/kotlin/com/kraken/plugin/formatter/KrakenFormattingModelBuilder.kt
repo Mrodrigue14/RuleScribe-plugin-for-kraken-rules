@@ -13,7 +13,7 @@ import com.intellij.formatting.Wrap
 import com.intellij.lang.ASTNode
 import com.intellij.psi.TokenType
 import com.intellij.psi.formatter.common.AbstractBlock
-import com.intellij.psi.tree.TokenSet
+import com.kraken.plugin.lang.KrakenParserDefinition
 import com.kraken.plugin.parser.KrakenTypes
 
 class KrakenFormattingModelBuilder : FormattingModelBuilder {
@@ -60,7 +60,7 @@ class KrakenBlock(
     private fun childIndent(child: ASTNode, afterLBrace: Boolean): Indent {
         val type = child.elementType
         if (type == KrakenTypes.LBRACE || type == KrakenTypes.RBRACE) return Indent.getNoneIndent()
-        return if (myNode.elementType in BRACE_OWNERS && afterLBrace) {
+        return if (myNode.elementType in KrakenParserDefinition.BRACE_BLOCKS && afterLBrace) {
             Indent.getNormalIndent()
         } else {
             Indent.getNoneIndent()
@@ -71,23 +71,9 @@ class KrakenBlock(
 
     override fun isLeaf(): Boolean = myNode.firstChildNode == null || myNode.elementType == KrakenTypes.EXPRESSION
 
-    override fun getChildAttributes(newChildIndex: Int): ChildAttributes = if (myNode.elementType in BRACE_OWNERS) {
+    override fun getChildAttributes(newChildIndex: Int): ChildAttributes = if (myNode.elementType in KrakenParserDefinition.BRACE_BLOCKS) {
         ChildAttributes(Indent.getNormalIndent(), null)
     } else {
         ChildAttributes(Indent.getNoneIndent(), null)
-    }
-
-    companion object {
-        private val BRACE_OWNERS = TokenSet.create(
-            KrakenTypes.RULE_BODY,
-            KrakenTypes.CONTEXT_DECL,
-            KrakenTypes.CONTEXTS_BLOCK,
-            KrakenTypes.RULES_BLOCK,
-            KrakenTypes.ENTRY_POINT_DECL,
-            KrakenTypes.ENTRY_POINTS_BLOCK,
-            KrakenTypes.EXTERNAL_CONTEXT_DECL,
-            KrakenTypes.EXTERNAL_ENTITY_DECL,
-            KrakenTypes.FUNCTION_BODY,
-        )
     }
 }

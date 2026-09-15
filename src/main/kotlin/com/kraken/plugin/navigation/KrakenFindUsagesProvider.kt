@@ -6,6 +6,7 @@ import com.intellij.lang.findUsages.FindUsagesProvider
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.tree.TokenSet
+import com.kraken.plugin.lang.KrakenParserDefinition
 import com.kraken.plugin.parser.KrakenLexer
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenEntryPointDecl
@@ -17,7 +18,7 @@ class KrakenFindUsagesProvider : FindUsagesProvider {
     override fun getWordsScanner(): WordsScanner = DefaultWordsScanner(
         KrakenLexer(),
         TokenSet.create(KrakenTypes.IDENTIFIER),
-        TokenSet.create(KrakenTypes.LINE_COMMENT, KrakenTypes.BLOCK_COMMENT, KrakenTypes.DOC_COMMENT),
+        KrakenParserDefinition.COMMENTS,
         TokenSet.create(KrakenTypes.STRING, KrakenTypes.NUMBER_LIT),
     )
 
