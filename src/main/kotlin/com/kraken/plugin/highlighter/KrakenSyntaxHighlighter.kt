@@ -94,7 +94,7 @@ class KrakenSyntaxHighlighter : SyntaxHighlighterBase() {
 
         private val ATTRIBUTES: Map<IElementType, TextAttributesKey> by lazy {
             val map = HashMap<IElementType, TextAttributesKey>()
-            SyntaxHighlighterBase.fillMap(map, KrakenLexer.KEYWORD_TOKENS, KEYWORD)
+            fillMap(map, KrakenLexer.KEYWORD_TOKENS, KEYWORD)
             map[KrakenTypes.STRING] = STRING
             map[KrakenTypes.NUMBER_LIT] = NUMBER
             map[KrakenTypes.LINE_COMMENT] = LINE_COMMENT
