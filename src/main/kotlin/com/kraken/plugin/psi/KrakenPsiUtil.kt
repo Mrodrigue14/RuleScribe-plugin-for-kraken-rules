@@ -231,9 +231,15 @@ object KrakenPsiUtil {
         return findRuleInNamespace(from.project, import.sourceNamespace, name)
     }
 
-    private fun refImportsRule(ref: PsiElement, name: String, declNs: String?): Boolean = declNs != null &&
-        ruleImportsForNamespaceOf(ref.containingFile)
-            .any { it.ruleName == name && it.sourceNamespace == declNs }
+    /** True if [from] sees [declarationFile] through its namespace and its includes. */
+    fun sees(from: PsiFile?, declarationFile: PsiFile?): Boolean = declarationFile != null && visibleFiles(from).any { it.isEquivalentTo(declarationFile) }
+
+    /**
+     * True if [from] sees rule [name] declared in [declarationFile]: through namespaces, or
+     * because its namespace imports the rule from [declarationNamespace].
+     */
+    fun seesRule(from: PsiFile?, name: String, declarationFile: PsiFile?, declarationNamespace: String?): Boolean = sees(from, declarationFile) ||
+        ruleImportsForNamespaceOf(from).any { it.ruleName == name && it.sourceNamespace == declarationNamespace }
 
     fun findRulesVisible(from: PsiElement): List<KrakenRuleDecl> {
         val direct = visibleFiles(from.containingFile)
@@ -285,12 +291,9 @@ object KrakenPsiUtil {
             .filter {
                 it.functionName == name &&
                     it.argumentCount == declaration.arity &&
-                    refSees(it, declarationFile)
+                    sees(it.containingFile, declarationFile)
             }
     }
-
-    private fun refSees(refElement: PsiElement, declarationFile: PsiFile?): Boolean = declarationFile != null &&
-        visibleFiles(refElement.containingFile).any { it.isEquivalentTo(declarationFile) }
 
     /**
      * Rule references that can actually see [declaration]. As in the engine, a reference
@@ -302,14 +305,14 @@ object KrakenPsiUtil {
         val declarationFile = declaration.containingFile
         val declNs = (declarationFile as? KrakenFile)?.let { namespaceOf(it) }
         return findRuleRefs(declaration.project, name).filter {
-            refSees(it, declarationFile) || refImportsRule(it, name, declNs)
+            seesRule(it.containingFile, name, declarationFile, declNs)
         }
     }
 
     fun findEpRefsVisibleTo(declaration: KrakenEntryPointDecl): List<KrakenEpRef> {
         val name = declaration.name ?: return emptyList()
         val declarationFile = declaration.containingFile
-        return findEpRefs(declaration.project, name).filter { refSees(it, declarationFile) }
+        return findEpRefs(declaration.project, name).filter { sees(it.containingFile, declarationFile) }
     }
 
     /** Nested `EntryPoint "name"` references with this name, across the project. */
