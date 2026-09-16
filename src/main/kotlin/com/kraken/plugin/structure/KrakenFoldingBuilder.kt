@@ -7,8 +7,8 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
-import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiTreeUtil
+import com.kraken.plugin.lang.KrakenParserDefinition
 import com.kraken.plugin.parser.KrakenTypes
 
 class KrakenFoldingBuilder :
@@ -19,7 +19,7 @@ class KrakenFoldingBuilder :
         val descriptors = mutableListOf<FoldingDescriptor>()
         PsiTreeUtil.processElements(root) { element ->
             val node = element.node
-            if (node != null && node.elementType in FOLDABLE) {
+            if (node != null && node.elementType in KrakenParserDefinition.BRACE_BLOCKS) {
                 val lbrace = node.findChildByType(KrakenTypes.LBRACE)
                 val rbrace = lastChildOfType(node, KrakenTypes.RBRACE)
                 if (lbrace != null && rbrace != null && rbrace.startOffset > lbrace.startOffset + 1) {
@@ -48,16 +48,5 @@ class KrakenFoldingBuilder :
     }
 
     companion object {
-        private val FOLDABLE = TokenSet.create(
-            KrakenTypes.RULE_BODY,
-            KrakenTypes.CONTEXT_DECL,
-            KrakenTypes.CONTEXTS_BLOCK,
-            KrakenTypes.RULES_BLOCK,
-            KrakenTypes.ENTRY_POINT_DECL,
-            KrakenTypes.ENTRY_POINTS_BLOCK,
-            KrakenTypes.EXTERNAL_CONTEXT_DECL,
-            KrakenTypes.EXTERNAL_ENTITY_DECL,
-            KrakenTypes.FUNCTION_BODY,
-        )
     }
 }

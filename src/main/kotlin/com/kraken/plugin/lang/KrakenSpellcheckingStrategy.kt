@@ -28,7 +28,7 @@ import com.kraken.plugin.parser.KrakenTypes
 class KrakenSpellcheckingStrategy : SpellcheckingStrategy() {
 
     override fun getTokenizer(element: PsiElement): Tokenizer<*> = when {
-        element.node?.elementType in COMMENTS -> TEXT_TOKENIZER
+        element.node?.elementType in KrakenParserDefinition.COMMENTS -> TEXT_TOKENIZER
         element.node?.elementType == KrakenTypes.STRING && isProse(element) -> QUOTED_TEXT
         else -> EMPTY_TOKENIZER
     }
@@ -42,12 +42,6 @@ class KrakenSpellcheckingStrategy : SpellcheckingStrategy() {
     private fun lastString(parent: PsiElement): PsiElement? = parent.node.getChildren(null).lastOrNull { it.elementType == KrakenTypes.STRING }?.psi
 
     private companion object {
-        val COMMENTS = setOf(
-            KrakenTypes.LINE_COMMENT,
-            KrakenTypes.BLOCK_COMMENT,
-            KrakenTypes.DOC_COMMENT,
-        )
-
         /** Sans les guillemets, que le découpeur ne saurait pas ignorer. */
         val QUOTED_TEXT = object : Tokenizer<PsiElement>() {
             override fun tokenize(element: PsiElement, consumer: TokenConsumer) {

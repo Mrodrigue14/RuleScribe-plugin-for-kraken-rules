@@ -22,6 +22,7 @@ import com.kraken.plugin.lang.KrakenFile
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.psi.KrakenEpRef
+import com.kraken.plugin.psi.KrakenPresentations
 import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleRef
 
@@ -153,7 +154,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
             result.addElement(
                 LookupElementBuilder.create("\"$name\"")
                     .withPresentableText(name)
-                    .withIcon(AllIcons.Nodes.Method)
+                    .withIcon(KrakenPresentations.RULE_ICON)
                     .withTypeText(rule.containingFile.name, true),
             )
         }
@@ -163,7 +164,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
             result.addElement(
                 LookupElementBuilder.create("EntryPoint \"$name\"")
                     .withPresentableText("EntryPoint $name")
-                    .withIcon(AllIcons.Nodes.Plugin)
+                    .withIcon(KrakenPresentations.ENTRY_POINT_ICON)
                     .withTypeText(entryPoint.containingFile.name, true),
             )
         }
@@ -180,7 +181,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
         for (function in KrakenFunctionCatalog.functions) {
             result.addElement(
                 LookupElementBuilder.create(function.name)
-                    .withIcon(AllIcons.Nodes.Function)
+                    .withIcon(KrakenPresentations.FUNCTION_ICON)
                     .withTailText("(${function.parameters.joinToString(", ") { it.presentation() }})", true)
                     .withTypeText(function.returnType, true)
                     .withInsertHandler(parenthesesFor(function.parameters.isNotEmpty())),
@@ -190,7 +191,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
             val name = declaration.name ?: continue
             result.addElement(
                 LookupElementBuilder.create(name)
-                    .withIcon(AllIcons.Nodes.Function)
+                    .withIcon(KrakenPresentations.FUNCTION_ICON)
                     .withTailText("(${declaration.parameters.joinToString(", ")})", true)
                     .withTypeText(declaration.returnType ?: declaration.containingFile.name, true)
                     .withInsertHandler(parenthesesFor(declaration.arity > 0)),

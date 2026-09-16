@@ -1,13 +1,6 @@
 package com.kraken.plugin
 
 import com.intellij.openapi.command.WriteCommandAction
-import com.intellij.psi.PsiErrorElement
-import com.intellij.psi.util.PsiTreeUtil
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import com.kraken.plugin.lang.KrakenFile
-import com.kraken.plugin.psi.KrakenEntryPointDecl
-import com.kraken.plugin.psi.KrakenEpRef
-import com.kraken.plugin.psi.KrakenRuleRef
 import com.kraken.plugin.refactoring.KrakenDeclarationMover
 
 /**
@@ -18,26 +11,7 @@ import com.kraken.plugin.refactoring.KrakenDeclarationMover
  * donc le déplacement peut le vider sans qu'une ligne bouge à l'intérieur, et
  * c'est ce cas-là qui a droit à son test.
  */
-class KrakenEntryPointMoveTest : BasePlatformTestCase() {
-
-    private fun file(name: String, text: String): KrakenFile = myFixture.addFileToProject(name, text) as KrakenFile
-
-    private fun epIn(file: KrakenFile, name: String): KrakenEntryPointDecl = PsiTreeUtil.findChildrenOfType(file, KrakenEntryPointDecl::class.java).first { it.name == name }
-
-    private fun ruleRefIn(file: KrakenFile, name: String): KrakenRuleRef = PsiTreeUtil.findChildrenOfType(file, KrakenRuleRef::class.java).first { it.ruleName == name }
-
-    private fun epRefIn(file: KrakenFile, name: String): KrakenEpRef = PsiTreeUtil.findChildrenOfType(file, KrakenEpRef::class.java).first { it.entryPointName == name }
-
-    private fun assertParses(vararg files: KrakenFile) {
-        for (f in files) {
-            val errors = PsiTreeUtil.findChildrenOfType(f, PsiErrorElement::class.java)
-            assertEquals(
-                "${f.name} ne parse plus :\n${f.text}",
-                emptyList<String>(),
-                errors.map { it.errorDescription },
-            )
-        }
-    }
+class KrakenEntryPointMoveTest : KrakenMoveTestCase() {
 
     fun testEntryPointLandsInTheTargetAndLeavesTheSource() {
         val a = file(

@@ -5,7 +5,6 @@ import com.intellij.lang.ASTNode
 import com.intellij.navigation.ItemPresentation
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
-import com.intellij.psi.impl.source.tree.LeafElement
 import com.kraken.plugin.parser.KrakenTypes
 
 /**
@@ -27,11 +26,7 @@ class KrakenEntryPointDecl(node: ASTNode) :
     )
 
     override fun setName(name: String): PsiElement {
-        val leaf = nameLeaf()
-        if (leaf is LeafElement) {
-            val quote = leaf.text.firstOrNull() ?: '"'
-            leaf.replaceWithText("$quote$name$quote")
-        }
+        KrakenPsiUtil.replaceQuoted(nameLeaf(), name)
         return this
     }
 

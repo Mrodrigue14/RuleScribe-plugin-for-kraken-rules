@@ -3,10 +3,12 @@ package com.kraken.plugin.psi
 import com.intellij.lang.ASTNode
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
+import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiWhiteSpace
+import com.intellij.psi.impl.source.tree.LeafElement
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.stubs.StubIndex
@@ -22,6 +24,37 @@ import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.stubs.KrakenRuleNameIndex
 
 object KrakenPsiUtil {
+
+    /** Identifiants d'une déclaration, en s'arrêtant avant la navigation `: …`. */
+    fun identifiersOf(node: ASTNode): List<String> {
+        val names = mutableListOf<String>()
+        var child = node.firstChildNode
+        while (child != null) {
+            when {
+                child.elementType == KrakenTypes.COLON -> return names
+                child.elementType == KrakenTypes.ANNOTATION -> Unit
+                child.psi is com.intellij.psi.PsiWhiteSpace -> Unit
+                child.elementType == KrakenTypes.STAR -> Unit
+                child.elementType == KrakenTypes.LBRACKET -> Unit
+                child.elementType == KrakenTypes.RBRACKET -> Unit
+                child.elementType == KrakenTypes.CHILD_KW -> Unit
+                child.elementType == KrakenTypes.EXTERNAL_KW -> Unit
+                else -> child.text.trim().takeIf { it.isNotEmpty() }?.let { names += it }
+            }
+            child = child.treeNext
+        }
+        return names
+    }
+
+    /** Remplace le contenu d'une chaîne en conservant son guillemet d'origine. */
+    fun replaceQuoted(leaf: ASTNode?, content: String) {
+        if (leaf !is LeafElement) return
+        val quote = leaf.text.firstOrNull() ?: '"'
+        leaf.replaceWithText("$quote$content$quote")
+    }
+
+    /** Plage du contenu d'une chaîne de [length] caractères posée à [start], guillemets exclus. */
+    fun insideQuotes(start: Int, length: Int): TextRange = if (length >= 2) TextRange(start + 1, start + length - 1) else TextRange(start, start + length)
 
     /** Tokens acceptés comme identifiants (miroir de la règle `id` du BNF). */
     @JvmField

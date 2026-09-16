@@ -22,6 +22,8 @@ import com.kraken.plugin.lang.KrakenIcons
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenDimensionDecl
 import com.kraken.plugin.psi.KrakenEntryPointDecl
+import com.kraken.plugin.psi.KrakenFunctionDecl
+import com.kraken.plugin.psi.KrakenPresentations
 import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
 import javax.swing.Icon
@@ -72,9 +74,7 @@ class KrakenStructureViewElement(private val element: PsiElement) :
         items.addAll(PsiTreeUtil.findChildrenOfType(element, KrakenEntryPointDecl::class.java))
         items.addAll(PsiTreeUtil.findChildrenOfType(element, KrakenDimensionDecl::class.java))
         items.addAll(KrakenPsiUtil.contextDecls(element))
-        items.addAll(
-            PsiTreeUtil.collectElements(element) { it.node?.elementType == KrakenTypes.FUNCTION_DECL },
-        )
+        items.addAll(PsiTreeUtil.findChildrenOfType(element, KrakenFunctionDecl::class.java))
         return items
             .sortedBy { it.textOffset }
             .map { KrakenStructureViewElement(it) }
@@ -109,11 +109,11 @@ class KrakenStructureViewElement(private val element: PsiElement) :
 
     private fun icon(): Icon = when {
         element is KrakenFile -> KrakenIcons.FILE
-        element is KrakenRuleDecl -> AllIcons.Nodes.Method
-        element is KrakenEntryPointDecl -> AllIcons.Nodes.Plugin
+        element is KrakenRuleDecl -> KrakenPresentations.RULE_ICON
+        element is KrakenEntryPointDecl -> KrakenPresentations.ENTRY_POINT_ICON
         element is KrakenDimensionDecl -> AllIcons.Nodes.Variable
         element.node?.elementType == KrakenTypes.CONTEXT_DECL -> AllIcons.Nodes.Class
-        element.node?.elementType == KrakenTypes.FUNCTION_DECL -> AllIcons.Nodes.Function
+        element.node?.elementType == KrakenTypes.FUNCTION_DECL -> KrakenPresentations.FUNCTION_ICON
         else -> KrakenIcons.FILE
     }
 
