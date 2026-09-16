@@ -46,8 +46,9 @@ class KrakenDocumentationProvider : AbstractDocumentationProvider() {
         val sb = StringBuilder()
         sb.append("<b>Rule</b> \"").append(StringUtil.escapeXmlEntities(name)).append("\"")
 
-        rule.node.findChildByType(KrakenTypes.RULE_TARGET)?.let {
-            sb.append("<br/><b>On</b> ").append(StringUtil.escapeXmlEntities(compact(it.text.removePrefix("On").trim())))
+        rule.node.findChildByType(KrakenTypes.RULE_TARGET)?.let { target ->
+            val path = target.text.drop(target.findChildByType(KrakenTypes.ON_KW)?.textLength ?: 0)
+            sb.append("<br/><b>On</b> ").append(StringUtil.escapeXmlEntities(compact(path)))
         }
 
         val annotations = rule.node.getChildren(TokenSet.create(KrakenTypes.ANNOTATION))

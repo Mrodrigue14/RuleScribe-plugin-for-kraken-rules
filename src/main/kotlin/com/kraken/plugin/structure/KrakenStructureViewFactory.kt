@@ -93,7 +93,7 @@ class KrakenStructureViewElement(private val element: PsiElement) :
         element.node?.elementType == KrakenTypes.CONTEXT_DECL ->
             KrakenPsiUtil.contextName(element) ?: "Context"
 
-        element.node?.elementType == KrakenTypes.FUNCTION_DECL -> functionName()
+        element is KrakenFunctionDecl -> element.name ?: "Function"
 
         else -> element.text.take(30)
     }
@@ -103,7 +103,7 @@ class KrakenStructureViewElement(private val element: PsiElement) :
         element is KrakenEntryPointDecl -> "entry point"
         element is KrakenDimensionDecl -> "dimension"
         element.node?.elementType == KrakenTypes.CONTEXT_DECL -> "context"
-        element.node?.elementType == KrakenTypes.FUNCTION_DECL -> "function"
+        element is KrakenFunctionDecl -> "function"
         else -> null
     }
 
@@ -113,21 +113,7 @@ class KrakenStructureViewElement(private val element: PsiElement) :
         element is KrakenEntryPointDecl -> KrakenPresentations.ENTRY_POINT_ICON
         element is KrakenDimensionDecl -> AllIcons.Nodes.Variable
         element.node?.elementType == KrakenTypes.CONTEXT_DECL -> AllIcons.Nodes.Class
-        element.node?.elementType == KrakenTypes.FUNCTION_DECL -> KrakenPresentations.FUNCTION_ICON
+        element is KrakenFunctionDecl -> KrakenPresentations.FUNCTION_ICON
         else -> KrakenIcons.FILE
-    }
-
-    private fun functionName(): String {
-        var node = element.node.firstChildNode
-        var seenKw = false
-        while (node != null) {
-            if (node.elementType == KrakenTypes.FUNCTION_KW) {
-                seenKw = true
-            } else if (seenKw && node.elementType in KrakenPsiUtil.ID_TOKENS) {
-                return node.text
-            }
-            node = node.treeNext
-        }
-        return "Function"
     }
 }

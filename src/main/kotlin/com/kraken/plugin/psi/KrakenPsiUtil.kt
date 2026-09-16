@@ -12,6 +12,7 @@ import com.intellij.psi.impl.source.tree.LeafElement
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.stubs.StubIndex
+import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.CachedValue
 import com.intellij.psi.util.CachedValueProvider
@@ -33,7 +34,7 @@ object KrakenPsiUtil {
             when {
                 child.elementType == KrakenTypes.COLON -> return names
                 child.elementType == KrakenTypes.ANNOTATION -> Unit
-                child.psi is com.intellij.psi.PsiWhiteSpace -> Unit
+                child.psi is PsiWhiteSpace -> Unit
                 child.elementType == KrakenTypes.STAR -> Unit
                 child.elementType == KrakenTypes.LBRACKET -> Unit
                 child.elementType == KrakenTypes.RBRACKET -> Unit
@@ -342,38 +343,45 @@ object KrakenPsiUtil {
     fun findContextDecl(from: PsiFile?, name: String): PsiElement? = findContextDecls(from, name).firstOrNull()
 
     /** Field and child names of a context, including those inherited through `Is Parent`. */
-    fun contextFieldNames(from: PsiFile?, contextName: String, depth: Int = 0): List<String> {
-        if (depth > 4) return emptyList()
-        val names = LinkedHashSet<String>()
-        // Union over all same-named declarations, so completion does not depend on file order.
-        for (decl in findContextDecls(from, contextName)) {
-            var child = decl.node.firstChildNode
-            while (child != null) {
-                when (child.elementType) {
-                    KrakenTypes.FIELD_DECL -> fieldName(child)?.let { names.add(it) }
-                    KrakenTypes.CHILD_DECL -> childContextName(child)?.let { names.add(it) }
-                }
-                child = child.treeNext
-            }
-            val inherited = decl.node.findChildByType(KrakenTypes.INHERITED_CONTEXTS)
-            if (inherited != null) {
-                for (parent in idLeafTexts(inherited)) {
-                    names.addAll(contextFieldNames(from, parent, depth + 1))
-                }
+    fun contextFieldNames(from: PsiFile?, contextName: String): List<String> = contextMembers(from, contextName).mapNotNull { memberName(it) }.distinct().toList()
+
+    /**
+     * Field and child declarations of every visible [context] declaration, each followed by
+     * those it inherits through `Is`. Same-named declarations are all walked, so a member
+     * declared in only one of them is still found.
+     */
+    fun contextMembers(from: PsiFile?, context: String, depth: Int = 0): Sequence<ASTNode> = sequence {
+        if (depth > MAX_INHERITANCE_DEPTH) return@sequence
+        for (decl in findContextDecls(from, context)) {
+            yieldAll(decl.node.getChildren(CONTEXT_MEMBERS).asSequence())
+            val inherited = decl.node.findChildByType(KrakenTypes.INHERITED_CONTEXTS) ?: continue
+            for (parent in inherited.getChildren(ID_TOKENS)) {
+                yieldAll(contextMembers(from, parent.text, depth + 1))
             }
         }
-        return names.toList()
     }
+
+    /** `String policyCd` → `policyCd`; `Child Address` → `Address`. */
+    fun memberName(member: ASTNode): String? = when (member.elementType) {
+        KrakenTypes.FIELD_DECL -> fieldName(member)
+        KrakenTypes.CHILD_DECL -> firstIdAfter(member, KrakenTypes.CHILD_KW)?.text
+        else -> null
+    }
+
+    /** Guards against an `Is` cycle between contexts. */
+    private const val MAX_INHERITANCE_DEPTH = 4
+
+    private val CONTEXT_MEMBERS = TokenSet.create(KrakenTypes.FIELD_DECL, KrakenTypes.CHILD_DECL)
 
     fun contextDecls(file: KrakenFile): List<PsiElement> = PsiTreeUtil.collectElements(file) { it.node?.elementType == KrakenTypes.CONTEXT_DECL }.toList()
 
-    fun contextName(contextDecl: PsiElement): String? {
-        val keyword = contextDecl.node.findChildByType(KrakenTypes.CONTEXT_KW) ?: return null
-        var node: ASTNode? = keyword.treeNext
-        while (node != null && node.psi is PsiWhiteSpace) {
-            node = node.treeNext
-        }
-        return if (node != null && node.elementType in ID_TOKENS) node.text else null
+    fun contextName(contextDecl: PsiElement): String? = firstIdAfter(contextDecl.node, KrakenTypes.CONTEXT_KW)?.text
+
+    /** First identifier token among [node]'s children after [keyword]. */
+    fun firstIdAfter(node: ASTNode, keyword: IElementType): ASTNode? {
+        var child = node.findChildByType(keyword)?.treeNext
+        while (child != null && child.elementType !in ID_TOKENS) child = child.treeNext
+        return child
     }
 
     /** Field name: the last identifier before `:` (`[External] Type [*] name`). */
@@ -386,30 +394,5 @@ object KrakenPsiUtil {
             child = child.treeNext
         }
         return last
-    }
-
-    /** Child context name: the first identifier after `Child [*]`. */
-    private fun childContextName(childDecl: ASTNode): String? {
-        var seenChildKw = false
-        var child = childDecl.firstChildNode
-        while (child != null) {
-            if (child.elementType == KrakenTypes.CHILD_KW) {
-                seenChildKw = true
-            } else if (seenChildKw && child.elementType in ID_TOKENS) {
-                return child.text
-            }
-            child = child.treeNext
-        }
-        return null
-    }
-
-    private fun idLeafTexts(node: ASTNode): List<String> {
-        val texts = mutableListOf<String>()
-        var child = node.firstChildNode
-        while (child != null) {
-            if (child.elementType in ID_TOKENS) texts.add(child.text)
-            child = child.treeNext
-        }
-        return texts
     }
 }

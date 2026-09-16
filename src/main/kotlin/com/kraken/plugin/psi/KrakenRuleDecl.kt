@@ -56,6 +56,11 @@ class KrakenRuleDecl :
 
     fun hasTarget(): Boolean = node.findChildByType(KrakenTypes.RULE_TARGET) != null
 
+    /** `Policy` in `On Policy.state`. */
+    fun targetContextLeaf(): PsiElement? = node.findChildByType(KrakenTypes.RULE_TARGET)
+        ?.let { KrakenPsiUtil.firstIdAfter(it, KrakenTypes.ON_KW) }
+        ?.psi
+
     fun ruleKeyword(): PsiElement? = node.findChildByType(KrakenTypes.RULE_KW)?.psi
 
     private fun nameLeaf(): ASTNode? = node.findChildByType(KrakenTypes.RULE_NAME)?.findChildByType(KrakenTypes.STRING)

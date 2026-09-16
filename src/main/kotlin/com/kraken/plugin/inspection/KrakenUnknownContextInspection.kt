@@ -5,9 +5,8 @@ import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
-import com.intellij.psi.PsiWhiteSpace
-import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenPsiUtil
+import com.kraken.plugin.psi.KrakenRuleDecl
 
 /**
  * Reports an `On Context.field` clause whose context is not declared in any visible
@@ -17,10 +16,11 @@ import com.kraken.plugin.psi.KrakenPsiUtil
 class KrakenUnknownContextInspection : LocalInspectionTool() {
 
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : PsiElementVisitor() {
+        private val known by lazy { KrakenPsiUtil.findContextNamesVisible(holder.file).toSet() }
+
         override fun visitElement(element: PsiElement) {
-            if (element.node?.elementType != KrakenTypes.RULE_TARGET) return
-            val nameLeaf = contextLeaf(element) ?: return
-            val known = KrakenPsiUtil.findContextNamesVisible(element.containingFile)
+            if (element !is KrakenRuleDecl) return
+            val nameLeaf = element.targetContextLeaf() ?: return
             if (known.isNotEmpty() && nameLeaf.text !in known) {
                 holder.registerProblem(
                     nameLeaf,
@@ -29,22 +29,5 @@ class KrakenUnknownContextInspection : LocalInspectionTool() {
                 )
             }
         }
-    }
-
-    private fun contextLeaf(ruleTarget: PsiElement): PsiElement? {
-        var child = ruleTarget.firstChild
-        var seenOn = false
-        while (child != null) {
-            if (child.node?.elementType == KrakenTypes.ON_KW) {
-                seenOn = true
-            } else if (seenOn &&
-                child !is PsiWhiteSpace &&
-                child.node?.elementType in KrakenPsiUtil.ID_TOKENS
-            ) {
-                return child
-            }
-            child = child.nextSibling
-        }
-        return null
     }
 }

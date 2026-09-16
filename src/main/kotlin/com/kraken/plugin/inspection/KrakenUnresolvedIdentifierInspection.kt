@@ -51,11 +51,7 @@ class KrakenUnresolvedIdentifierInspection : LocalInspectionTool() {
             // Filter predicate on an element of unknown type: the scope is undetermined, not empty.
             // The engine accepts anything there (Scope.isDynamic), typically under the external
             // context.
-            if (KrakenScopeResolver.isInFilterPredicate(element) &&
-                KrakenScopeResolver.filterContext(element) == null
-            ) {
-                return
-            }
+            if (KrakenScopeResolver.isInUntypedFilter(element)) return
 
             if (element.reference?.resolve() != null) return
             holder.registerProblem(

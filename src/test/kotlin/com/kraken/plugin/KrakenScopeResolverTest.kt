@@ -189,7 +189,7 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
     fun testFilterOnAnUnknownHeadHasNoContext() {
         configureRule("Assert IsEmpty(context.additional.items[whatever = 1])")
         val ref = refTo("whatever")
-        assertTrue(KrakenScopeResolver.isInFilterPredicate(ref))
+        assertTrue(KrakenScopeResolver.isInUntypedFilter(ref))
         assertNull(KrakenScopeResolver.filterContext(ref))
     }
 

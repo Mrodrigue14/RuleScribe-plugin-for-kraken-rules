@@ -143,6 +143,14 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
         assertTrue("Doc should contain the description: $doc", doc.contains("A documented rule"))
     }
 
+    /** Keywords are case-insensitive, so a lowercase `on` must not leak into the target path. */
+    fun testQuickDocumentationTargetOmitsLowercaseOn() {
+        myFixture.configureByText("test.rules", "Rule \"Lower\" on Policy.state { Assert true }")
+        val rule = PsiTreeUtil.findChildrenOfType(myFixture.file, KrakenRuleDecl::class.java).first()
+        val doc = KrakenDocumentationProvider().generateDoc(rule, null)!!
+        assertTrue("Doc should show the bare target path: $doc", doc.contains("<b>On</b> Policy.state"))
+    }
+
     fun testNamespaceScopedResolution() {
         myFixture.addFileToProject(
             "other.rules",

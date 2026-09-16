@@ -3,9 +3,12 @@ package com.kraken.plugin.psi
 import com.intellij.extapi.psi.ASTWrapperPsiElement
 import com.intellij.lang.ASTNode
 import com.intellij.navigation.ItemPresentation
+import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
+import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.impl.source.tree.LeafElement
+import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.parser.KrakenTypes
 
@@ -36,23 +39,13 @@ class KrakenFunctionDecl(node: ASTNode) :
     override fun getTextOffset(): Int = nameIdentifier?.textOffset ?: super.getTextOffset()
 
     val arity: Int
-        get() = node.findChildByType(KrakenTypes.FUNCTION_PARAMS)
-            ?.getChildren(null)
-            ?.count { it.elementType == KrakenTypes.FUNCTION_PARAM }
-            ?: 0
+        get() = parameterNodes().size
 
     val parameters: List<String>
-        get() = node.findChildByType(KrakenTypes.FUNCTION_PARAMS)
-            ?.getChildren(null)
-            ?.filter { it.elementType == KrakenTypes.FUNCTION_PARAM }
-            ?.map { it.text.trim() }
-            .orEmpty()
+        get() = parameterNodes().map { it.text.trim() }
 
     val returnType: String?
-        get() = node.findChildByType(KrakenTypes.RETURN_TYPE)
-            ?.findChildByType(KrakenTypes.TYPE_REF)
-            ?.text
-            ?.trim()
+        get() = returnTypeElement?.text?.trim()
 
     /** A `T is Number` bound from `Function <…> Name(…)`. */
     data class GenericBound(
@@ -88,15 +81,21 @@ class KrakenFunctionDecl(node: ASTNode) :
             .orEmpty()
 
     val parameterList: List<Parameter>
-        get() = node.findChildByType(KrakenTypes.FUNCTION_PARAMS)
-            ?.getChildren(null)
-            ?.filter { it.elementType == KrakenTypes.FUNCTION_PARAM }
-            ?.map { param ->
-                val type = param.findChildByType(KrakenTypes.TYPE_REF)
-                val name = type?.let { firstMeaningfulChild(param, after = it) }
-                Parameter(type?.text?.trim(), name?.text?.trim(), type?.psi, name?.psi)
-            }
-            .orEmpty()
+        get() = parameterNodes().map { toParameter(it) }
+
+    /** The `FUNCTION_PARAM` declaring [name], which references to the parameter resolve to. */
+    fun parameterNamed(name: String): PsiElement? = parameterNodes().firstOrNull { toParameter(it).name == name }?.psi
+
+    private fun parameterNodes(): List<ASTNode> = node.findChildByType(KrakenTypes.FUNCTION_PARAMS)
+        ?.getChildren(PARAMETER)
+        ?.toList()
+        .orEmpty()
+
+    private fun toParameter(param: ASTNode): Parameter {
+        val type = param.findChildByType(KrakenTypes.TYPE_REF)
+        val name = type?.let { firstMeaningfulChild(param, after = it) }
+        return Parameter(type?.text?.trim(), name?.text?.trim(), type?.psi, name?.psi)
+    }
 
     /** The `TYPE_REF` of the `: Type` clause, to anchor diagnostics on. */
     val returnTypeElement: PsiElement?
@@ -129,7 +128,7 @@ class KrakenFunctionDecl(node: ASTNode) :
     private fun nameLeaf(): ASTNode? {
         val paren = node.findChildByType(KrakenTypes.LPAREN) ?: return null
         var candidate = paren.treePrev
-        while (candidate != null && candidate.psi is com.intellij.psi.PsiWhiteSpace) {
+        while (candidate != null && candidate.psi is PsiWhiteSpace) {
             candidate = candidate.treePrev
         }
         return candidate?.takeIf { it.elementType != KrakenTypes.GENERIC_BOUNDS }
@@ -144,8 +143,8 @@ class KrakenFunctionDecl(node: ASTNode) :
     private fun firstMeaningfulChild(parent: ASTNode, after: ASTNode? = null): ASTNode? {
         var child = after?.treeNext ?: parent.firstChildNode
         while (child != null) {
-            if (child.psi !is com.intellij.psi.PsiWhiteSpace &&
-                child.psi !is com.intellij.psi.PsiComment &&
+            if (child.psi !is PsiWhiteSpace &&
+                child.psi !is PsiComment &&
                 child.textLength > 0
             ) {
                 return child
@@ -153,5 +152,9 @@ class KrakenFunctionDecl(node: ASTNode) :
             child = child.treeNext
         }
         return null
+    }
+
+    private companion object {
+        val PARAMETER = TokenSet.create(KrakenTypes.FUNCTION_PARAM)
     }
 }
