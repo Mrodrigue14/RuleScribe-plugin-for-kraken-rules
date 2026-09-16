@@ -10,17 +10,14 @@ import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenPsiUtil
 
 /**
- * Colore le nom appelé dans une expression KEL.
+ * Colours the called name in a KEL expression.
  *
- * Un highlighter lexical ne peut pas faire ce travail : `Round` et une simple
- * variable sont tous deux des `IDENTIFIER`, et seule la présence de la liste
- * d'arguments derrière le nom les sépare — une information d'arbre, pas de
- * flux de tokens. D'où cet [Annotator].
+ * The lexical highlighter cannot do it: `Round` and a plain variable are both
+ * `IDENTIFIER`, and only the argument list after the name tells them apart, which is
+ * tree information.
  *
- * Deux teintes distinctes, parce que la confusion utile n'est pas
- * « fonction ou variable » mais « fonction du moteur ou fonction du projet » :
- * une faute de frappe dans le nom d'une native se voit alors immédiatement, la
- * couleur retombant sur celle des fonctions déclarées.
+ * Native and project functions get different colours, so a typo in a native name
+ * shows up at once: its colour falls back to that of declared functions.
  */
 class KrakenFunctionAnnotator : Annotator {
 
@@ -37,8 +34,8 @@ class KrakenFunctionAnnotator : Annotator {
             KrakenPsiUtil.findFunctionVisible(element, name, arity) != null ->
                 KrakenSyntaxHighlighter.DECLARED_FUNCTION
 
-            // Appel non résolu : on ne colore pas. L'inspection dédiée le
-            // signale, et teindre un nom inconnu en « fonction » serait mentir.
+            // Unresolved call: left uncoloured, since colouring an unknown name as a function
+            // would be wrong.
             else -> return
         }
 

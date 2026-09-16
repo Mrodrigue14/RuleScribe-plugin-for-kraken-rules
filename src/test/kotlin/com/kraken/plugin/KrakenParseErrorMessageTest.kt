@@ -5,12 +5,11 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 
 /**
- * Lisibilité des erreurs de syntaxe.
+ * Readability of syntax errors.
  *
- * Grammar-Kit compose ces messages en énumérant tout ce qui pouvait suivre. Sur
- * une expression KEL cassée, cela donnait plus de quatre cents caractères :
- * chaque token préfixé de `KrakenTokenType.`, et les treize opérateurs binaires
- * listés un par un. Un message que personne ne lit ne signale rien.
+ * Grammar-Kit builds these messages by listing everything that could follow. On a
+ * broken KEL expression that reached over four hundred characters, with every token
+ * prefixed by `KrakenTokenType.` and the thirteen binary operators listed one by one.
  */
 class KrakenParseErrorMessageTest : BasePlatformTestCase() {
 
@@ -26,34 +25,33 @@ class KrakenParseErrorMessageTest : BasePlatformTestCase() {
         }
     """.trimIndent()
 
-    /** Le nom de la classe n'a rien à faire dans un message d'erreur. */
+    /** The class name has no place in an error message. */
     fun testTokenNamesCarryNoClassPrefix() {
         val message = errors(brokenExpression).first()
         assertFalse(
-            "« KrakenTokenType. » ne doit plus apparaître : $message",
+            "\"KrakenTokenType.\" must not appear: $message",
             message.contains("KrakenTokenType"),
         )
     }
 
     /**
-     * Les treize opérateurs binaires se présentent groupés. Sans cela, chacun
-     * apparaît nommément et le message triple de longueur.
+     * The thirteen binary operators are reported as one group; otherwise each is named and
+     * the message triples in length.
      */
     fun testBinaryOperatorsAreReportedAsOneGroup() {
         val message = errors(brokenExpression).first()
-        assertTrue("les opérateurs doivent être groupés : $message", message.contains("<operator>"))
+        assertTrue("operators must be grouped: $message", message.contains("<operator>"))
         for (operator in listOf("instanceof", "satisfies", "Matches")) {
             assertFalse(
-                "'$operator' ne doit plus être listé séparément : $message",
+                "'$operator' must not be listed separately: $message",
                 message.contains(operator),
             )
         }
     }
 
     /**
-     * Seuil volontairement lâche : il ne s'agit pas de figer une formulation,
-     * mais d'empêcher qu'une évolution de la grammaire ramène les messages
-     * fleuves d'avant (plus de 400 caractères).
+     * Deliberately loose threshold: it does not freeze the wording, it keeps grammar changes
+     * from bringing back messages over 400 characters.
      */
     fun testMessagesStayReadableInLength() {
         for (message in errors(brokenExpression)) {
@@ -61,7 +59,7 @@ class KrakenParseErrorMessageTest : BasePlatformTestCase() {
         }
     }
 
-    /** Le message doit toujours dire ce qu'il a trouvé, pas seulement ce qu'il attendait. */
+    /** The message still names what it found, not only what it expected. */
     fun testMessageStillNamesTheOffendingToken() {
         assertTrue(errors(brokenExpression).first().contains("got ']'"))
     }

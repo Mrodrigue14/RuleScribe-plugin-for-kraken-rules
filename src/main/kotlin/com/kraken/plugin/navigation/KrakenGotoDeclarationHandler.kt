@@ -8,12 +8,7 @@ import com.kraken.plugin.psi.KrakenEpRef
 import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleRef
 
-/**
- * Navigation Ctrl+B / Ctrl+clic, dans les deux sens :
- * - depuis une référence (item d'EntryPoint) vers la déclaration ;
- * - depuis le nom d'une déclaration (Rule ou EntryPoint) vers les items
- *   d'EntryPoint qui la référencent (popup si plusieurs).
- */
+/** Ctrl+B / Ctrl+click from a reference (an EntryPoint item) to its declarations. */
 class KrakenGotoDeclarationHandler : GotoDeclarationHandler {
 
     override fun getGotoDeclarationTargets(
@@ -23,10 +18,8 @@ class KrakenGotoDeclarationHandler : GotoDeclarationHandler {
     ): Array<PsiElement>? {
         if (sourceElement == null) return null
 
-        // 1. Référence -> déclaration(s). Toutes les déclarations visibles, pas
-        //    seulement celle que `resolve()` retient : un même nom peut couvrir
-        //    plusieurs variantes @Dimension, et n'en proposer qu'une mènerait à
-        //    une implémentation choisie au hasard de l'ordre de l'index.
+        // Every visible declaration, not only the one `resolve()` picks: one name can cover
+        // several @Dimension variants.
         val ruleRef = PsiTreeUtil.getParentOfType(sourceElement, KrakenRuleRef::class.java, false)
         if (ruleRef != null) {
             return KrakenPsiUtil.findRulesVisible(ruleRef, ruleRef.ruleName)
@@ -41,18 +34,10 @@ class KrakenGotoDeclarationHandler : GotoDeclarationHandler {
                 .takeIf { it.isNotEmpty() }
         }
 
-        // Le sens déclaration -> usages n'est délibérément PAS traité ici.
-        //
-        // Il l'a été jusqu'en v0.8.0 : le handler renvoyait les usages comme
-        // s'ils étaient des cibles de déclaration, ce qui donnait une popup
-        // plate de libellés. En ne renvoyant rien, on laisse « Go To
-        // Declaration or Usages » de la plateforme prendre le relais et
-        // afficher sa popup d'usages — groupée par fichier, avec l'aperçu du
-        // code. Elle s'alimente de ReferencesSearch, donc de
-        // KrakenReferencesSearcher, qui applique déjà les mêmes règles de
-        // visibilité de namespace : la sémantique ne change pas, seule la
-        // présentation s'améliore. Même popup au clic sur l'inlay « N usages »
-        // (KrakenReferencesCodeVisionProvider).
+        // Declaration → usages is deliberately not handled here. Returning nothing lets the
+        // platform's "Go To Declaration or Usages" show its usages popup, fed by
+        // ReferencesSearch and therefore by KrakenReferencesSearcher, which applies the same
+        // namespace visibility rules. The "N usages" inlay opens the same popup.
         return null
     }
 }

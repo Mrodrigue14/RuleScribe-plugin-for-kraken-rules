@@ -10,10 +10,9 @@ import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenPsiUtil
 
 /**
- * Signale une clause `On Contexte.champ` dont le contexte n'est déclaré
- * nulle part dans les fichiers visibles. Ne se déclenche que si au moins
- * un contexte est déclaré (pour éviter le bruit sur les projets sans
- * définitions de contextes).
+ * Reports an `On Context.field` clause whose context is not declared in any visible
+ * file. Only fires when at least one context is declared, to stay quiet in projects
+ * without context definitions.
  */
 class KrakenUnknownContextInspection : LocalInspectionTool() {
 

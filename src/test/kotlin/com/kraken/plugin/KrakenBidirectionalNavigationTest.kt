@@ -12,16 +12,15 @@ import com.kraken.plugin.psi.KrakenRuleDecl
 import com.kraken.plugin.psi.KrakenRuleRef
 
 /**
- * Correction des cibles de Ctrl+B, dans les deux sens.
+ * Ctrl+B targets, in both directions.
  *
- * [KrakenNavigationPresentationTest] couvre les *libellés* du popup ; ici on
- * vérifie que les cibles elles-mêmes sont les bonnes — et surtout qu'aucune ne
- * manque : proposer une seule implémentation là où plusieurs sont légitimes
- * revient à en choisir une au hasard de l'ordre de l'index.
+ * [KrakenNavigationPresentationTest] covers popup labels; this checks the targets
+ * themselves, and above all that none is missing: offering one implementation where
+ * several are legitimate picks one by index order.
  */
 class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
 
-    /** Cibles que Ctrl+B produirait sur le nom porté par [element]. */
+    /** Targets Ctrl+B would produce on the name carried by [element]. */
     private fun targetsFor(element: PsiElement): List<PsiElement> {
         val offset = element.textOffset
         val leaf = element.containingFile.findElementAt(offset)
@@ -38,11 +37,6 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
 
     private inline fun <reified T : PsiElement> allOf(file: PsiElement): List<T> = PsiTreeUtil.findChildrenOfType(file, T::class.java).toList()
 
-    // ------------------------------------------------------------------
-    // Sens 1 : item d'EntryPoint -> implémentation
-    // ------------------------------------------------------------------
-
-    /** Chaque item d'un EntryPoint mène à *sa* règle, pas à la première venue. */
     fun testEachEntryPointItemResolvesToItsOwnRule() {
         val file = myFixture.configureByText(
             "coverage.rules",
@@ -80,8 +74,8 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
     }
 
     /**
-     * Deux namespaces indépendants déclarent la même règle. La visibilité
-     * Kraken interdit de traverser : chaque EntryPoint doit rester chez lui.
+     * Two independent namespaces declare the same rule. Visibility forbids crossing, so
+     * each EntryPoint stays within its own namespace.
      */
     fun testEntryPointItemResolvesWithinItsOwnNamespace() {
         val other = myFixture.addFileToProject(
@@ -124,9 +118,8 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
     }
 
     /**
-     * Variantes `@Dimension` : même nom, même fichier, deux implémentations
-     * également valides. Ctrl+B doit proposer les deux — c'est précisément le
-     * cas que KrakenDuplicateRuleInspection laisse passer volontairement.
+     * `@Dimension` variants: same name, same file, two valid implementations. Ctrl+B must
+     * offer both; this is the case KrakenDuplicateRuleInspection deliberately allows.
      */
     fun testDimensionVariantsAreAllOffered() {
         val file = myFixture.configureByText(
@@ -151,8 +144,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
         val targets = targetsFor(allOf<KrakenRuleRef>(file).single())
         assertEquals("Both dimensional variants are valid targets", 2, targets.size)
 
-        // Même nom, même fichier : sans l'annotation le popup afficherait deux
-        // lignes rigoureusement identiques.
+        // Same name, same file: without the annotation the popup would show two identical lines.
         assertEquals(
             listOf(
                 "\"Coverage limit\" @Dimension(\"plan\", \"GOLD\") @ dimensioned.rules",
@@ -162,7 +154,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
         )
     }
 
-    /** `Import Rule` court-circuite Include : la cible reste le namespace source. */
+    /** `Import Rule` bypasses Include: the target stays in the source namespace. */
     fun testImportedRuleResolvesToItsSourceNamespace() {
         myFixture.addFileToProject(
             "library.rules",
@@ -190,7 +182,6 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
         assertEquals("library.rules", target.containingFile.name)
     }
 
-    /** Item `EntryPoint "x"` imbriqué : même exigence que pour les règles. */
     fun testNestedEntryPointItemResolvesToItsDeclaration() {
         val file = myFixture.configureByText(
             "composed.rules",
@@ -209,22 +200,14 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
         assertSame(allOf<KrakenEntryPointDecl>(file).first { it.name == "Reused" }, target)
     }
 
-    // ------------------------------------------------------------------
-    // Sens 2 : implémentation -> EntryPoint(s)
-    // ------------------------------------------------------------------
-
     /**
-     * Depuis v0.8.1 ce sens ne passe plus par [KrakenGotoDeclarationHandler] :
-     * la plateforme affiche sa propre popup d'usages, alimentée par
-     * `ReferencesSearch`, et l'inlay « N usages » compte la même chose. Les
-     * tests suivent le comportement à son nouvel emplacement — la sémantique
-     * de visibilité, elle, est inchangée.
+     * Declaration → usages goes through the platform's usages popup, fed by
+     * `ReferencesSearch`, and the "N usages" inlay counts the same thing.
      */
     private fun usageCountOf(declaration: PsiElement): Int = myFixture.findUsages(declaration as com.intellij.psi.PsiNamedElement).size
 
     private fun codeVisionHintOf(declaration: PsiElement): String? = KrakenReferencesCodeVisionProvider().getHint(declaration, declaration.containingFile)
 
-    /** Une règle partagée par plusieurs EntryPoints : tous sont des usages. */
     fun testImplementationIsUsedByEveryEntryPointReferencingIt() {
         myFixture.addFileToProject(
             "billing.rules",
@@ -265,8 +248,8 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
     }
 
     /**
-     * L'inverse : un EntryPoint d'un namespace qui ne voit pas la déclaration
-     * n'est pas un usage, même s'il cite le même nom — il résout ailleurs.
+     * An EntryPoint in a namespace that cannot see the declaration is not a usage, even with
+     * the same name: it resolves elsewhere.
      */
     fun testImplementationIgnoresEntryPointsThatCannotSeeIt() {
         myFixture.addFileToProject(
@@ -306,7 +289,6 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
         )
     }
 
-    /** Un EntryPoint réutilisé par plusieurs autres compte tous ses appelants. */
     fun testEntryPointDeclarationCountsEveryCaller() {
         myFixture.addFileToProject(
             "first.rules",
@@ -337,7 +319,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
         )
     }
 
-    /** Une déclaration sans usage le dit, plutôt que de n'afficher aucun inlay. */
+    /** A declaration without usages says so instead of showing no inlay. */
     fun testDeclarationWithoutUsagesSaysSo() {
         val file = myFixture.configureByText(
             "lonely.rules",

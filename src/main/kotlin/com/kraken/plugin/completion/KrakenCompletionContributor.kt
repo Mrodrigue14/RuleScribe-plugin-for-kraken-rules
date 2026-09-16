@@ -40,7 +40,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
         context: ProcessingContext,
         result: CompletionResultSet,
     ) {
-        // Position dans le fichier original (sans identifiant fictif) : arbre intact
+        // Position in the original file, without the dummy identifier, where the tree is intact.
         val position = parameters.originalPosition ?: parameters.position
         val file = position.containingFile as? KrakenFile ?: return
         val prev = prevVisibleLeaf(position)
@@ -71,7 +71,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
 
             inRuleTarget -> {
                 if (prev != null && prev.node?.elementType == KrakenTypes.DOT) {
-                    // "On Contexte.<caret>" : champs et enfants du contexte
+                    // "On Context.<caret>": fields and children of the context.
                     val contextLeaf = prevVisibleLeaf(prev)
                     val contextName = contextLeaf?.text
                     if (contextName != null) {
@@ -95,7 +95,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
                     prev.node?.elementType == KrakenTypes.DOT ||
                         prev.node?.elementType == KrakenTypes.QDOT
                     ) -> {
-                // "Contexte.<caret>" dans une expression (When, Assert, Default To…)
+                // "Context.<caret>" in an expression (When, Assert, Default To…).
                 val headName = prevVisibleLeaf(prev)?.text
                 if (headName != null) {
                     for (field in KrakenPsiUtil.contextFieldNames(file, headName)) {
@@ -126,10 +126,9 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
     }
 
     /**
-     * Complétion dans un bloc `EntryPoint { ... }` :
-     * - règles visibles (icône méthode, fichier d'origine en légende) ;
-     * - autres entry points sous la forme `EntryPoint "nom"` (icône plugin) ;
-     * - sans les items déjà listés ni l'entry point courant (cycle direct).
+     * Completion inside `EntryPoint { ... }`: visible rules (with their file) and other
+     * entry points as `EntryPoint "name"`, excluding items already listed and the current
+     * entry point (a direct cycle).
      */
     private fun addEntryPointItemCompletions(
         position: PsiElement,
@@ -171,11 +170,9 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
     }
 
     /**
-     * Fonctions appelables depuis une expression : les 55 natives du catalogue
-     * embarqué, puis les `Function` déclarées et visibles depuis ce fichier.
-     *
-     * Les deux peuvent porter le même nom avec des arités différentes — le
-     * moteur les distingue ainsi — donc chaque arité est une entrée distincte.
+     * Functions callable from an expression: the natives of the bundled catalogue, then the
+     * `Function`s declared and visible from this file. A name can exist with several
+     * arities, which the engine tells apart, so each arity is its own entry.
      */
     private fun addFunctionCompletions(position: PsiElement, result: CompletionResultSet) {
         for (function in KrakenFunctionCatalog.functions) {

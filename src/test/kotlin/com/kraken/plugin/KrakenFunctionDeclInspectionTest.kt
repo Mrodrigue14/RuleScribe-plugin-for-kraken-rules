@@ -7,12 +7,11 @@ import com.kraken.plugin.inspection.KrakenFunctionParameterDuplicateInspection
 import com.kraken.plugin.inspection.KrakenFunctionTypeUnionGenericMixInspection
 
 /**
- * Validation des déclarations `Function`, miroir de `FunctionValidator` et
+ * `Function` declaration checks, mirroring `FunctionValidator` and
  * `FunctionSignatureValidator`.
  *
- * Les tests vérifient le **code** autant que le déclenchement : c'est lui qui
- * relie le soulignement dans l'éditeur à la ligne du log de build, et il change
- * selon que la déclaration a un corps ou non.
+ * The tests check the code as much as the trigger: the code links the editor underline
+ * to the build log line, and it depends on whether the declaration has a body.
  */
 class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
 
@@ -32,10 +31,6 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
 
     private fun assertCodes(expected: List<String>, source: String) = assertEquals(expected.sorted(), codesFor(source))
 
-    // ------------------------------------------------------------------
-    // Bornes génériques
-    // ------------------------------------------------------------------
-
     fun testDuplicateGenericBoundIsReported() = assertCodes(
         listOf("kvf004"),
         """
@@ -45,7 +40,7 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
         """,
     )
 
-    /** Même défaut sans corps : c'est une signature, donc un autre code. */
+    /** The same defect without a body: a signature, so a different code. */
     fun testDuplicateGenericBoundInSignatureUsesSignatureCode() = assertCodes(
         listOf("kvf017"),
         "Function <T is Number, T is String> Dup(<T> p) : Number",
@@ -65,7 +60,6 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
         "Function <T is <G>> Itself(<T> p) : Number",
     )
 
-    /** Une borne générique se cache aussi derrière un suffixe de tableau. */
     fun testArrayOfGenericIsStillAGenericBound() = assertCodes(
         listOf("kvf005"),
         """
@@ -75,11 +69,7 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
         """,
     )
 
-    // ------------------------------------------------------------------
-    // Mélange union / générique
-    // ------------------------------------------------------------------
-
-    /** Le cas exact de `FunctionValidatorTest.shouldFailWhenGenericsAreMixedWithUnion`. */
+    /** The exact case of `FunctionValidatorTest.shouldFailWhenGenericsAreMixedWithUnion`. */
     fun testUnionGenericMixIsReportedOnBothPositions() = assertCodes(
         listOf("kvf007", "kvf010"),
         """
@@ -94,7 +84,6 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
         "Function <T is Number> First(<T>[] | String p) : <T> | String",
     )
 
-    /** Une union sans générique est parfaitement valide. */
     fun testPlainUnionIsNotReported() = assertCodes(
         emptyList(),
         """
@@ -105,8 +94,8 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
     )
 
     /**
-     * `Foo<Bar>` n'est pas un générique : la grammaire l'accepte par tolérance,
-     * mais le confondre avec `<T>` condamnerait du code valide.
+     * `Foo<Bar>` is not a generic: the grammar tolerates it, and confusing it with `<T>`
+     * would condemn valid code.
      */
     fun testParameterisedTypeIsNotAGeneric() = assertCodes(
         emptyList(),
@@ -118,9 +107,8 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
     )
 
     /**
-     * L'union vit dans la **borne**, pas dans le type du paramètre. Le moteur
-     * résout la borne et signalerait peut-être ce cas ; aucun de ses tests ne le
-     * fixe, donc RuleScribe s'abstient plutôt que de condamner du code valide.
+     * The union is in the bound, not in the parameter type. The engine resolves the bound
+     * and might report this, but none of its tests pins it, so RuleScribe abstains.
      */
     fun testUnionInsideTheBoundIsNotReported() = assertCodes(
         emptyList(),
@@ -130,10 +118,6 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
         }
         """,
     )
-
-    // ------------------------------------------------------------------
-    // Paramètres et natives
-    // ------------------------------------------------------------------
 
     fun testDuplicateParameterNameIsReported() = assertCodes(
         listOf("kvf008"),
@@ -163,8 +147,8 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
     )
 
     /**
-     * Sans corps, la déclaration *est* la façon de déclarer une fonction Java :
-     * `FunctionSignatureValidator` ne fait pas cette vérification.
+     * Without a body, the declaration is how a Java function is declared:
+     * `FunctionSignatureValidator` does not run this check.
      */
     fun testSignatureNamedAfterANativeIsNotReported() = assertCodes(
         emptyList(),

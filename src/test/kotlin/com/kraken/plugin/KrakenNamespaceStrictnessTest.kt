@@ -5,8 +5,8 @@ import com.kraken.plugin.inspection.KrakenUnusedRuleInspection
 import com.kraken.plugin.navigation.KrakenGotoDeclarationHandler
 
 /**
- * Sémantique stricte des namespaces : une référence située dans un namespace
- * qui ne voit pas la déclaration ne compte pas (usages, navigation, inspection).
+ * Strict namespace semantics: a reference in a namespace that cannot see the
+ * declaration does not count (usages, navigation, inspection).
  */
 class KrakenNamespaceStrictnessTest : BasePlatformTestCase() {
 

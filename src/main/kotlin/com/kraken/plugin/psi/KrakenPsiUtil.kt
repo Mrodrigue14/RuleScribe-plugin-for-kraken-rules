@@ -25,7 +25,7 @@ import com.kraken.plugin.psi.stubs.KrakenRuleNameIndex
 
 object KrakenPsiUtil {
 
-    /** Identifiants d'une déclaration, en s'arrêtant avant la navigation `: …`. */
+    /** Identifiers of a declaration, stopping before the `: …` navigation. */
     fun identifiersOf(node: ASTNode): List<String> {
         val names = mutableListOf<String>()
         var child = node.firstChildNode
@@ -46,17 +46,16 @@ object KrakenPsiUtil {
         return names
     }
 
-    /** Remplace le contenu d'une chaîne en conservant son guillemet d'origine. */
+    /** Replaces a string's content, keeping its original quote character. */
     fun replaceQuoted(leaf: ASTNode?, content: String) {
         if (leaf !is LeafElement) return
         val quote = leaf.text.firstOrNull() ?: '"'
         leaf.replaceWithText("$quote$content$quote")
     }
 
-    /** Plage du contenu d'une chaîne de [length] caractères posée à [start], guillemets exclus. */
     fun insideQuotes(start: Int, length: Int): TextRange = if (length >= 2) TextRange(start + 1, start + length - 1) else TextRange(start, start + length)
 
-    /** Tokens acceptés comme identifiants (miroir de la règle `id` du BNF). */
+    /** Tokens accepted as identifiers (mirrors the BNF `id` rule). */
     @JvmField
     val ID_TOKENS: TokenSet = TokenSet.create(
         KrakenTypes.IDENTIFIER,
@@ -85,10 +84,6 @@ object KrakenPsiUtil {
     fun krakenFiles(project: Project): List<KrakenFile> = FileTypeIndex.getFiles(KrakenFileType, GlobalSearchScope.projectScope(project))
         .mapNotNull { PsiManager.getInstance(project).findFile(it) as? KrakenFile }
 
-    // ------------------------------------------------------------------
-    // Espaces de noms : Namespace X + Include Y
-    // ------------------------------------------------------------------
-
     fun namespaceOf(file: KrakenFile): String? = file.node.findChildByType(KrakenTypes.NAMESPACE_DECL)
         ?.findChildByType(KrakenTypes.QUALIFIED_NAME)?.text?.trim()
 
@@ -96,11 +91,9 @@ object KrakenPsiUtil {
         .mapNotNull { it.findChildByType(KrakenTypes.QUALIFIED_NAME)?.text?.trim() }
 
     /**
-     * Modèle des namespaces du projet : fichiers par namespace + graphe
-     * d'inclusions. Calculé une seule fois et mis en cache (invalidé à chaque
-     * modification PSI). Sans ce cache, [visibleFiles] relisait l'AST de tous
-     * les fichiers à chaque appel — or il est invoqué par presque toutes les
-     * résolutions, complétions et inspections.
+     * Project namespace model: files per namespace plus the include graph. Cached and
+     * invalidated on any PSI change, because [visibleFiles] is called by nearly every
+     * resolution, completion and inspection.
      */
     private class NamespaceModel(
         val filesByNamespace: Map<String?, List<KrakenFile>>,
@@ -127,9 +120,8 @@ object KrakenPsiUtil {
     }, false)
 
     /**
-     * Fichiers visibles depuis [from] : même namespace, namespaces inclus
-     * (transitivement) et fichiers sans namespace. Un fichier sans namespace
-     * voit tout le projet.
+     * Files visible from [from]: same namespace, transitively included namespaces, and
+     * files without a namespace. A file without a namespace sees the whole project.
      */
     fun visibleFiles(from: PsiFile?): List<KrakenFile> {
         val fromKraken = from as? KrakenFile ?: return emptyList()
@@ -139,8 +131,8 @@ object KrakenPsiUtil {
         if (ns == null) {
             result = model.allFiles
         } else {
-            // Inclusions du namespace courant, en repliant celles du fichier
-            // en cours d'édition (qui peut ne pas encore être indexé).
+            // Includes of the current namespace, merged with those of the file being edited,
+            // which may not be indexed yet.
             val ownIncludes = includesOf(fromKraken)
             val visited = linkedSetOf(ns)
             val queue = ArrayDeque(listOf(ns))
@@ -160,20 +152,18 @@ object KrakenPsiUtil {
             collected.addAll(model.filesByNamespace[null].orEmpty())
             result = collected
         }
-        // Le fichier courant peut ne pas être indexé (éditeur léger, tests)
+        // The current file may not be indexed yet (light editor, tests).
         return if (result.any { it.isEquivalentTo(fromKraken) }) result else result + fromKraken
     }
 
-    // ------------------------------------------------------------------
-    // Imports de règles : Import Rule "X" [, "Y"] From Ns
-    //
-    // Sémantique du moteur (ResourceKrakenProjectBuilder.importRules) : la
-    // règle importée est copiée dans le namespace importateur comme si elle
-    // y était déclarée — indépendamment de tout Include. Les imports déclarés
-    // par n'importe quel fichier d'un namespace valent pour tout le namespace.
-    // ------------------------------------------------------------------
-
-    /** Un import déclaré : nom de règle + namespace source + éléments PSI à surligner. */
+    /**
+     * A declared `Import Rule "X" From Ns`: rule name, source namespace, and the PSI
+     * elements to highlight.
+     *
+     * Engine semantics (`ResourceKrakenProjectBuilder.importRules`): the imported rule is
+     * copied into the importing namespace as if declared there, regardless of any Include,
+     * and imports declared by any file of a namespace apply to the whole namespace.
+     */
     data class RuleImport(
         val ruleName: String,
         val sourceNamespace: String,
@@ -181,7 +171,7 @@ object KrakenPsiUtil {
         val namespaceElement: PsiElement,
     )
 
-    /** Imports déclarés par une déclaration `Import Rule … From …` précise. */
+    /** Imports declared by one `Import Rule … From …` declaration. */
     fun ruleImportsIn(decl: PsiElement): List<RuleImport> {
         val node = decl.node ?: return emptyList()
         if (node.elementType != KrakenTypes.RULE_IMPORT_DECL) return emptyList()
@@ -199,14 +189,10 @@ object KrakenPsiUtil {
         return result
     }
 
-    /** Imports déclarés dans un fichier. */
     fun ruleImportsOf(file: KrakenFile): List<RuleImport> = file.node.getChildren(TokenSet.create(KrakenTypes.RULE_IMPORT_DECL))
         .flatMap { ruleImportsIn(it.psi) }
 
-    /**
-     * Imports valant pour le namespace de [from] : ceux déclarés par tous les
-     * fichiers de ce namespace (le moteur fusionne les imports par namespace).
-     */
+    /** Imports that apply to [from]'s namespace: those of all its files, as the engine merges them. */
     fun ruleImportsForNamespaceOf(from: PsiFile?): List<RuleImport> {
         val fromKraken = from as? KrakenFile ?: return emptyList()
         val ns = namespaceOf(fromKraken)
@@ -216,16 +202,12 @@ object KrakenPsiUtil {
         return importing.flatMap { ruleImportsOf(it) }
     }
 
-    /** Vrai si un fichier du projet déclare `Namespace [ns]`. */
     fun namespaceExists(project: Project, ns: String): Boolean = krakenFiles(project).any { namespaceOf(it) == ns }
 
-    /** Fichiers appartenant à un namespace donné (null = fichiers sans namespace). */
+    /** Files of namespace [ns]; null means files without a namespace. */
     fun filesOfNamespace(project: Project, ns: String?): List<KrakenFile> = krakenFiles(project).filter { namespaceOf(it) == ns }
 
-    /**
-     * Résout une règle déclarée dans un namespace précis, sans passer par la
-     * visibilité Include (c'est le propre d'un Import Rule).
-     */
+    /** Resolves a rule declared in namespace [ns], bypassing Include visibility as `Import Rule` does. */
     fun findRuleInNamespace(project: Project, ns: String?, name: String): KrakenRuleDecl? {
         val files = filesOfNamespace(project, ns)
         val virtualFiles = files.mapNotNull { it.virtualFile }
@@ -244,40 +226,33 @@ object KrakenPsiUtil {
             .firstOrNull { it.name == name }
     }
 
-    /** Déclaration ciblée par un `Import Rule` du namespace de [from], le cas échéant. */
+    /** Declaration targeted by an `Import Rule` in [from]'s namespace, if any. */
     fun findImportedRule(from: PsiElement, name: String): KrakenRuleDecl? {
         val import = ruleImportsForNamespaceOf(from.containingFile)
             .firstOrNull { it.ruleName == name } ?: return null
         return findRuleInNamespace(from.project, import.sourceNamespace, name)
     }
 
-    /** Vrai si le namespace de [ref] importe explicitement [name] depuis [declNs]. */
     private fun refImportsRule(ref: PsiElement, name: String, declNs: String?): Boolean = declNs != null &&
         ruleImportsForNamespaceOf(ref.containingFile)
             .any { it.ruleName == name && it.sourceNamespace == declNs }
 
-    // ------------------------------------------------------------------
-    // Règles
-    // ------------------------------------------------------------------
-
     fun findRulesVisible(from: PsiElement): List<KrakenRuleDecl> {
         val direct = visibleFiles(from.containingFile)
             .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenRuleDecl::class.java) }
-        // Règles importées via Import Rule … From … (hors visibilité Include)
         val imported = ruleImportsForNamespaceOf(from.containingFile)
             .mapNotNull { findRuleInNamespace(from.project, it.sourceNamespace, it.ruleName) }
         return if (imported.isEmpty()) direct else (direct + imported).distinct()
     }
 
     /**
-     * Toutes les déclarations visibles portant ce nom. Plusieurs cibles sont
-     * légitimes : les variantes `@Dimension` d'une règle partagent son nom
-     * (cf. KrakenDuplicateRuleInspection, qui ne signale que les doublons
-     * *sans* annotation différenciante). La navigation doit donc les proposer
-     * toutes plutôt que d'en retenir une au hasard de l'ordre de l'index.
+     * Every visible declaration with this name. Several targets are legitimate:
+     * `@Dimension` variants share the rule name (`KrakenDuplicateRuleInspection` only
+     * reports duplicates without a distinguishing annotation), so navigation must offer
+     * all of them.
      */
     fun findRulesVisible(from: PsiElement, name: String): List<KrakenRuleDecl> {
-        // 1. Chemin rapide : stub index (O(1), sans charger les AST)
+        // Fast path: the stub index, without loading ASTs.
         val project = from.project
         val virtualFiles = visibleFiles(from.containingFile).mapNotNull { it.virtualFile }
         val indexed = if (virtualFiles.isEmpty()) {
@@ -291,41 +266,32 @@ object KrakenPsiUtil {
                 KrakenRuleDecl::class.java,
             ).toList()
         }
-        // 2. Repli : fichiers non indexés (éditeur léger, fragments, tests)
+        // Fallback for unindexed files (light editor, fragments, tests).
         val declared = indexed.ifEmpty { findRulesVisible(from).filter { it.name == name } }
-        // 3. Règle importée explicitement (indépendant d'Include)
+        // Explicitly imported rule, independent of Include.
         return (declared + listOfNotNull(findImportedRule(from, name))).distinct()
     }
 
     fun findRuleVisible(from: PsiElement, name: String): KrakenRuleDecl? = findRulesVisible(from, name).firstOrNull()
 
-    // ------------------------------------------------------------------
-    // Entry points
-    // ------------------------------------------------------------------
-
     fun findEntryPointsVisible(from: PsiElement): List<KrakenEntryPointDecl> = visibleFiles(from.containingFile)
         .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenEntryPointDecl::class.java) }
 
-    /** Même raison que pour les règles : un EntryPoint aussi peut être dimensionné. */
+    /** Same as for rules: an EntryPoint can have `@Dimension` variants too. */
     fun findEntryPointsVisible(from: PsiElement, name: String): List<KrakenEntryPointDecl> = findEntryPointsVisible(from).filter { it.name == name }
 
     fun findEntryPointVisible(from: PsiElement, name: String): KrakenEntryPointDecl? = findEntryPointsVisible(from, name).firstOrNull()
-
-    // ------------------------------------------------------------------
-    // Fonctions déclarées en DSL
-    // ------------------------------------------------------------------
 
     fun findFunctionsVisible(from: PsiElement): List<KrakenFunctionDecl> = visibleFiles(from.containingFile)
         .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenFunctionDecl::class.java) }
 
     /**
-     * Le moteur indexe une fonction par `(nom, nombre de paramètres)` — pas par
-     * les types (cf. `FunctionHeader`). Deux `Function` de même nom et de même
-     * arité sont un conflit, pas une surcharge.
+     * The engine indexes a function by `(name, parameter count)`, not by types
+     * (`FunctionHeader`): two `Function`s with the same name and arity conflict.
      */
     fun findFunctionVisible(from: PsiElement, name: String, arity: Int): KrakenFunctionDecl? = findFunctionsVisible(from).firstOrNull { it.name == name && it.arity == arity }
 
-    /** Appels visibles portant ce nom et cette arité, pour Find Usages. */
+    /** Visible calls with this name and arity, for Find Usages. */
     fun findFunctionCallsVisibleTo(declaration: KrakenFunctionDecl): List<KrakenFunctionCall> {
         val name = declaration.name ?: return emptyList()
         val declarationFile = declaration.containingFile
@@ -338,15 +304,13 @@ object KrakenPsiUtil {
             }
     }
 
-    /** Vrai si le fichier de [refElement] peut voir [declarationFile] (namespaces). */
     private fun refSees(refElement: PsiElement, declarationFile: PsiFile?): Boolean = declarationFile != null &&
         visibleFiles(refElement.containingFile).any { it.isEquivalentTo(declarationFile) }
 
     /**
-     * Références de règles qui peuvent effectivement voir [declaration] :
-     * une référence située dans un namespace qui n'inclut pas celui de la
-     * déclaration ne compte pas (cohérent avec la résolution du moteur) —
-     * sauf si son namespace importe explicitement la règle (Import Rule).
+     * Rule references that can actually see [declaration]. As in the engine, a reference
+     * in a namespace that does not include the declaration's does not count, unless its
+     * namespace imports the rule explicitly.
      */
     fun findRuleRefsVisibleTo(declaration: KrakenRuleDecl): List<KrakenRuleRef> {
         val name = declaration.name ?: return emptyList()
@@ -357,45 +321,35 @@ object KrakenPsiUtil {
         }
     }
 
-    /** Idem pour les références d'entry points imbriquées. */
     fun findEpRefsVisibleTo(declaration: KrakenEntryPointDecl): List<KrakenEpRef> {
         val name = declaration.name ?: return emptyList()
         val declarationFile = declaration.containingFile
         return findEpRefs(declaration.project, name).filter { refSees(it, declarationFile) }
     }
 
-    /** Références `EntryPoint "nom"` imbriquées portant ce nom, projet entier. */
+    /** Nested `EntryPoint "name"` references with this name, across the project. */
     fun findEpRefs(project: Project, name: String): List<KrakenEpRef> = krakenFiles(project)
         .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenEpRef::class.java) }
         .filter { it.entryPointName == name }
 
-    /** Toutes les références (items d'EntryPoint) portant ce nom, projet entier. */
+    /** EntryPoint rule items with this name, across the project. */
     fun findRuleRefs(project: Project, name: String): List<KrakenRuleRef> = krakenFiles(project)
         .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenRuleRef::class.java) }
         .filter { it.ruleName == name }
-
-    // ------------------------------------------------------------------
-    // Dimensions
-    // ------------------------------------------------------------------
 
     fun findDimensionNamesVisible(from: PsiFile?): List<String> = visibleFiles(from)
         .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenDimensionDecl::class.java) }
         .mapNotNull { it.dimensionName }
         .distinct()
 
-    // ------------------------------------------------------------------
-    // Contextes et champs
-    // ------------------------------------------------------------------
-
     fun findContextNamesVisible(from: PsiFile?): List<String> = visibleFiles(from).flatMap { contextDecls(it).mapNotNull { decl -> contextName(decl) } }.distinct()
 
     /**
-     * *Toutes* les déclarations visibles portant ce nom de contexte.
+     * Every visible declaration of this context name.
      *
-     * Plusieurs fichiers d'un même namespace peuvent en déclarer un homonyme —
-     * un dépôt qui héberge plusieurs produits, ou de simples fixtures de test à
-     * côté du code. N'en retenir qu'une au hasard de l'ordre des fichiers fait
-     * échouer la résolution d'un champ qui n'existe que dans les autres.
+     * Several files in one namespace can declare the same context (a repository hosting
+     * several products, or test fixtures next to the code). Keeping only one, by file
+     * order, breaks resolution of fields that exist only in the others.
      */
     fun findContextDecls(from: PsiFile?, name: String): List<PsiElement> = visibleFiles(from)
         .flatMap { contextDecls(it) }
@@ -403,14 +357,11 @@ object KrakenPsiUtil {
 
     fun findContextDecl(from: PsiFile?, name: String): PsiElement? = findContextDecls(from, name).firstOrNull()
 
-    /**
-     * Noms des champs et enfants d'un contexte, héritage (`Is Parent`) compris.
-     */
+    /** Field and child names of a context, including those inherited through `Is Parent`. */
     fun contextFieldNames(from: PsiFile?, contextName: String, depth: Int = 0): List<String> {
         if (depth > 4) return emptyList()
         val names = LinkedHashSet<String>()
-        // Union sur toutes les déclarations homonymes : la complétion ne doit
-        // pas dépendre de celle que l'ordre des fichiers fait sortir en premier.
+        // Union over all same-named declarations, so completion does not depend on file order.
         for (decl in findContextDecls(from, contextName)) {
             var child = decl.node.firstChildNode
             while (child != null) {
@@ -441,7 +392,7 @@ object KrakenPsiUtil {
         return if (node != null && node.elementType in ID_TOKENS) node.text else null
     }
 
-    /** Nom d'un champ : dernier identifiant avant `:` ([External?] Type [*] nom). */
+    /** Field name: the last identifier before `:` (`[External] Type [*] name`). */
     private fun fieldName(fieldDecl: ASTNode): String? {
         var last: String? = null
         var child = fieldDecl.firstChildNode
@@ -453,7 +404,7 @@ object KrakenPsiUtil {
         return last
     }
 
-    /** Nom du contexte enfant : premier identifiant après `Child` [*]. */
+    /** Child context name: the first identifier after `Child [*]`. */
     private fun childContextName(childDecl: ASTNode): String? {
         var seenChildKw = false
         var child = childDecl.firstChildNode

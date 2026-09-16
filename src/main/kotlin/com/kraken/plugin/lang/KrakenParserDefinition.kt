@@ -62,7 +62,7 @@ class KrakenParserDefinition : ParserDefinition {
             "kraken.FILE",
             KrakenLanguage,
         ) {
-            // À incrémenter à chaque évolution de la grammaire ou des stubs
+            // Bump whenever the grammar or the stubs change.
             override fun getStubVersion(): Int = 2
             override fun getExternalId(): String = "kraken.FILE"
         }
@@ -80,7 +80,7 @@ class KrakenParserDefinition : ParserDefinition {
         @JvmField
         val STRINGS: TokenSet = TokenSet.create(KrakenTypes.STRING)
 
-        /** Nœuds délimités par des accolades : repliables, et indentés à l'intérieur. */
+        /** Brace-delimited nodes: foldable, and indented inside. */
         @JvmField
         val BRACE_BLOCKS: TokenSet = TokenSet.create(
             KrakenTypes.RULE_BODY,

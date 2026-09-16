@@ -9,9 +9,8 @@ import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenPsiUtil
 
 /**
- * Signale un `@Dimension("nom", ...)` dont le nom n'est déclaré par aucun
- * `Dimension "nom" : Type`. Ne se déclenche que si le projet déclare au
- * moins une dimension.
+ * Reports a `@Dimension("name", ...)` whose name no `Dimension "name" : Type` declares.
+ * Only fires when the project declares at least one dimension.
  */
 class KrakenUndeclaredDimensionInspection : LocalInspectionTool() {
 

@@ -7,18 +7,18 @@ import com.kraken.plugin.inspection.KrakenDuplicateRuleInspection
 import com.kraken.plugin.inspection.KrakenUndeclaredDimensionInspection
 
 /**
- * Correctifs des inspections.
+ * Inspection quick fixes.
  *
- * On vérifie le texte obtenu, pas seulement qu'un correctif est proposé :
- * c'est le résultat qui doit rester du Kraken valide, notamment l'ordre imposé
- * par `kraken_file ::= namespace_decl? import_decl* model_item*`.
+ * The resulting text is checked, not just that a fix is offered: it must stay valid
+ * Kraken, including the order required by
+ * `kraken_file ::= namespace_decl? import_decl* model_item*`.
  */
 class KrakenQuickFixTest : BasePlatformTestCase() {
 
     /**
-     * La plateforme enveloppe un `LocalQuickFix` dans une action dont le
-     * `familyName` porte le libellé affiché, donc `getName()` quand le
-     * correctif en définit un : on cherche par préfixe.
+     * The platform wraps a `LocalQuickFix` in an action whose `familyName` carries the
+     * displayed label (`getName()` when the fix defines one), so fixes are looked up by
+     * prefix.
      */
     private fun applyFix(fileName: String, before: String, label: String): String {
         myFixture.configureByText(fileName, before)
@@ -29,20 +29,15 @@ class KrakenQuickFixTest : BasePlatformTestCase() {
             )
         myFixture.launchAction(fix)
         val after = myFixture.file.text
-        // Le correctif écrit du texte : la seule garantie qui compte est que
-        // le fichier parse toujours.
+        // The fix writes text, so what matters is that the file still parses.
         val errors = PsiTreeUtil.findChildrenOfType(myFixture.file, PsiErrorElement::class.java)
         assertEquals(
-            "le correctif a cassé le fichier :\n$after",
+            "the fix broke the file:\n$after",
             emptyList<String>(),
             errors.map { it.errorDescription },
         )
         return after
     }
-
-    // ------------------------------------------------------------------
-    // Déclarer une dimension manquante
-    // ------------------------------------------------------------------
 
     fun testDeclaresMissingDimensionAfterTheExistingOnes() {
         myFixture.enableInspections(KrakenUndeclaredDimensionInspection())
@@ -59,14 +54,14 @@ class KrakenQuickFixTest : BasePlatformTestCase() {
             "Declare dimension",
         )
         assertTrue(
-            "les dimensions restent groupées, une par ligne :\n$after",
+            "dimensions stay grouped, one per line:\n$after",
             after.contains("Dimension \"planCd\" : String\nDimension \"packageCd\" : String"),
         )
     }
 
     /**
-     * Une dimension ne peut pas précéder le `Namespace` : le correctif doit
-     * l'insérer après l'en-tête, sinon il produit un fichier qui ne parse plus.
+     * A dimension cannot precede `Namespace`: the fix must insert after the header, or the
+     * file no longer parses.
      */
     fun testDeclaredDimensionGoesAfterTheHeader() {
         myFixture.enableInspections(KrakenUndeclaredDimensionInspection())
@@ -87,13 +82,9 @@ class KrakenQuickFixTest : BasePlatformTestCase() {
         )
         val namespaceAt = after.indexOf("Namespace Policy")
         val newDimensionAt = after.indexOf("Dimension \"packageCd\"")
-        assertTrue("la dimension doit suivre le Namespace :\n$after", namespaceAt < newDimensionAt)
+        assertTrue("the dimension must follow the Namespace:\n$after", namespaceAt < newDimensionAt)
         assertTrue(after.indexOf("Include Base") < newDimensionAt)
     }
-
-    // ------------------------------------------------------------------
-    // Annoter une règle dupliquée
-    // ------------------------------------------------------------------
 
     fun testAddsDimensionAnnotationToADuplicateRule() {
         myFixture.enableInspections(KrakenDuplicateRuleInspection())
@@ -111,12 +102,12 @@ class KrakenQuickFixTest : BasePlatformTestCase() {
             "Add a differentiating @Dimension annotation",
         )
         assertTrue(
-            "l'annotation précède la règle :\n$after",
+            "the annotation precedes the rule:\n$after",
             after.contains("@Dimension(\"dimensionName\", \"value\")\nRule \"Same\""),
         )
     }
 
-    /** Une règle imbriquée dans un `Rules { }` garde son indentation. */
+    /** A rule nested in `Rules { }` keeps its indentation. */
     fun testAnnotationFollowsTheRuleIndentation() {
         myFixture.enableInspections(KrakenDuplicateRuleInspection())
         val after = applyFix(
@@ -135,7 +126,7 @@ class KrakenQuickFixTest : BasePlatformTestCase() {
             "Add a differentiating @Dimension annotation",
         )
         assertTrue(
-            "l'annotation reprend l'indentation de la règle :\n$after",
+            "the annotation uses the rule's indentation:\n$after",
             after.contains("    @Dimension(\"dimensionName\", \"value\")\n    Rule \"Same\""),
         )
     }

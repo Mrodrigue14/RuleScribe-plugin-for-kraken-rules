@@ -99,15 +99,11 @@ class KrakenEntryPointRefTest : BasePlatformTestCase() {
     }
 }
 
-// Navigation déclaration -> usages (Ctrl+clic sur le nom déclaré)
 class KrakenDeclarationToUsagesTest : com.intellij.testFramework.fixtures.BasePlatformTestCase() {
 
     /**
-     * Depuis v0.8.1, Ctrl+B sur une déclaration ne passe plus par notre
-     * handler : celui-ci s'abstient, et « Go To Declaration or Usages » de la
-     * plateforme prend le relais pour afficher sa popup d'usages. Le test
-     * verrouille donc les deux moitiés du contrat — le handler se tait, et la
-     * recherche de références trouve bien l'usage.
+     * Ctrl+B on a declaration is left to the platform's "Go To Declaration or Usages": the
+     * handler returns nothing and reference search finds the usage. This pins both halves.
      */
     fun testDeclarationLeavesUsagesToThePlatform() {
         myFixture.addFileToProject(

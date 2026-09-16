@@ -4,11 +4,11 @@ import com.intellij.spellchecker.inspections.SpellCheckingInspection
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 
 /**
- * Orthographe.
+ * Spellchecking.
  *
- * Les messages d'erreur d'un `.rules` finissent affichés à l'utilisateur final
- * d'une application, d'où la vérification. Les tests négatifs comptent autant :
- * un vocabulaire métier signalé à tort noierait les vraies fautes.
+ * Error messages in a `.rules` file end up in front of an application's end users. The
+ * negative tests matter as much: business vocabulary flagged by mistake would bury the
+ * real typos.
  */
 class KrakenSpellcheckTest : BasePlatformTestCase() {
 
@@ -22,7 +22,7 @@ class KrakenSpellcheckTest : BasePlatformTestCase() {
 
     fun testATypoInAnErrorMessageIsReported() {
         assertTrue(
-            "la faute doit être signalée",
+            "the typo must be reported",
             typos(
                 """
                 Rule "R" On Policy.state {
@@ -47,7 +47,6 @@ class KrakenSpellcheckTest : BasePlatformTestCase() {
         )
     }
 
-    /** Un message correct ne doit rien déclencher. */
     fun testACleanMessageIsNotReported() {
         assertEquals(
             emptyList<String>(),
@@ -62,10 +61,7 @@ class KrakenSpellcheckTest : BasePlatformTestCase() {
         )
     }
 
-    /**
-     * `Error "code" : "message"` : le code est un identifiant, pas de la
-     * prose. Seule la seconde chaîne est vérifiée.
-     */
+    /** `Error "code" : "message"`: the code is an identifier, so only the second string is checked. */
     fun testTheErrorCodeIsNotCheckedButTheMessageIs() {
         val reported = typos(
             """
@@ -75,14 +71,13 @@ class KrakenSpellcheckTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        assertTrue("le message doit être vérifié : $reported", reported.contains("requiredd"))
-        assertFalse("le code ne doit pas l'être : $reported", reported.contains("Mandatoryy"))
+        assertTrue("the message must be checked: $reported", reported.contains("requiredd"))
+        assertFalse("the code must not be: $reported", reported.contains("Mandatoryy"))
     }
 
     /**
-     * Le vocabulaire métier d'un modèle Kraken — `policyCd`,
-     * `AutoCOMPCoverage` — n'est dans aucun dictionnaire. Le signaler
-     * rendrait la vérification inutilisable.
+     * Business vocabulary such as `policyCd` or `AutoCOMPCoverage` is in no dictionary;
+     * flagging it would make the check unusable.
      */
     fun testIdentifiersAndRuleNamesAreNotChecked() {
         assertEquals(

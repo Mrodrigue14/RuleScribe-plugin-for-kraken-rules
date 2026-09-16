@@ -3,17 +3,17 @@ name: "CodeQL"
 on:
   push:
     branches: [ main ]
-    # Changements purement documentaires : pas d'analyse de code nécessaire.
-    # Le scan hebdomadaire (schedule) tourne de toute façon.
+    # Documentation-only changes need no code analysis; the weekly scheduled scan
+    # runs anyway.
     paths-ignore:
       - '**/*.md'
       - 'LICENSE'
       - 'NOTICE'
       - 'third_party/**'
       - '.gitignore'
-  # PAS de paths-ignore ici : `Analyze (java-kotlin)` est un check REQUIS par la
-  # protection de `main`. Skippé, il ne rapporte aucun statut et bloque la PR
-  # indéfiniment. Le filtre reste sur `push`, où il n'y a rien à réanalyser.
+  # NO paths-ignore here: `Analyze (java-kotlin)` is a required check on `main`.
+  # Skipped, it reports no status and blocks the PR forever. The filter stays on
+  # `push`, where there is nothing to re-analyse.
   pull_request:
     branches: [ main ]
   schedule:
@@ -39,11 +39,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      # Composite action plutôt qu'un setup-java isolé : elle apporte le cache
-      # Gradle. `build-mode: autobuild` compile réellement le plugin, donc sans
-      # cache chaque analyse re-télécharge le SDK IntelliJ (~1 Go) — d'où 4 min
-      # ici contre 1 min pour le workflow Build. En lecture seule : ce workflow
-      # consomme le cache écrit par build.yml sans gonfler le budget du dépôt.
+      # The composite action rather than a bare setup-java, for the Gradle cache:
+      # `build-mode: autobuild` really compiles the plugin, so without a cache each
+      # analysis downloads the IntelliJ SDK (~1 GB) again. Read-only: this workflow
+      # uses the cache written by build.yml without growing the repository budget.
       - name: Setup Java + Gradle
         uses: ./.github/actions/setup-java-gradle
 
@@ -52,25 +51,25 @@ jobs:
         with:
           languages: java-kotlin
           build-mode: autobuild
-          # Suite security-and-quality + exclusion du code généré.
+          # security-and-quality suite, excluding generated code.
           config-file: ./.github/codeql/codeql-config.yml
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4.37.7
         with:
           category: "/language:java-kotlin"
-          # On n'upload pas directement : on filtre d'abord le code généré.
+          # Not uploaded directly: generated code is filtered out first.
           upload: false
           output: sarif-results
 
-      # paths-ignore n'a aucun effet pour les langages compilés : on retire donc
-      # les alertes du parseur généré (src/main/gen) du SARIF avant l'upload.
-      # Filtrage via jq (autonome, sans nom de fichier en dur ni action tierce).
-      - name: Filtrer le code généré du SARIF
+      # paths-ignore has no effect for compiled languages, so alerts on the
+      # generated parser (src/main/gen) are removed from the SARIF before upload,
+      # with jq (no hard-coded file name, no third-party action).
+      - name: Filter generated code out of the SARIF
         run: |
           set -euo pipefail
           for sarif in sarif-results/*.sarif; do
-            echo "Filtrage de $sarif"
+            echo "Filtering $sarif"
             jq '.runs |= map(.results |= map(select(
                   [ .locations[]?.physicalLocation.artifactLocation.uri // "" ]
                   | any(contains("src/main/gen/")) | not )))' \
@@ -78,7 +77,7 @@ jobs:
             mv "$sarif.tmp" "$sarif"
           done
 
-      - name: Upload du SARIF filtré
+      - name: Upload the filtered SARIF
         uses: github/codeql-action/upload-sarif@v4.37.7
         with:
           sarif_file: sarif-results

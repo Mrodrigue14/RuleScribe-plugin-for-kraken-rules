@@ -6,12 +6,11 @@ import com.kraken.plugin.navigation.KrakenVcsCodeVisionContext
 import com.kraken.plugin.parser.KrakenTypes
 
 /**
- * Quels éléments reçoivent l'inlay « auteur, date », et jusqu'où va leur bloc.
+ * Which elements get the "author, date" inlay, and how far their block extends.
  *
- * L'inlay lui-même dépend d'un dépôt sous contrôle de version et
- * d'annotations disponibles, hors de portée d'un test headless. Ce qui *est*
- * testable, et ce qui nous appartient, c'est la sélection des éléments et la
- * reconnaissance de l'accolade fermante dont dépend le calcul d'étendue.
+ * The inlay itself needs a VCS repository and annotations, out of reach of a headless
+ * test. What is testable, and owned by the plugin, is element selection and recognising
+ * the closing brace that the extent depends on.
  */
 class KrakenVcsCodeVisionTest : BasePlatformTestCase() {
 
@@ -57,7 +56,7 @@ class KrakenVcsCodeVisionTest : BasePlatformTestCase() {
         )
     }
 
-    /** Les références et les corps ne sont pas des déclarations : pas d'inlay. */
+    /** References and bodies are not declarations: no inlay. */
     fun testNonDeclarationsAreRejected() {
         configure()
         val rejected = listOf(
@@ -78,27 +77,23 @@ class KrakenVcsCodeVisionTest : BasePlatformTestCase() {
     }
 
     /**
-     * La classe de base déduit l'étendue du bloc de l'accolade fermante. Si
-     * celle-ci n'était pas reconnue, l'étendue s'arrêterait avant la fin de la
-     * déclaration et l'inlay annoncerait l'auteur de la mauvaise portion de
-     * fichier — d'où cette vérification sur le résultat plutôt que sur le
-     * prédicat, qui est protégé.
+     * The base class derives the block extent from the closing brace. If it were not
+     * recognised, the extent would stop early and the inlay would show the author of the
+     * wrong part of the file. The result is checked because the predicate is protected.
      */
     fun testEffectiveRangeCoversTheWholeDeclaration() {
         val file = configure()
         val rule = PsiTreeUtil.findChildrenOfType(file, com.kraken.plugin.psi.KrakenRuleDecl::class.java).single()
 
         val range = context.computeEffectiveRange(rule)
-        // La base démarre l'étendue à `textOffset`, que KrakenRuleDecl fait
-        // pointer sur le nom : l'inlay décrit ainsi l'auteur de la règle, pas
-        // celui d'une annotation @Dimension qui la précéderait.
-        assertEquals("Commence au nom de la règle", rule.nameIdentifier!!.textOffset, range.startOffset)
-        // La base s'arrête à la fin de la dernière ligne du corps : la ligne de
-        // l'accolade fermante est exclue, sinon l'auteur affiché serait souvent
-        // celui qui a simplement ajouté la dernière instruction.
-        assertTrue("L'étendue reste dans la règle", rule.textRange.contains(range))
+        // The base starts at `textOffset`, which KrakenRuleDecl points at the name, so the inlay
+        // shows the rule's author and not that of a preceding @Dimension annotation.
+        assertEquals("Starts at the rule name", rule.nameIdentifier!!.textOffset, range.startOffset)
+        // The base stops at the end of the body's last line, excluding the closing brace line;
+        // otherwise the author shown would often be whoever added the last statement.
+        assertTrue("The range stays within the rule", rule.textRange.contains(range))
         assertTrue(
-            "L'étendue doit contenir tout le corps de la règle",
+            "The range must cover the whole rule body",
             file.text.substring(range.startOffset, range.endOffset).contains("Assert limitAmount > 0"),
         )
     }

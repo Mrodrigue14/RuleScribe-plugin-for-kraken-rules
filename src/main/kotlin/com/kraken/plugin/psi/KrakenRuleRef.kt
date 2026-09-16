@@ -5,9 +5,7 @@ import com.intellij.lang.ASTNode
 import com.intellij.navigation.ItemPresentation
 import com.intellij.psi.PsiReference
 
-/**
- * Référence à une règle dans un `EntryPoint { "nomDeRegle", ... }`.
- */
+/** Rule reference in `EntryPoint { "ruleName", ... }`. */
 class KrakenRuleRef(node: ASTNode) : ASTWrapperPsiElement(node) {
 
     val ruleName: String
@@ -16,8 +14,8 @@ class KrakenRuleRef(node: ASTNode) : ASTWrapperPsiElement(node) {
     override fun getReference(): PsiReference = KrakenRuleReference(this)
 
     /**
-     * Une règle est souvent référencée par plusieurs EntryPoints : sans
-     * présentation, le popup de navigation afficherait N lignes identiques.
+     * A rule is often referenced by several EntryPoints: without a presentation the
+     * navigation popup would show identical lines.
      */
     override fun getPresentation(): ItemPresentation = KrakenPresentations.of(
         this,

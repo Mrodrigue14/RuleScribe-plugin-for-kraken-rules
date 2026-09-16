@@ -5,16 +5,15 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.psi.KrakenRuleRef
 
 /**
- * Vérifie que la résolution reste correcte ET rapide sur un projet synthétique
- * de 500 fichiers. Sans le cache du modèle de namespaces, chaque résolution
- * relisait l'AST de tous les fichiers — coût quadratique. Ce test garde contre
- * une régression de ce cache.
+ * Resolution stays correct and fast on a synthetic 500-file project. Without the
+ * namespace model cache, every resolution re-read every file's AST (quadratic cost);
+ * this guards against losing that cache.
  */
 class KrakenPerfTest : BasePlatformTestCase() {
 
     fun testResolutionScalesToFiveHundredFiles() {
         val namespaces = 10
-        val perNamespace = 50 // 10 x 50 = 500 fichiers
+        val perNamespace = 50
 
         for (n in 0 until namespaces) {
             for (i in 0 until perNamespace) {
@@ -31,7 +30,7 @@ class KrakenPerfTest : BasePlatformTestCase() {
             }
         }
 
-        // Consommateur dans Ns0 : référence une règle de son propre namespace.
+        // Consumer in Ns0, referencing a rule of its own namespace.
         myFixture.configureByText(
             "consumer.rules",
             """
@@ -45,22 +44,22 @@ class KrakenPerfTest : BasePlatformTestCase() {
 
         val ref = PsiTreeUtil.findChildrenOfType(myFixture.file, KrakenRuleRef::class.java)
             .firstOrNull { it.ruleName == "Rule 0_0" }
-        assertNotNull("La référence 'Rule 0_0' doit exister dans le PSI", ref)
+        assertNotNull("The 'Rule 0_0' reference must exist in the PSI", ref)
 
         assertNotNull(
-            "La règle doit se résoudre à l'échelle de 500 fichiers",
+            "The rule must resolve across 500 files",
             ref!!.reference.resolve(),
         )
 
-        // Le cache doit rendre les résolutions répétées quasi instantanées.
+        // The cache must make repeated resolutions near-instant.
         val start = System.nanoTime()
         repeat(300) { assertNotNull(ref.reference.resolve()) }
         val elapsedMs = (System.nanoTime() - start) / 1_000_000
-        // Borne large pour tolérer la variance CI, mais qui échouerait en cas de
-        // régression O(n) par résolution (relecture des 500 fichiers à chaque fois).
+        // A loose bound that tolerates CI variance but fails on an O(n) regression per
+        // resolution (re-reading the 500 files each time).
         assertTrue(
-            "300 résolutions sur 500 fichiers ont pris $elapsedMs ms — " +
-                "le cache du modèle de namespaces a-t-il régressé ?",
+            "300 resolutions over 500 files took $elapsedMs ms; " +
+                "did the namespace model cache regress?",
             elapsedMs < 10_000,
         )
     }

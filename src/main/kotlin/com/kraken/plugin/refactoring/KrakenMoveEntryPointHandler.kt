@@ -16,18 +16,12 @@ import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.psi.KrakenRuleDecl
 
 /**
- * Déplace une déclaration `EntryPoint` vers un autre fichier `.rules` (F6).
+ * Moves an `EntryPoint` declaration to another `.rules` file (F6).
  *
- * Même flux que [KrakenMoveRuleHandler], et pour les mêmes raisons : les
- * références sont par nom, aucun texte ne change, seule la résolution bouge.
- *
- * Ce qui n'est pas pareil, c'est le nombre de directions. Une règle est
- * référencée ; un EntryPoint est référencé **et** référence. Le déplacer peut
- * donc casser les entry points qui le citent et, séparément, ses propres items
- * — un `EntryPoint "Validation" { "Ma règle" }` posé dans un namespace qui ne
- * voit pas cette règle devient un entry point vide sans qu'une ligne bouge à
- * l'intérieur. [KrakenMoveConflicts.EntryPointMove] tient les deux comptes
- * séparés parce que ce ne sont pas la même décision.
+ * Same flow as [KrakenMoveRuleHandler]. The difference is direction: moving an
+ * EntryPoint can break the entry points that cite it and, separately, its own items.
+ * An `EntryPoint "Validation" { "My rule" }` placed where that rule is invisible becomes
+ * empty without a line changing. [KrakenMoveConflicts.EntryPointMove] keeps both counts.
  */
 class KrakenMoveEntryPointHandler : MoveHandlerDelegate() {
 
@@ -59,10 +53,8 @@ class KrakenMoveEntryPointHandler : MoveHandlerDelegate() {
     }
 
     /**
-     * Une `Rule` à l'intérieur d'un bloc `Rules { }` d'EntryPoint appartient au
-     * handler de règles : sans cette réserve, les deux se déclareraient
-     * compétents sur le même caret et lequel gagne dépendrait de l'ordre
-     * d'enregistrement.
+     * A `Rule` inside an EntryPoint's `Rules { }` block belongs to the rule handler;
+     * otherwise both handlers would claim the caret and registration order would decide.
      */
     private fun entryPointOf(element: PsiElement): KrakenEntryPointDecl? {
         if (PsiTreeUtil.getParentOfType(element, KrakenRuleDecl::class.java, false) != null) return null
@@ -71,10 +63,8 @@ class KrakenMoveEntryPointHandler : MoveHandlerDelegate() {
     }
 
     /**
-     * Les deux comptes sont annoncés séparément : accepter de casser des
-     * références chez les autres et accepter de vider l'entry point qu'on
-     * déplace ne s'arbitrent pas de la même façon. Répondre non annule sans
-     * rien modifier.
+     * Both counts are announced separately because they are different decisions.
+     * Answering no cancels without changing anything.
      */
     private fun confirm(
         project: Project,

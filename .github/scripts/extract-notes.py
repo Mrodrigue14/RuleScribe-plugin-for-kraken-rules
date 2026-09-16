@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Extrait les notes de version d'une version donnée depuis le bloc
-<change-notes> de plugin.xml, et les convertit en Markdown pour une
-GitHub Release.
+"""Extracts the release notes of a given version from the <change-notes> block of
+plugin.xml and converts them to Markdown for a GitHub Release.
 
-Usage: extract-notes.py <version>   (ex. extract-notes.py 0.5.7)
-Écrit le Markdown sur stdout. Si la version n'est pas trouvée, sort en
-erreur (le workflow retombera alors sur des notes auto-générées).
+Usage: extract-notes.py <version>   (e.g. extract-notes.py 0.5.7)
+Writes the Markdown to stdout. Exits with an error if the version is not found
+(the workflow then falls back to auto-generated notes).
 """
 import re
 import sys
@@ -22,30 +21,30 @@ def main() -> int:
     xml = open(PLUGIN_XML, encoding="utf-8").read()
     m = re.search(r"<change-notes><!\[CDATA\[(.*?)\]\]></change-notes>", xml, re.S)
     if not m:
-        print("change-notes introuvable dans plugin.xml", file=sys.stderr)
+        print("change-notes not found in plugin.xml", file=sys.stderr)
         return 1
     notes = m.group(1)
 
-    # Bloc de CETTE version : de <b>version</b> jusqu'au prochain <b> (ou la fin).
+    # Block of THIS version: from <b>version</b> to the next <b> (or the end).
     block_re = re.compile(
         r"<b>\s*" + re.escape(version) + r"\s*</b>(.*?)(?=<b>|\Z)", re.S
     )
     bm = block_re.search(notes)
     if not bm:
-        print(f"aucun bloc de notes pour la version {version}", file=sys.stderr)
+        print(f"no notes block for version {version}", file=sys.stderr)
         return 1
     block = bm.group(1)
 
-    # <li> -> puce Markdown, puis on retire les balises restantes.
+    # <li> -> Markdown bullet, then strip the remaining tags.
     block = re.sub(r"<li>\s*", "\n- ", block)
     block = re.sub(r"</li>", "", block)
     block = re.sub(r"<[^>]+>", "", block)
 
-    # Décoder quelques entités HTML courantes.
+    # Decode a few common HTML entities.
     for ent, ch in (("&lt;", "<"), ("&gt;", ">"), ("&amp;", "&"), ("&quot;", '"')):
         block = block.replace(ent, ch)
 
-    # Nettoyage des espaces.
+    # Whitespace cleanup.
     block = "\n".join(re.sub(r"[ \t]+", " ", ln).strip() for ln in block.splitlines())
     block = re.sub(r"\n{3,}", "\n\n", block).strip()
 

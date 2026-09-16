@@ -4,12 +4,10 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.kraken.plugin.refactoring.KrakenDeclarationMover
 
 /**
- * Le déplacement d'EntryPoint bout en bout.
+ * EntryPoint move, end to end.
  *
- * Comme pour une règle, ce qui est vérifié est la **résolution** après coup et
- * jamais le texte. La différence tient au sens : un EntryPoint référence aussi,
- * donc le déplacement peut le vider sans qu'une ligne bouge à l'intérieur, et
- * c'est ce cas-là qui a droit à son test.
+ * As for rules, resolution is checked afterwards, never text. An EntryPoint also
+ * references rules, so the move can empty it without a line changing inside.
  */
 class KrakenEntryPointMoveTest : KrakenMoveTestCase() {
 
@@ -27,12 +25,12 @@ class KrakenEntryPointMoveTest : KrakenMoveTestCase() {
             KrakenDeclarationMover.move(project, epIn(a, "Moved"), b)
         }
 
-        assertTrue("l'entry point doit être dans la destination", b.text.contains("""EntryPoint "Moved""""))
-        assertFalse("et avoir quitté la source", a.text.contains("""EntryPoint "Moved""""))
+        assertTrue("the entry point must be in the destination", b.text.contains("""EntryPoint "Moved""""))
+        assertFalse("and have left the source", a.text.contains("""EntryPoint "Moved""""))
         assertParses(a, b)
     }
 
-    /** Destination visible : le texte des items ne bouge pas et ils résolvent encore. */
+    /** Visible destination: item text is unchanged and the items still resolve. */
     fun testItemsStillResolveWhenTheDestinationSeesThem() {
         val a = file(
             "a.rules",
@@ -48,13 +46,13 @@ class KrakenEntryPointMoveTest : KrakenMoveTestCase() {
             KrakenDeclarationMover.move(project, epIn(a, "Moving"), b)
         }
 
-        assertNotNull("l'item doit résoudre depuis la destination", ruleRefIn(b, "Stays").reference.resolve())
+        assertNotNull("the item must resolve from the destination", ruleRefIn(b, "Stays").reference.resolve())
         assertParses(a, b)
     }
 
     /**
-     * Le cas propre à l'EntryPoint : son item garde exactement le même texte et
-     * cesse de résoudre. C'est ce que l'analyse annonce avant d'écrire.
+     * Specific to EntryPoints: the item keeps its exact text and stops resolving, which the
+     * analysis announces before writing.
      */
     fun testOwnItemKeepsItsTextAndStopsResolving() {
         val a = file(
@@ -67,19 +65,19 @@ class KrakenEntryPointMoveTest : KrakenMoveTestCase() {
         )
         val far = file("far.rules", "Namespace Other")
 
-        assertNotNull("l'item résout avant le déplacement", ruleRefIn(a, "Stays").reference.resolve())
+        assertNotNull("the item resolves before the move", ruleRefIn(a, "Stays").reference.resolve())
 
         WriteCommandAction.runWriteCommandAction(project) {
             KrakenDeclarationMover.move(project, epIn(a, "Moving"), far)
         }
 
         val moved = ruleRefIn(far, "Stays")
-        assertEquals("le texte de l'item est intact", "Stays", moved.ruleName)
-        assertNull("mais il ne résout plus", moved.reference.resolve())
+        assertEquals("the item text is intact", "Stays", moved.ruleName)
+        assertNull("but it no longer resolves", moved.reference.resolve())
         assertParses(a, far)
     }
 
-    /** L'autre sens : la référence entrante garde son texte et perd sa cible. */
+    /** The other direction: the incoming reference keeps its text and loses its target. */
     fun testIncomingReferenceKeepsItsTextAndStopsResolving() {
         val a = file(
             "a.rules",
@@ -97,15 +95,15 @@ class KrakenEntryPointMoveTest : KrakenMoveTestCase() {
             """.trimIndent(),
         )
 
-        assertNotNull("la référence résout avant", epRefIn(outer, "Moving").reference?.resolve())
+        assertNotNull("the reference resolves before", epRefIn(outer, "Moving").reference?.resolve())
 
         WriteCommandAction.runWriteCommandAction(project) {
             KrakenDeclarationMover.move(project, epIn(a, "Moving"), far)
         }
 
         val ref = epRefIn(outer, "Moving")
-        assertEquals("le texte de la référence est intact", "Moving", ref.entryPointName)
-        assertNull("mais elle ne résout plus", ref.reference?.resolve())
+        assertEquals("the reference text is intact", "Moving", ref.entryPointName)
+        assertNull("but it no longer resolves", ref.reference?.resolve())
         assertParses(a, far, outer)
     }
 }

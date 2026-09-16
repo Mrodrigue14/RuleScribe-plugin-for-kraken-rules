@@ -3,27 +3,25 @@ name: Build
 on:
   push:
     branches: [ main ]
-    # Ne pas lancer le build/les scans pour des changements purement
-    # documentaires (README, ROADMAP, LICENSE…) : ils ne peuvent pas casser
-    # le code ni introduire de vulnérabilité. Un push qui touche AUSSI du code
-    # déclenche quand même le workflow.
+    # Skip the build and scans for documentation-only changes (README, ROADMAP,
+    # LICENSE…): they cannot break the code or add a vulnerability. A push that
+    # also touches code still triggers the workflow.
     paths-ignore:
       - '**/*.md'
       - 'LICENSE'
       - 'NOTICE'
       - 'third_party/**'
       - '.gitignore'
-  # PAS de paths-ignore ici : ce job est un check REQUIS par la protection de
-  # `main`. Un workflow skippé ne rapporte aucun statut, et un check requis qui
-  # ne rapporte jamais reste « Expected » — la PR devient impossible à merger.
-  # Le filtre reste sur `push` : après le merge d'une PR purement documentaire,
-  # il n'y a effectivement rien à re-tester.
+  # NO paths-ignore here: this job is a required check on `main`. A skipped
+  # workflow reports no status, and a required check that never reports stays
+  # "Expected", so the PR could never be merged. The filter stays on `push`:
+  # after a documentation-only PR is merged there is nothing to re-test.
   pull_request:
     branches: [ main ]
   workflow_dispatch:
 
-# Annule le run devenu obsolète quand un nouveau push arrive sur la même ref
-# (event_name dans la clé pour qu'un run planifié n'annule pas un run de push).
+# Cancels the outdated run when a new push arrives on the same ref (event_name is
+# in the key so that a scheduled run does not cancel a push run).
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
@@ -37,28 +35,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      # Seul workflow autorisé à ÉCRIRE le cache Gradle (cf. composite action).
+      # The only workflow allowed to WRITE the Gradle cache (see the composite action).
       - name: Setup Java + Gradle
         uses: ./.github/actions/setup-java-gradle
         with:
           cache-read-only: "false"
 
-      # Le style avant les tests : il coûte quelques secondes et échoue sur un
-      # défaut mécanique, alors que la suite prend des minutes. Autant le dire
-      # tout de suite plutôt qu'après avoir fait attendre.
+      # Style before tests: it takes seconds and fails on mechanical issues, while
+      # the test suite takes minutes.
       - name: Style Kotlin
         run: ./gradlew ktlintCheck
 
-      # koverVerify lance les tests puis contrôle le plancher de couverture.
-      # -PwarningsAsErrors=true : strict en CI, souple en local, pour qu'un
-      # avertissement du compilateur ne s'accumule pas dans la branche stable.
+      # koverVerify runs the tests, then checks the coverage floor.
+      # -PwarningsAsErrors=true: strict in CI, lenient locally, so compiler warnings
+      # do not pile up on the stable branch.
       - name: Tests + couverture
         run: ./gradlew koverVerify koverHtmlReport -PwarningsAsErrors=true
 
-      - name: Build du plugin
+      - name: Build the plugin
         run: ./gradlew buildPlugin -PwarningsAsErrors=true
 
-      - name: Vérification du plugin (structure zip)
+      - name: Verify the plugin (zip structure)
         run: ./gradlew verifyPluginProjectConfiguration
 
       - name: Publier l'artefact
@@ -68,14 +65,14 @@ jobs:
           path: build/distributions/*.zip
           retention-days: 30
 
-      - name: Publier le rapport de couverture
+      - name: Upload the coverage report
         uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: build/reports/kover/html/
           retention-days: 14
 
-      - name: Rapport de tests (en cas d'échec)
+      - name: Test report (on failure)
         if: failure()
         uses: actions/upload-artifact@v7
         with:

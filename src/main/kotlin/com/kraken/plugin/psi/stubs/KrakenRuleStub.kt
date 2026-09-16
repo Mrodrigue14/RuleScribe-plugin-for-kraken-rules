@@ -6,8 +6,8 @@ import com.intellij.psi.stubs.StubElement
 import com.kraken.plugin.psi.KrakenRuleDecl
 
 /**
- * Stub d'une déclaration de règle : seul le nom est persisté dans l'index,
- * ce qui permet de résoudre les références sans charger l'AST des fichiers.
+ * Rule declaration stub: only the name is stored, so references resolve without
+ * loading file ASTs.
  */
 interface KrakenRuleStub : StubElement<KrakenRuleDecl> {
     val name: String?

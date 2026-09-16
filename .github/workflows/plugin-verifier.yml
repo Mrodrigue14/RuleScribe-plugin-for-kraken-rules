@@ -1,23 +1,21 @@
-name: Compatibilité IntelliJ (Plugin Verifier)
+name: IntelliJ compatibility (Plugin Verifier)
 
-# Vérifie la compatibilité binaire du plugin contre plusieurs versions
-# d'IntelliJ (API supprimées/dépréciées) via le Plugin Verifier officiel de
-# JetBrains. Si une nouvelle version d'IntelliJ casse une API utilisée par le
-# plugin, une issue est ouverte automatiquement avec le détail.
+# Checks the plugin's binary compatibility against several IntelliJ versions
+# (removed or deprecated APIs) with JetBrains' Plugin Verifier. If a new IntelliJ
+# version breaks an API the plugin uses, an issue is opened with the details.
 #
-# Lourd (télécharge chaque IDE ~1 Go) → seulement planifié + manuel, jamais
-# sur chaque push.
+# Heavy (downloads each IDE, ~1 GB), so scheduled and manual only, never on push.
 on:
   schedule:
-    - cron: '0 3 * * 6'   # samedi 03:00 UTC
+    - cron: '0 3 * * 6'   # Saturday 03:00 UTC
   workflow_dispatch:
     inputs:
       ide_versions:
-        description: "Versions IntelliJ à vérifier (ex. IC-2024.1.7,IC-2025.1). Vide = liste par défaut."
+        description: "IntelliJ versions to verify (e.g. IC-2024.1.7,IC-2025.1). Empty = default list."
         required: false
         default: ""
 
-# Permissions minimales : lecture du dépôt + écriture d'issues pour l'alerte.
+# Minimal permissions: read the repository, write issues for the alert.
 permissions:
   contents: read
   issues: write
@@ -30,7 +28,7 @@ jobs:
   verify:
     name: Plugin Verifier
     runs-on: ubuntu-latest
-    # Large : le verifier télécharge chaque IDE (~1 Go).
+    # Generous: the verifier downloads each IDE (~1 GB).
     timeout-minutes: 60
     steps:
       - name: Checkout
@@ -39,20 +37,17 @@ jobs:
       - name: Setup Java + Gradle
         uses: ./.github/actions/setup-java-gradle
 
-      - name: Déterminer les versions IntelliJ à vérifier
+      - name: Determine the IntelliJ versions to verify
         id: versions
-        # Source = la liste officielle des builds testables par le Plugin Verifier
-        # (jb.gg/intellij-platform-builds-list). C'est EXACTEMENT ce que le verifier
-        # sait télécharger : on évite les erreurs "cannot be downloaded", et la liste
-        # avance automatiquement quand JetBrains y ajoute de nouvelles versions
-        # (2026.x compris, le jour venu) — contrairement à l'API data.services/IIC
-        # qui était en retard et annonçait des versions non téléchargeables.
-        # On vérifie le dernier patch de CHAQUE majeure depuis la version cible,
-        # pas seulement les deux extrémités : une API retirée en 2024.3 puis
-        # réintroduite ensuite passait entre les mailles quand seules la base et
-        # la dernière version étaient testées. Cinq IDE au lieu de deux, mais le
-        # job est hebdomadaire, jamais sur un push.
-        # OVERRIDE passé par env, jamais interpolé dans le script → pas d'injection.
+        # Source: the official list of builds the Plugin Verifier can test
+        # (jb.gg/intellij-platform-builds-list), which is EXACTLY what the verifier
+        # can download. That avoids "cannot be downloaded" errors, and the list moves
+        # forward by itself when JetBrains adds versions.
+        # The latest patch of EVERY major version since the target is verified, not
+        # just both ends: an API removed in one version and restored in a later one
+        # would slip through otherwise. The job is weekly, so the extra IDEs are fine.
+        # OVERRIDE comes through env and is never interpolated into the script, so
+        # there is no injection.
         env:
           OVERRIDE: ${{ github.event.inputs.ide_versions }}
         run: |
@@ -63,31 +58,31 @@ jobs:
             BASE="IC-2024.1.7"
             ALL=$(curl -fsSL "https://jb.gg/intellij-platform-builds-list" \
               | grep -oE 'IC-20[0-9]{2}\.[0-9]+(\.[0-9]+)?' | sort -uV)
-            # Filtre les majeures antérieures à la base (sinceBuild=241), puis
-            # garde le dernier patch de chacune, dans l'ordre des versions.
+            # Drops majors older than the base (sinceBuild=241), then keeps the latest
+            # patch of each, in version order.
             PER_MAJOR=$(printf '%s\n' "$ALL" \
               | awk -F'[-.]' '$2>2024 || ($2==2024 && $3>=1)' \
               | awk -F. '{maj=$1"."$2; last[maj]=$0; ord[maj]=NR} END{for(m in last) print ord[m]"\t"last[m]}' \
               | sort -n | cut -f2)
-            # La base reste explicite : si JetBrains retire 2024.1 de la liste,
-            # on continue de vérifier ce que le plugin déclare supporter.
+            # The base stays explicit: if JetBrains drops 2024.1 from the list, what the
+            # plugin declares it supports is still verified.
             IDE_VERSIONS=$(printf '%s\n%s\n' "$BASE" "$PER_MAJOR" \
               | awk 'NF && !seen[$0]++' | paste -sd,)
           fi
-          echo "Versions vérifiées : $IDE_VERSIONS"
+          echo "Verified versions: $IDE_VERSIONS"
           echo "ide_versions=$IDE_VERSIONS" >> "$GITHUB_OUTPUT"
 
       - name: Plugin Verifier
         id: verify
-        # IDE_VERSIONS passé par env puis référencé comme variable shell :
-        # jamais interpolé via ${{ }} dans le script (pas d'injection).
+        # IDE_VERSIONS comes through env and is used as a shell variable, never
+        # interpolated with ${{ }} into the script (no injection).
         env:
           IDE_VERSIONS: ${{ steps.versions.outputs.ide_versions }}
         run: |
           set -o pipefail
           ./gradlew verifyPlugin -PpluginVerifierIdeVersions="$IDE_VERSIONS" 2>&1 | tee verifier-output.txt
 
-      - name: Publier le rapport du verifier
+      - name: Upload the verifier report
         if: always()
         uses: actions/upload-artifact@v7
         with:
@@ -97,7 +92,7 @@ jobs:
             build/reports/pluginVerifier/
           retention-days: 14
 
-      - name: Ouvrir/mettre à jour une issue si incompatibilité
+      - name: Open or update an issue on incompatibility
         if: failure() && steps.verify.outcome == 'failure'
         uses: actions/github-script@v9
         env:
@@ -109,15 +104,14 @@ jobs:
             try { report = fs.readFileSync('verifier-output.txt', 'utf8'); } catch (e) {}
             const tail = report.slice(-4000);
             const label = 'intellij-compat';
-            const title = "Plugin Verifier : incompatibilité IntelliJ détectée";
+            const title = "Plugin Verifier: IntelliJ incompatibility detected";
             const body = [
-              "Le Plugin Verifier a détecté une incompatibilité binaire avec une version",
-              "d'IntelliJ (API supprimée ou modifiée). Un correctif du code du plugin est",
-              "probablement nécessaire.",
+              "The Plugin Verifier detected a binary incompatibility with an IntelliJ",
+              "version (removed or changed API). The plugin code probably needs a fix.",
               "",
-              `Run : ${process.env.RUN_URL}`,
+              `Run: ${process.env.RUN_URL}`,
               "",
-              "<details><summary>Sortie du verifier (fin)</summary>",
+              "<details><summary>Verifier output (tail)</summary>",
               "",
               "```",
               tail,
@@ -125,14 +119,14 @@ jobs:
               "</details>",
             ].join("\n");
             const { owner, repo } = context.repo;
-            // Anti-doublon : réutilise une issue ouverte portant le label.
+            // Avoid duplicates: reuse an open issue with the label.
             const existing = await github.rest.issues.listForRepo({
               owner, repo, state: "open", labels: label,
             });
             if (existing.data.length > 0) {
               await github.rest.issues.createComment({
                 owner, repo, issue_number: existing.data[0].number,
-                body: `Nouvelle détection.\n\nRun : ${process.env.RUN_URL}`,
+                body: `Detected again.\n\nRun: ${process.env.RUN_URL}`,
               });
             } else {
               await github.rest.issues.create({ owner, repo, title, body, labels: [label] });

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Simulation Python du lexer KrakenLexer + de la grammaire Kraken.bnf (semantique PEG)."""
+"""Python simulation of KrakenLexer and the Kraken.bnf grammar (PEG semantics)."""
 import sys, re
 
 KEYWORDS = {
@@ -159,13 +159,11 @@ R=ref
 RULES={}
 def define(name,p): RULES[name]=p
 
-# ---- identifiants ----
 define('expr_id', alt(*[tk(t) for t in ['IDENTIFIER','ON_KW','FROM_KW','TO_KW','MIN_KW','MAX_KW','STEP_KW','SIZE_KW','LENGTH_KW',
  'NUMBER_KW','EMPTY_KW','MANDATORY_KW','DISABLED_KW','HIDDEN_KW','DESCRIPTION_KW','PRIORITY_KW','EXTERNAL_KW',
  'CHILD_KW','ROOT_KW','SYSTEM_KW','CONTEXT_KW','DIMENSION_KW','FUNCTION_KW','MATCHES_KW','INCLUDE_KW','NAMESPACE_KW']]))
 define('id', alt(R('expr_id'),tk('ERROR_KW'),tk('WARN_KW'),tk('INFO_KW')))
 
-# ---- expressions (KEL structuré, v0.3) ----
 define('literal', alt(tk('STRING'),tk('NUMBER_LIT'),tk('TRUE_KW'),tk('FALSE_KW'),tk('NULL_KW')))
 define('call_args', seqp(1, 'call_args', tk('LPAREN'),opt(seq(R('expression'),many(seq(tk('COMMA'),R('expression'))))),tk('RPAREN')))
 define('function_call', seq(alt(R('expr_id'),R('message_severity')),R('call_args')))
@@ -197,10 +195,9 @@ define('expression', alt(
  seq(many1(R('set_var')),opt(seq(tk('RETURN_KW'),R('value_chain')))),
  seq(tk('RETURN_KW'),R('value_chain')),
  R('value_chain')))
-# compat : nav_value utilise collection_lit désormais (alias brace_expr)
+# compat: nav_value now uses collection_lit (alias brace_expr)
 define('brace_expr', R('collection_lit'))
 
-# ---- header ----
 define('qualified_name', seq(R('id'),many(seq(tk('DOT'),R('id')))))
 define('namespace_decl', seqp(1, 'namespace_decl', tk('NAMESPACE_KW'),R('qualified_name')))
 define('include_decl', seqp(1, 'include_decl', tk('INCLUDE_KW'),R('qualified_name')))
@@ -208,7 +205,6 @@ define('import_rule_names', seq(tk('STRING'),many(seq(tk('COMMA'),tk('STRING')))
 define('rule_import_decl', seqp(1, 'rule_import_decl', tk('IMPORT_KW'),tk('RULE_KW'),R('import_rule_names'),tk('FROM_KW'),R('qualified_name')))
 define('import_decl', alt(R('include_decl'),R('rule_import_decl')))
 
-# ---- annotations ----
 define('signed_number', seq(opt(tk('OP')),tk('NUMBER_LIT')))
 define('annotation_arg', alt(tk('STRING'),R('signed_number'),tk('TRUE_KW'),tk('FALSE_KW'),R('qualified_name')))
 define('dimension_annotation', seqp(2, 'dimension_annotation', tk('DIMENSION_KW'),tk('LPAREN'),R('annotation_arg'),tk('COMMA'),R('annotation_arg'),tk('RPAREN')))
@@ -216,7 +212,6 @@ define('annotation_body', alt(R('dimension_annotation'),tk('NOT_STRICT_KW'),tk('
  tk('FORBID_TARGET_KW'),tk('FORBID_REFERENCE_KW'),R('id')))
 define('annotation', seqp(1, 'annotation', tk('AT'),R('annotation_body')))
 
-# ---- contexts ----
 define('path_expr', seq(R('id'),many(seq(tk('DOT'),R('id')))))
 define('nav_value', alt(R('brace_expr'),R('path_expr')))
 define('inherited_contexts', seqp(1, 'inherited_contexts', tk('IS_KW'),R('id'),many(seq(tk('COMMA'),R('id')))))
@@ -234,7 +229,6 @@ define('external_context_decl', seqp(1, 'external_context_decl', tk('EXTERNAL_CO
 define('external_field_decl', seq(R('id'),opt(tk('STAR')),R('id')))
 define('external_entity_decl', seqp(1, 'external_entity_decl', tk('EXTERNAL_ENTITY_KW'),R('id'),tk('LBRACE'),many(R('external_field_decl')),tk('RBRACE')))
 
-# ---- rules ----
 define('rule_name', tk('STRING'))
 define('rule_target', seqp(1, 'rule_target', tk('ON_KW'),R('id'),opt(seq(tk('DOT'),R('path_expr')))))
 define('description_clause', seqp(1, 'description_clause', tk('DESCRIPTION_KW'),tk('STRING')))
@@ -275,7 +269,6 @@ define('rule_decl', seqp(2, 'rule_decl', many(R('annotation')),tk('RULE_KW'),opt
 define('rules_member', alt(R('rules_block'),R('rule_decl')))
 define('rules_block', seqp(2, 'rules_block', many(R('annotation')),tk('RULES_KW'),tk('LBRACE'),many(R('rules_member')),tk('RBRACE')))
 
-# ---- entry points ----
 define('ep_name', tk('STRING'))
 define('ep_ref', seqp(1, 'ep_ref', tk('ENTRYPOINT_KW'),tk('STRING')))
 define('rule_ref', tk('STRING'))
@@ -286,10 +279,9 @@ define('entry_point_decl', seqp(2, 'entry_point_decl', many(R('annotation')),tk(
 define('ep_block_member', alt(R('entry_points_block'),R('entry_point_decl')))
 define('entry_points_block', seqp(2, 'entry_points_block', many(R('annotation')),tk('ENTRYPOINTS_KW'),tk('LBRACE'),many(R('ep_block_member')),tk('RBRACE')))
 
-# ---- dimension / function ----
 define('dimension_decl', seqp(1, 'dimension_decl', tk('DIMENSION_KW'),tk('STRING'),tk('COLON'),R('id')))
-# Type Kraken, aligné sur la production `type` de Value.g4 : les trois niveaux
-# déroulent la récursion à gauche du `|` et du `[]`, `[]` liant plus fort.
+# Kraken type, matching the `type` production of Value.g4: the three levels unroll
+# the left recursion of `|` and `[]`, with `[]` binding tighter.
 define('atom_type', alt(seq(tk('LPAREN'),R('type_ref'),tk('RPAREN')),
  seq(tk('LT'),R('id'),tk('GT')),
  seq(R('id'),opt(seq(tk('LT'),R('type_ref'),many(seq(tk('COMMA'),R('type_ref'))),tk('GT'))))))
@@ -320,12 +312,12 @@ def parse_file(path):
         full=False
     status='OK' if (full and not bad) else 'ECHEC'
     print(f"{status}  {path}  ({len(toks)} tokens)")
-    if bad: print("   tokens invalides:",bad[:5])
-    for off,msg in ERRORS[:4]: print("   FAUX POSITIF:", msg)
+    if bad: print("   invalid tokens:",bad[:5])
+    for off,msg in ERRORS[:4]: print("   FALSE POSITIVE:", msg)
     if not full:
         i=max(s.p,s.maxp)
         ctx=' '.join(t[1] for t in toks[max(0,i-6):i+6])
-        print(f"   bloque au token #{i}: ...{ctx}...")
+        print(f"   stuck at token #{i}: ...{ctx}...")
     return full and not bad
 
 if __name__=='__main__':

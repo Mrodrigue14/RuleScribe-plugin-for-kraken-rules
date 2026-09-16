@@ -11,11 +11,10 @@ import com.kraken.plugin.psi.KrakenFunctionDecl
 import com.kraken.plugin.psi.KrakenPsiUtil
 
 /**
- * Info paramètres (Ctrl+P) sur un appel de fonction KEL.
+ * Parameter info (Ctrl+P) for a KEL function call.
  *
- * Toutes les surcharges du nom sont proposées, pas seulement celle qui
- * correspond à l'arité courante : pendant la frappe, l'appel est justement
- * incomplet, et n'afficher que la signature déjà satisfaite serait inutile.
+ * Every overload of the name is shown, not only the one matching the current arity:
+ * while typing, the call is incomplete by definition.
  */
 class KrakenParameterInfoHandler : ParameterInfoHandler<KrakenFunctionCall, String> {
 
@@ -52,7 +51,7 @@ class KrakenParameterInfoHandler : ParameterInfoHandler<KrakenFunctionCall, Stri
 
     private fun callAt(file: com.intellij.psi.PsiFile, offset: Int): KrakenFunctionCall? = PsiTreeUtil.getParentOfType(file.findElementAt(offset), KrakenFunctionCall::class.java, false)
 
-    /** Signatures connues pour ce nom : natives d'abord, puis celles du projet. */
+    /** Known signatures for this name: natives first, then project functions. */
     private fun signaturesFor(call: KrakenFunctionCall): List<String> {
         val name = call.functionName
         if (name.isEmpty()) return emptyList()

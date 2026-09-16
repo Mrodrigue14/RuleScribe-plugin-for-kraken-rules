@@ -9,8 +9,8 @@ import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
 
 /**
- * Signale une règle qui n'est référencée par aucun `EntryPoint` du projet :
- * elle ne sera jamais évaluée par le moteur (code mort probable).
+ * Reports a rule that no `EntryPoint` in the project references: the engine never
+ * evaluates it, so it is probably dead code.
  */
 class KrakenUnusedRuleInspection : LocalInspectionTool() {
 

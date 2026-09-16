@@ -14,29 +14,23 @@ import com.kraken.plugin.psi.KrakenRefExpr
 import com.kraken.plugin.psi.KrakenScopeResolver
 
 /**
- * Signale un identifiant nu qu'aucune portée ne définit.
+ * Reports a bare identifier that no scope defines.
  *
- * Reprend « Reference ''{0}'' not found. » de
- * `kraken.el.ast.validation.AstValidatingVisitor`, mais **beaucoup plus
- * prudemment** : le moteur dispose des types, pas nous. Un identifiant n'est
- * donc signalé que lorsque l'absence est certaine, ce qui exclut :
+ * Uses "Reference ''{0}'' not found." from
+ * `kraken.el.ast.validation.AstValidatingVisitor`, but much more cautiously: the engine
+ * has types and this plugin does not. An identifier is only reported when its absence
+ * is certain, which excludes:
  *
- * - les **segments de chaîne** (`a.b.c`) : sans le type de `a`, on ne peut rien
- *   affirmer sur `b` ;
- * - les règles dont la cible `On` ne se résout pas — sans contexte de
- *   référence, tout identifiant serait suspect ;
- * - `context`, la racine du contexte externe, que le moteur place d'office
- *   dans la portée globale (`ScopeBuilder`) et qui n'est déclarée nulle part
- *   dans le DSL ;
- * - les prédicats de filtre dont le type de l'élément est inconnu, par exemple
- *   `context.additional.vehicles[model = …]` : la portée y est indéterminée,
- *   et le moteur lui-même y accepte tout (`Scope.isDynamic`) ;
- * - les têtes d'appel de fonction — aucune inspection ne les valide (voir
- *   ROADMAP.md : nécessiterait un projet propriétaire pour être vérifié
- *   fiablement).
+ * - chain segments (`a.b.c`): without the type of `a`, nothing can be said about `b`;
+ * - rules whose `On` target does not resolve, since there is no reference context;
+ * - `context`, the external context root, which the engine always puts in the global
+ *   scope (`ScopeBuilder`) and the DSL never declares;
+ * - filter predicates on an element of unknown type, such as
+ *   `context.additional.vehicles[model = …]`: the scope is undetermined and the engine
+ *   accepts anything there (`Scope.isDynamic`);
+ * - function call heads, which no inspection validates (see ROADMAP.md).
  *
- * Le compromis est assumé : cette inspection laisse passer des erreurs que le
- * moteur attrape. Elle ne doit pas, en revanche, souligner du code valide.
+ * This lets through errors the engine catches, but it must never underline valid code.
  */
 class KrakenUnresolvedIdentifierInspection : LocalInspectionTool() {
 
@@ -47,17 +41,16 @@ class KrakenUnresolvedIdentifierInspection : LocalInspectionTool() {
             if (name.isEmpty() || name == EXTERNAL_CONTEXT) return
             if (isCallHead(element)) return
 
-            // Hors d'une règle ou d'une fonction, aucune portée de
-            // référence : rien à affirmer. Il ne suffit pas que la clause
-            // `On` nomme une cible, encore faut-il que ce contexte existe —
-            // sinon aucun champ n'est connu et tout paraîtrait introuvable.
+            // Outside a rule or function there is no reference scope. Naming an `On` target is not
+            // enough: the context must exist, or no field is known and everything would look
+            // unresolved.
             val inFunction =
                 PsiTreeUtil.getParentOfType(element, KrakenFunctionDecl::class.java, false) != null
             if (!inFunction && !hasResolvableTarget(element)) return
 
-            // Prédicat de filtre dont on ignore le type de l'élément :
-            // portée indéterminée, pas vide. Le moteur y accepte tout
-            // (Scope.isDynamic), typiquement sous le contexte externe.
+            // Filter predicate on an element of unknown type: the scope is undetermined, not empty.
+            // The engine accepts anything there (Scope.isDynamic), typically under the external
+            // context.
             if (KrakenScopeResolver.isInFilterPredicate(element) &&
                 KrakenScopeResolver.filterContext(element) == null
             ) {
@@ -79,19 +72,17 @@ class KrakenUnresolvedIdentifierInspection : LocalInspectionTool() {
     }
 
     /**
-     * `Round(x)` : `Round` est une tête d'appel, pas une référence à résoudre.
+     * `Round(x)`: `Round` is a call head, not a reference to resolve.
      *
-     * Qodana annonce cette expression « toujours fausse », ce qui voudrait dire
-     * que toute tête d'appel est signalée introuvable. Elle ne l'est pas :
-     * `KrakenTypes` est générée dans `src/main/gen`, que le conteneur Qodana ne
-     * reçoit jamais — il recopie le projet en sautant ce que `.gitignore`
-     * exclut — et un symbole non résolu suffit à lui faire tirer cette
-     * conclusion, comme pour les `KotlinUnreachableCode` écartés dans
-     * `qodana.yaml`. Trois tests de `KrakenUnresolvedIdentifierTest` fixent le
-     * comportement réel.
+     * Qodana reports this expression as always false, which would mean every call head gets
+     * reported. It does not: `KrakenTypes` is generated into `src/main/gen`, which the
+     * Qodana container never receives (it copies the project minus what `.gitignore`
+     * excludes), and an unresolved symbol is enough for that conclusion, as with the
+     * `KotlinUnreachableCode` exclusions in `qodana.yaml`. Three tests in
+     * `KrakenUnresolvedIdentifierTest` pin the real behaviour.
      *
-     * Suppression posée ici plutôt que sur la règle : ailleurs, une condition
-     * constante reste un défaut qu'on veut voir.
+     * Suppressed here rather than for the whole rule: elsewhere a constant condition is
+     * still a defect worth seeing.
      */
     @Suppress("KotlinConstantConditions")
     private fun isCallHead(element: KrakenRefExpr): Boolean = PsiTreeUtil.getParentOfType(element, KrakenFunctionCall::class.java, false)
@@ -101,8 +92,8 @@ class KrakenUnresolvedIdentifierInspection : LocalInspectionTool() {
 
     private companion object {
         /**
-         * `ScopeBuilder` met toujours `context` dans la portée globale, qu'un
-         * `ExternalContext` soit déclaré ou non.
+         * `ScopeBuilder` always puts `context` in the global scope, whether or not an
+         * `ExternalContext` is declared.
          */
         const val EXTERNAL_CONTEXT = "context"
     }

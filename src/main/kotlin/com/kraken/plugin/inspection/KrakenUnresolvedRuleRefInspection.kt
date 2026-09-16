@@ -8,9 +8,6 @@ import com.intellij.psi.PsiElementVisitor
 import com.kraken.plugin.psi.KrakenEpRef
 import com.kraken.plugin.psi.KrakenRuleRef
 
-/**
- * Signale les références de règles introuvables dans les `EntryPoint`.
- */
 class KrakenUnresolvedRuleRefInspection : LocalInspectionTool() {
 
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : PsiElementVisitor() {

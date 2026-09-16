@@ -20,9 +20,6 @@ version = "1.0.0"
 repositories {
     mavenCentral()
 
-    // Dépôts d'où sortent la plateforme elle-même et son outillage (Plugin
-    // Verifier, ZIP Signer). En 1.x le plugin les déclarait en douce ; 2.x
-    // demande qu'ils soient écrits, ce qui rend visible d'où vient le SDK.
     intellijPlatform {
         defaultRepositories()
     }
@@ -31,21 +28,14 @@ repositories {
 dependencies {
     testImplementation("junit:junit:4.13.2")
 
-    // Plateforme IntelliJ cible (IntelliJ IDEA Community 2024.1). C'était le
-    // bloc `intellij { version; type }` en 1.x : une dépendance déclarée
-    // plutôt qu'une extension, donc résolue comme n'importe quelle autre.
     intellijPlatform {
         intellijIdeaCommunity("2024.1.7")
 
-        // Outils tirés à la demande, au lieu d'être embarqués dans le plugin
-        // Gradle comme en 1.x. Sans eux, `verifyPlugin` et `signPlugin`
-        // échouent en réclamant leur binaire.
+        // Without these, verifyPlugin and signPlugin fail asking for their binaries.
         pluginVerifier()
         zipSigner()
 
-        // `BasePlatformTestCase` et les fixtures dont dépend toute la suite.
-        // La 1.x les mettait au classpath de test d'office ; 2.x veut la
-        // dépendance écrite, sinon le code de test ne compile plus.
+        // Required by BasePlatformTestCase and the test fixtures.
         testFramework(TestFrameworkType.Platform)
     }
 }
@@ -54,58 +44,46 @@ kotlin {
     jvmToolchain(17)
 }
 
-// Chemin du certificat matérialisé pour la signature. Déclaré une fois :
-// l'extension le lit, `writeCertificateChain` l'écrit, et deux littéraux qui
-// divergeraient produiraient un fichier écrit ailleurs que là où on le lit.
+// Declared once: the signing extension reads this path and writeCertificateChain
+// writes it.
 val signingCertificate = layout.buildDirectory.file("signing/certificate-chain.crt")
 
 intellijPlatform {
-    // Les options recherchables sont une page de réglages indexée au build.
-    // Le plugin n'en déclare aucune : les générer coûte un démarrage d'IDE
-    // complet pour produire un index vide.
+    // The plugin declares no searchable options, and building them boots a full IDE to
+    // produce an empty index.
     buildSearchableOptions = false
 
     pluginConfiguration {
         ideaVersion {
             sinceBuild = "241"
-            // Pas de borne supérieure : compatible avec les builds futurs (2026.1+)
+            // No upper bound, so future IDE builds stay compatible.
             untilBuild = provider { null }
         }
     }
 
-    // Signature : `signPlugin` lit CERTIFICATE_CHAIN, PRIVATE_KEY et
-    // PRIVATE_KEY_PASSWORD tout seul et fonctionne ainsi. `verifyPluginSignature`
-    // veut en revanche un CHEMIN de certificat, et reçoit la chaîne brute en
-    // argument, à quoi le signeur répond « Invalid argument » et sort en 64.
-    // Trois `set()` posés sur la tâche n'y ont rien changé : elle continuait
-    // d'annoncer son chemin par défaut, signe que ce n'est pas elle qui bâtit
-    // la ligne de commande. C'est cette extension qui la gouverne, d'où le
-    // fichier déclaré ici. Un certificat est du matériel public — seule la clé
-    // privée est sensible — donc rien de secret ne touche le disque.
+    // signPlugin reads CERTIFICATE_CHAIN, PRIVATE_KEY and PRIVATE_KEY_PASSWORD by itself,
+    // but verifyPluginSignature needs a certificate path: given the raw chain, the signer
+    // fails with "Invalid argument" (exit 64). This extension builds that command line,
+    // hence the file declared here. A certificate is public material, so nothing secret
+    // touches the disk.
     signing {
         certificateChainFile = signingCertificate
     }
 
-    // Publication sur le JetBrains Marketplace. Le token est fourni par la
-    // variable d'environnement PUBLISH_TOKEN (secret CI), jamais en clair.
     publishing {
         token = providers.environmentVariable("PUBLISH_TOKEN")
     }
 
-    // Vérifie la compatibilité binaire du plugin contre plusieurs versions
-    // d'IntelliJ (API supprimées/dépréciées) via le Plugin Verifier officiel.
-    // La liste des versions est fournie via -PpluginVerifierIdeVersions="IC-x,IC-y".
-    // Le workflow CI l'alimente dynamiquement depuis l'API JetBrains (dernière
-    // release de chaque majeure) pour rester à jour automatiquement ; par
-    // défaut, la version cible actuelle.
+    // Binary compatibility check against several IntelliJ versions. The list comes from
+    // -PpluginVerifierIdeVersions="IC-x,IC-y", which CI fills with the latest release of
+    // each major version; the default is the current target.
     pluginVerification {
         ides {
             val requested = (project.findProperty("pluginVerifierIdeVersions") as String?)
                 ?.split(",")?.map(String::trim)?.filter(String::isNotEmpty)
                 .orEmpty()
                 .ifEmpty { listOf("IC-2024.1.7") }
-            // `IC-2024.1.7` : le type précède la version, comme dans la liste
-            // publiée par JetBrains que le workflow lit.
+            // `IC-2024.1.7`: type first, as in the JetBrains list the workflow reads.
             requested.forEach { notation ->
                 val (type, ideVersion) = notation.split("-", limit = 2)
                 create(IntelliJPlatformType.fromCode(type), ideVersion)
@@ -114,41 +92,25 @@ intellijPlatform {
     }
 }
 
-// Style Kotlin. Le style lui-même vit dans `.editorconfig`, que ktlint et
-// IntelliJ lisent tous les deux — un seul endroit pour une seule règle.
-//
-// Rien à exclure ici, contrairement à Kover, CodeQL et Qodana qui écartent tous
-// `src/main/gen` : Grammar-Kit y génère du **Java**, pas du Kotlin, donc ktlint
-// ne le voit jamais. Un filtre décoratif donnerait l'impression d'une
-// protection inexistante.
-//
-// La porte est bloquante, et elle peut se le permettre : la base est à zéro
-// violation. Un linter qu'on laisse rougir est un linter que plus personne ne
-// lit.
+// The style lives in `.editorconfig`, which ktlint and IntelliJ both read.
+// Nothing is excluded: Grammar-Kit generates Java, not Kotlin, into src/main/gen.
 ktlint {
     version.set("1.8.0")
 }
 
-// SBOM CycloneDX de l'artefact LIVRÉ. Même périmètre que le scan OWASP :
-// `runtimeClasspath`, c'est-à-dire ce que le zip embarque réellement.
-//
-// Sans ce cadrage, le SBOM par défaut liste 28 composants (SDK IntelliJ, JUnit,
-// compilateur Kotlin, Ant…) qui sont des dépendances de BUILD, jamais
-// distribuées — il contredirait frontalement le « zéro dépendance tierce » que
-// le rapport OWASP démontre par ailleurs.
+// CycloneDX SBOM of the shipped artifact: `runtimeClasspath`, the same scope as the
+// OWASP scan. The default would list build-only dependencies (IntelliJ SDK, JUnit,
+// Kotlin compiler) that are never distributed.
 tasks.cyclonedxDirectBom {
     includeConfigs.set(listOf("runtimeClasspath"))
-    // Le SBOM décrit ce qui est LIVRÉ, pas la machine qui a compilé : sans
-    // cela, Gradle et le JDK du runner s'y retrouveraient. La provenance du
-    // build est déjà couverte par l'attestation SLSA.
+    // Describe what ships, not the build machine; build provenance is covered by the SLSA
+    // attestation.
     includeBuildEnvironment.set(false)
     jsonOutput.set(layout.buildDirectory.file("reports/cyclonedx-direct/rulescribe-sbom.json"))
 }
 
-// Couverture de tests. Le parseur de `src/main/gen` est généré par Grammar-Kit
-// à partir du BNF : le mesurer gonflerait artificiellement le taux sans rien
-// dire de la qualité du code écrit à la main. Même raisonnement que le filtrage
-// du SARIF CodeQL, qui exclut déjà ce répertoire.
+// The Grammar-Kit parser in src/main/gen is excluded: measuring it would inflate the
+// rate without saying anything about hand-written code.
 kover {
     reports {
         filters {
@@ -156,11 +118,8 @@ kover {
                 packages("com.kraken.plugin.parser")
             }
         }
-        // Plancher anti-régression, pas objectif à atteindre. La couverture
-        // réelle du code écrit à la main est ~81 % ; 75 % laisse de la marge
-        // pour une PR légitime tout en signalant une érosion franche. Viser un
-        // seuil collé à la valeur courante rendrait le build cassant sans rien
-        // améliorer.
+        // A floor against regressions, not a target: set below current coverage so a
+        // legitimate PR passes while real erosion fails.
         verify {
             rule {
                 minBound(75)
@@ -169,31 +128,22 @@ kover {
     }
 }
 
-// Analyse des CVE connues dans les dépendances réellement livrées (base NVD).
-//
-// On ne scanne que `runtimeClasspath` — c'est-à-dire ce que le plugin embarque
-// dans son zip. La plateforme IntelliJ (netty, commons-lang3, httpcore… tirés
-// par le plugin org.jetbrains.intellij.platform) n'est PAS livrée : elle est
-// fournie par l'IDE hôte à l'exécution et corrigée par JetBrains via les mises
-// à jour de l'IDE. La scanner ferait échouer chaque build sur des CVE hors de
-// notre contrôle. Scoper à runtimeClasspath garde la porte CVSS>=7 pertinente
-// pour toute vraie dépendance embarquée qu'on ajouterait à l'avenir.
+// Known CVEs (NVD) in the dependencies that actually ship. Only `runtimeClasspath` is
+// scanned: the IntelliJ platform is provided by the host IDE and patched by JetBrains,
+// so scanning it would fail every build on CVEs outside our control.
 dependencyCheck {
     failBuildOnCVSS = 7.0f
     formats = listOf("HTML", "JUNIT")
     scanConfigurations = listOf("runtimeClasspath")
 
-    // Stratégie "single updater + readers" recommandée par OWASP : un job
-    // met à jour la base NVD (autoUpdate = true) et archive le `data` dir ;
-    // les jobs "lecteurs" (ex. publish) le restaurent et scannent avec
-    // -PodcAutoUpdate=false → aucun appel NVD, donc rapide et fiable.
+    // OWASP "single updater + readers": one job updates the NVD database and archives it;
+    // reader jobs (publish) restore it and scan with -PodcAutoUpdate=false, without calling
+    // NVD.
     autoUpdate = (project.findProperty("odcAutoUpdate") as String?)
         ?.toBooleanStrictOrNull() ?: true
 
-    // La clé API NVD (secret CI) accélère la synchro de la base. Elle reste
-    // facultative : si le secret est absent ou vide (p. ex. clé expirée puis
-    // retirée), on ne la passe pas et dependency-check bascule sur le mode
-    // sans clé (fonctionnel, juste plus lent) au lieu de casser le build.
+    // The NVD API key speeds up syncing but is optional: when the secret is missing or
+    // blank, dependency-check runs without it (slower) instead of failing the build.
     System.getenv("NVD_API_KEY")?.takeIf { it.isNotBlank() }?.let { key ->
         nvd {
             apiKey = key
@@ -201,10 +151,8 @@ dependencyCheck {
     }
 }
 
-// Les sources générées par Grammar-Kit sont compilées avec le reste
 sourceSets["main"].java.srcDirs("src/main/gen")
 
-// Génération du parser à partir de la grammaire BNF
 val generateKrakenParser = tasks.register<GenerateParserTask>("generateKrakenParser") {
     sourceFile.set(file("src/main/bnf/Kraken.bnf"))
     targetRootOutputDir.set(file("src/main/gen"))
@@ -216,31 +164,18 @@ val generateKrakenParser = tasks.register<GenerateParserTask>("generateKrakenPar
 tasks {
     withType<KotlinCompile> {
         dependsOn(generateKrakenParser)
-        // Souple en local, strict en CI (-PwarningsAsErrors=true) : un
-        // avertissement du compilateur ne doit pas casser une itération de
-        // développement, mais il ne doit pas non plus s'accumuler en silence
-        // dans la branche stable.
+        // Lenient locally, strict in CI (-PwarningsAsErrors=true).
         kotlinOptions.allWarningsAsErrors =
             (project.findProperty("warningsAsErrors") as String?)?.toBooleanStrictOrNull() ?: false
     }
     compileJava {
         dependsOn(generateKrakenParser)
     }
-    // Signature cryptographique du plugin : l'IDE peut vérifier que l'artefact
-    // vient bien de nous et n'a pas été altéré. Complète l'attestation SLSA
-    // (qui prouve « buildé par la pipeline ») côté distribution.
-    //
-    // Les trois éléments viennent de secrets CI, jamais du dépôt. 2.x lit
-    // CERTIFICATE_CHAIN, PRIVATE_KEY et PRIVATE_KEY_PASSWORD tout seul, ce qui
-    // remplace le câblage explicite de la 1.x — et aussi la tâche
-    // `writeCertificateChain`, qui n'existait que pour matérialiser le
-    // certificat en fichier parce que `verifyPluginSignature` en voulait un.
-    //
-    // Reste ce que le plugin ne fait pas : sauter la signature quand les
-    // secrets sont absents (build local, fork) plutôt que casser le build.
-    // `verifyPluginSignature` suit, sinon elle relirait une archive non signée.
-    // Matérialise le certificat que l'extension déclare, et le fait avant que
-    // signature et vérification n'évaluent leurs entrées.
+    // Plugin signing lets the IDE check that the artifact comes from us unaltered. The
+    // certificate chain, key and password come from CI secrets; without them (local build,
+    // fork) signing is skipped instead of failing, and verifyPluginSignature with it.
+    // writeCertificateChain writes the certificate the extension declares before signing
+    // and verification read it.
     val writeCertificateChain = register("writeCertificateChain") {
         val chain = System.getenv("CERTIFICATE_CHAIN")
         onlyIf { !chain.isNullOrBlank() }
@@ -254,19 +189,15 @@ tasks {
     }
     signPlugin {
         onlyIf { !System.getenv("CERTIFICATE_CHAIN").isNullOrBlank() && !System.getenv("PRIVATE_KEY").isNullOrBlank() }
-        // Le certificat déclaré sur l'extension vaut pour les DEUX tâches :
-        // celle-ci le lit aussi, et Gradle 9 exige que ça se dise.
+        // The extension's certificate applies to both tasks, and Gradle 9 requires the
+        // dependency to be declared.
         dependsOn(writeCertificateChain)
     }
     verifyPluginSignature {
         onlyIf { !System.getenv("CERTIFICATE_CHAIN").isNullOrBlank() }
-        // La tâche relit l'archive signée sans que le plugin ne déclare d'où
-        // elle vient : `gradlew buildPlugin signPlugin verifyPluginSignature`
-        // ne marchait que parce que l'ordre de la ligne de commande tombait
-        // juste. Gradle 9 en fait une erreur dure, et seulement quand la
-        // signature a réellement lieu — donc uniquement sur un tag, avec les
-        // secrets. Sans eux les deux tâches sont sautées, ne produisent rien,
-        // et la dépendance manquante reste invisible.
+        // This task reads the signed archive, which the plugin does not declare as an input.
+        // Gradle 9 fails on that, but only when signing actually runs (tag builds with secrets),
+        // so the missing dependency is invisible otherwise.
         dependsOn(signPlugin, writeCertificateChain)
     }
 }

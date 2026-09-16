@@ -10,10 +10,9 @@ import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenPsiUtil
 
 /**
- * Inspections des `Import Rule "X" From Ns`, miroir des quatre validations du
- * moteur Kraken (ResourceKrakenProjectBuilder.validateRuleImports) :
- * namespace source inconnu, règle introuvable dans le namespace source,
- * collision avec une règle locale, import ambigu.
+ * Base of the `Import Rule "X" From Ns` inspections, which mirror the engine's four
+ * checks (`ResourceKrakenProjectBuilder.validateRuleImports`): unknown source
+ * namespace, rule missing from it, clash with a local rule, ambiguous import.
  */
 private abstract class KrakenRuleImportVisitorBase(
     private val holder: ProblemsHolder,
@@ -32,12 +31,12 @@ private abstract class KrakenRuleImportVisitorBase(
 }
 
 /**
- * Namespace du fichier courant : les messages du moteur nomment toujours le
- * namespace de destination de l'import (« … to ''{2}'' »).
+ * Namespace of the current file: engine messages always name the import's target
+ * namespace ("… to ''{2}''").
  */
 private fun targetNamespaceOf(decl: PsiElement): String = (decl.containingFile as? KrakenFile)?.let { KrakenPsiUtil.namespaceOf(it) }.orEmpty()
 
-/** Le namespace nommé après `From` n'existe dans aucun fichier du projet. */
+/** The namespace named after `From` does not exist in any project file. */
 class KrakenImportUnknownNamespaceInspection : LocalInspectionTool() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenRuleImportVisitorBase(holder) {
         override fun checkImportDecl(
@@ -60,15 +59,15 @@ class KrakenImportUnknownNamespaceInspection : LocalInspectionTool() {
     }
 }
 
-/** La règle importée n'existe pas dans le namespace source. */
+/** The imported rule does not exist in the source namespace. */
 class KrakenImportUnknownRuleInspection : LocalInspectionTool() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenRuleImportVisitorBase(holder) {
         override fun checkImportDecl(
             decl: PsiElement,
             imports: List<KrakenPsiUtil.RuleImport>,
         ) {
-            // Comme le moteur : ne vérifie l'existence de la règle que si
-            // le namespace source existe (sinon l'autre inspection suffit).
+            // Like the engine, only check the rule when the source namespace exists; otherwise the
+            // unknown namespace inspection covers it.
             for (import in imports) {
                 if (!KrakenPsiUtil.namespaceExists(decl.project, import.sourceNamespace)) continue
                 val found = KrakenPsiUtil.findRuleInNamespace(
@@ -92,7 +91,7 @@ class KrakenImportUnknownRuleInspection : LocalInspectionTool() {
     }
 }
 
-/** Le nom importé entre en collision avec une règle déclarée localement. */
+/** The imported name clashes with a locally declared rule. */
 class KrakenImportNameClashInspection : LocalInspectionTool() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenRuleImportVisitorBase(holder) {
         override fun checkImportDecl(
@@ -123,15 +122,15 @@ class KrakenImportNameClashInspection : LocalInspectionTool() {
     }
 }
 
-/** Le même nom de règle est importé plusieurs fois (namespaces différents ou non). */
+/** The same rule name is imported more than once, from the same or different namespaces. */
 class KrakenImportAmbiguousInspection : LocalInspectionTool() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenRuleImportVisitorBase(holder) {
         override fun checkImportDecl(
             decl: PsiElement,
             imports: List<KrakenPsiUtil.RuleImport>,
         ) {
-            // Le moteur groupe les imports de tout le namespace par nom de
-            // règle et refuse tout nom importé plus d'une fois.
+            // The engine groups a namespace's imports by rule name and rejects any name imported
+            // more than once.
             val allImports = KrakenPsiUtil.ruleImportsForNamespaceOf(decl.containingFile)
             for (import in imports) {
                 val sameName = allImports.filter { it.ruleName == import.ruleName }

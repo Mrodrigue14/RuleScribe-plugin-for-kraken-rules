@@ -10,19 +10,17 @@ import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenRuleDecl
 
 /*
- * Correctifs proposés depuis les inspections.
+ * Quick fixes offered by inspections.
  *
- * Ils écrivent dans le document plutôt que de construire du PSI : le plugin
- * n'a pas de fabrique d'éléments, et en créer une pour insérer deux lignes
- * coûterait plus que ça ne rapporte. C'est déjà l'approche de
- * [KrakenAddOnClauseIntention].
+ * They edit the document instead of building PSI: the plugin has no element factory,
+ * and writing one to insert two lines would cost more than it saves.
+ * [KrakenAddOnClauseIntention] does the same.
  *
- * Chaque correctif laisse une valeur à remplir plutôt que d'en inventer une :
- * ni le type d'une dimension ni la valeur qui distingue deux règles ne se
- * déduisent du fichier, et deviner produirait du code faux d'aspect correct.
+ * Each fix leaves a value to fill in rather than inventing one: neither a dimension's
+ * type nor the value separating two rules can be derived from the file.
  */
 
-/** Déclare la dimension qu'une annotation `@Dimension` référence sans qu'elle existe. */
+/** Declares the dimension a `@Dimension` annotation references but that does not exist. */
 internal class KrakenDeclareDimensionFix(private val dimensionName: String) : LocalQuickFix {
 
     override fun getFamilyName(): String = "Declare dimension"
@@ -44,9 +42,9 @@ internal class KrakenDeclareDimensionFix(private val dimensionName: String) : Lo
     }
 
     /**
-     * Après la dernière dimension déclarée, pour les garder groupées ; sinon
-     * après l'en-tête, puisque `kraken_file ::= namespace_decl? import_decl*
-     * model_item*` impose qu'une déclaration de dimension le suive.
+     * After the last declared dimension, to keep them grouped; otherwise after the header,
+     * since `kraken_file ::= namespace_decl? import_decl* model_item*` requires a dimension
+     * declaration to follow it.
      */
     private fun declarationOffset(file: PsiFile): Int {
         val anchors = file.node.getChildren(null)
@@ -65,11 +63,11 @@ internal class KrakenDeclareDimensionFix(private val dimensionName: String) : Lo
 }
 
 /**
- * Ajoute une annotation `@Dimension` à une règle dupliquée.
+ * Adds a `@Dimension` annotation to a duplicate rule.
  *
- * Dupliquer un nom de règle est légitime en Kraken quand chaque variante porte
- * une dimension différente — c'est le mécanisme de variabilité du moteur. Le
- * correctif pose donc l'annotation à remplir, il ne supprime pas la règle.
+ * Duplicate rule names are legitimate when each variant has a different dimension (the
+ * engine's variability mechanism), so the fix adds the annotation to fill in instead of
+ * deleting the rule.
  */
 internal class KrakenAddDimensionAnnotationFix : LocalQuickFix {
 
@@ -88,7 +86,7 @@ internal class KrakenAddDimensionAnnotationFix : LocalQuickFix {
         manager.commitDocument(document)
     }
 
-    /** L'annotation doit s'aligner sur la règle, qui peut être imbriquée dans un `Rules { }`. */
+    /** The annotation must align with the rule, which may be nested in `Rules { }`. */
     private fun indentAt(text: String, offset: Int): String {
         val lineStart = text.lastIndexOf('\n', offset - 1) + 1
         return text.substring(lineStart, offset).takeWhile { it == ' ' || it == '\t' }

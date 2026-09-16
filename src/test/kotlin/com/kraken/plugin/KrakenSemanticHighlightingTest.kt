@@ -4,12 +4,11 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.highlighter.KrakenSyntaxHighlighter
 
 /**
- * Coloration sémantique des références.
+ * Semantic colouring of references.
  *
- * Ce que le lexer ne peut pas distinguer — un nom de contexte, un champ, un
- * nom inconnu, tous `IDENTIFIER` — l'annotator le sépare à partir de la
- * résolution de portée. Le point important est le cas négatif : un nom qui ne
- * se résout pas ne doit recevoir aucune couleur.
+ * What the lexer cannot tell apart (a context name, a field, an unknown name, all
+ * `IDENTIFIER`), the annotator separates through scope resolution. The key case is the
+ * negative one: an unresolved name gets no colour.
  */
 class KrakenSemanticHighlightingTest : BasePlatformTestCase() {
 
@@ -28,7 +27,7 @@ class KrakenSemanticHighlightingTest : BasePlatformTestCase() {
         }
     """.trimIndent()
 
-    /** Clés posées par l'annotator sur le texte donné. */
+    /** Keys the annotator sets on [needle]. */
     private fun attributesFor(body: String, needle: String): List<String> {
         myFixture.configureByText(
             "sem.rules",
@@ -42,7 +41,7 @@ class KrakenSemanticHighlightingTest : BasePlatformTestCase() {
         )
         val text = myFixture.file.text
         val start = text.lastIndexOf(needle)
-        require(start >= 0) { "'$needle' absent du fichier" }
+        require(start >= 0) { "'$needle' is not in the file" }
         val range = start until (start + needle.length)
         return myFixture.doHighlighting()
             .filter { it.startOffset in range || it.endOffset - 1 in range }
@@ -51,9 +50,8 @@ class KrakenSemanticHighlightingTest : BasePlatformTestCase() {
     }
 
     /**
-     * Une référence croisée vers un contexte que la cible `On` n'a pas pour
-     * enfant. `Coverage`, lui, est un `Child` de `Policy` : il se résout donc
-     * en champ, ce qui est le bon sens de lecture.
+     * A cross reference to a context that is not a child of the `On` target. `Coverage` is
+     * a `Child` of `Policy`, so it resolves as a field.
      */
     fun testACrossContextNameIsColouredAsAContext() {
         assertEquals(
@@ -76,7 +74,6 @@ class KrakenSemanticHighlightingTest : BasePlatformTestCase() {
         )
     }
 
-    /** Une variable locale relève de la même catégorie qu'un champ. */
     fun testALocalVariableIsColouredAsAField() {
         assertEquals(
             listOf(KrakenSyntaxHighlighter.FIELD_REFERENCE.externalName),
@@ -84,10 +81,7 @@ class KrakenSemanticHighlightingTest : BasePlatformTestCase() {
         )
     }
 
-    /**
-     * Le cas qui compte : colorer un nom inconnu comme un champ reviendrait à
-     * affirmer qu'il en désigne un.
-     */
+    /** Colouring an unknown name as a field would claim that it is one. */
     fun testAnUnresolvedNameGetsNoColour() {
         assertEquals(emptyList<String>(), attributesFor("Assert notAThing > 0", "notAThing"))
     }

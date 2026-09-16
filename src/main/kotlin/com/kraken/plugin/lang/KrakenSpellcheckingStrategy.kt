@@ -9,21 +9,18 @@ import com.intellij.spellchecker.tokenizer.Tokenizer
 import com.kraken.plugin.parser.KrakenTypes
 
 /**
- * Vérifie l'orthographe des seules chaînes destinées à être lues par un
- * humain, et des commentaires.
+ * Spellchecks comments and only the strings meant to be read by people.
  *
- * Un `.rules` est plein de chaînes, mais la plupart sont des identifiants :
- * noms de règles, d'entry points, de dimensions, codes d'erreur. Tout vérifier
- * signalerait `AZStateCoverateVisibility` et `policyCd` à chaque ligne, ce qui
- * noierait les vraies fautes — la vérification deviendrait inutilisable et
- * serait désactivée.
+ * Most strings in a `.rules` file are identifiers: rule, entry point and dimension
+ * names, error codes. Checking all of them would flag `AZStateCoverateVisibility` and
+ * `policyCd` on every line and bury the real typos.
  *
- * Deux positions sont de la prose, d'après la grammaire :
+ * Two grammar positions hold prose:
  *
  * - `description_clause ::= DESCRIPTION_KW STRING`
- * - `payload_message ::= message_severity STRING (COLON STRING)?`, où la
- *   **dernière** chaîne est le message. Avec deux chaînes, la première est le
- *   code d'erreur (`Error "code" : "message"`), qui n'est pas de la prose.
+ * - `payload_message ::= message_severity STRING (COLON STRING)?`, where the last
+ *   string is the message. With two strings, the first is the error code
+ *   (`Error "code" : "message"`).
  */
 class KrakenSpellcheckingStrategy : SpellcheckingStrategy() {
 
@@ -42,7 +39,7 @@ class KrakenSpellcheckingStrategy : SpellcheckingStrategy() {
     private fun lastString(parent: PsiElement): PsiElement? = parent.node.getChildren(null).lastOrNull { it.elementType == KrakenTypes.STRING }?.psi
 
     private companion object {
-        /** Sans les guillemets, que le découpeur ne saurait pas ignorer. */
+        /** Excludes the quotes, which the splitter would not ignore. */
         val QUOTED_TEXT = object : Tokenizer<PsiElement>() {
             override fun tokenize(element: PsiElement, consumer: TokenConsumer) {
                 val text = element.text

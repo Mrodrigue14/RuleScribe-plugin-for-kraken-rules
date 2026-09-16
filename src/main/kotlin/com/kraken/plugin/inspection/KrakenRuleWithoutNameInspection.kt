@@ -7,9 +7,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.kraken.plugin.psi.KrakenRuleDecl
 
-/**
- * Signale les déclarations `Rule` sans nom : `Rule On Policy.state { ... }`.
- */
+/** Reports `Rule` declarations without a name: `Rule On Policy.state { ... }`. */
 class KrakenRuleWithoutNameInspection : LocalInspectionTool() {
 
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : PsiElementVisitor() {

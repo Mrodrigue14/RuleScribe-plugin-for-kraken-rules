@@ -4,11 +4,10 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.inspection.KrakenTypeMismatchInspection
 
 /**
- * L'inspection de types.
+ * The type mismatch inspection.
  *
- * Comme pour les identifiants, la majorité des tests vérifient qu'elle **se
- * tait** : le plugin ne type pas tout, et un diagnostic inventé coûte plus cher
- * qu'un diagnostic manqué.
+ * As for identifiers, most tests check that it stays silent: the plugin does not type
+ * everything, and an invented diagnostic costs more than a missed one.
  */
 class KrakenTypeMismatchTest : BasePlatformTestCase() {
 
@@ -40,11 +39,6 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
             .filter { it.startsWith("[kvr049]") }
     }
 
-    // ------------------------------------------------------------------
-    // Comparaisons
-    // ------------------------------------------------------------------
-
-    /** Le piège classique : le moteur refuse Date contre DateTime. */
     fun testDateComparedWithDateTimeIsReported() {
         assertEquals(
             listOf(
@@ -66,9 +60,8 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
     }
 
     /**
-     * Deux `String` ne s'ordonnent pas davantage qu'une `Date` et une
-     * `DateTime` : `isComparableWith` du moteur ne connaît que les numériques,
-     * les dates et les date-heures. La v0.10.x laissait passer ce cas.
+     * Two `String`s cannot be ordered any more than a `Date` and a `DateTime`: the engine's
+     * `isComparableWith` only knows numbers, dates and date-times.
      */
     fun testTwoStringsCannotBeOrdered() {
         assertEquals(
@@ -80,12 +73,11 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         )
     }
 
-    /** L'égalité, elle, accepte deux `String` : critère d'assignabilité. */
+    /** Equality accepts two `String`s: assignability applies. */
     fun testTwoStringsCanBeCompared() {
         assertEquals(emptyList<String>(), problems("Assert policyCd = policyCd"))
     }
 
-    /** Mais pas deux types étrangers l'un à l'autre. */
     fun testEqualityBetweenUnrelatedTypesIsReported() {
         assertEquals(
             listOf(
@@ -96,16 +88,12 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         )
     }
 
-    /** `Money` reste assignable à `Number`, dans ce sens-là. */
+    /** `Money` is assignable to `Number`, in that direction. */
     fun testEqualityBetweenMoneyAndNumberIsAccepted() {
         assertEquals(emptyList<String>(), problems("Assert limitAmount = premium"))
     }
 
-    /**
-     * `>=` et `<=` se lexaient en deux tokens (`GT` puis `OP('=')`), si bien
-     * que la vérification prenait le `=` pour l'opérande droite et renonçait :
-     * aucune comparaison large n'a jamais été vérifiée avant la v0.11.0.
-     */
+    /** `>=` and `<=` must lex as single tokens for the right operand to be found. */
     fun testWideComparisonIsChecked() {
         assertEquals(
             listOf(
@@ -135,19 +123,13 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         assertEquals(emptyList<String>(), problems("Assert effectiveDate < effectiveDate"))
     }
 
-    /** Un littéral de date se compare bien à un champ Date. */
     fun testDateLiteralComparesWithADateField() {
         assertEquals(emptyList<String>(), problems("Assert effectiveDate < 2020-01-01"))
     }
 
-    /** Un opérande non typé fait renoncer la vérification. */
     fun testUnknownOperandIsNotJudged() {
         assertEquals(emptyList<String>(), problems("Assert effectiveDate < whatIsThis"))
     }
-
-    // ------------------------------------------------------------------
-    // Arguments de fonction
-    // ------------------------------------------------------------------
 
     fun testWrongArgumentTypeIsReported() {
         val reported = problems("Assert Round(policyCd) > 0")
@@ -160,10 +142,10 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
     }
 
     fun testMoneyIsAcceptedWhereNumberIsExpected() {
-        assertEquals("Money se rétrécit vers Number", emptyList<String>(), problems("Assert Round(limitAmount) > 0"))
+        assertEquals("Money narrows to Number", emptyList<String>(), problems("Assert Round(limitAmount) > 0"))
     }
 
-    /** Un paramètre d'union (`Date | DateTime`) est dynamique : tout passe. */
+    /** A union parameter (`Date | DateTime`) is dynamic: anything passes. */
     fun testUnionParameterAcceptsAnything() {
         assertEquals(emptyList<String>(), problems("Assert GetDay(effectiveDate) > 0"))
         assertEquals(emptyList<String>(), problems("Assert GetDay(createdOn) > 0"))
@@ -174,26 +156,23 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
     }
 
     /**
-     * Le type d'un appel est son type de retour, pas celui de ce qu'il y a
-     * dans ses arguments. Chercher les segments d'accès récursivement les
-     * ramenait depuis l'intérieur des parenthèses : `NumberOfDaysBetween(a, b)`
-     * était typé Date. Ce seul défaut produisait les 10 derniers faux positifs
-     * du corpus officiel.
+     * A call's type is its return type, not that of its arguments: a recursive segment
+     * search would type `NumberOfDaysBetween(a, b)` as Date.
      */
     fun testCallTypeComesFromItsReturnNotItsArguments() {
         assertEquals(
-            "NumberOfDaysBetween renvoie un Number",
+            "NumberOfDaysBetween returns a Number",
             emptyList<String>(),
             problems("Assert NumberOfDaysBetween(effectiveDate, effectiveDate) < 365"),
         )
         assertEquals(
-            "NumberToString renvoie un String",
+            "NumberToString returns a String",
             emptyList<String>(),
             problems("Assert NumberToString(premium) == \"11\""),
         )
     }
 
-    /** Une projection sur une collection reste une collection. */
+    /** A projection over a collection stays a collection. */
     fun testProjectionOverACollectionIsNotJudged() {
         myFixture.configureByText(
             "projection.rules",
@@ -219,7 +198,6 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         assertEquals(emptyList<String>(), reported)
     }
 
-    /** Les noms de types du DSL sont insensibles à la casse. */
     fun testTypeNamesAreCaseInsensitive() {
         myFixture.configureByText(
             "casing.rules",
@@ -239,10 +217,10 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         val reported = myFixture.doHighlighting()
             .mapNotNull { it.description }
             .filter { it.startsWith("[kvr049]") }
-        assertEquals("STRING, string et String sont le même type", emptyList<String>(), reported)
+        assertEquals("STRING, string and String are the same type", emptyList<String>(), reported)
     }
 
-    /** Les fonctions du projet ne sont pas vérifiées : trop de bruit. */
+    /** Project functions are not checked: too noisy. */
     fun testDeclaredFunctionArgumentsAreNotChecked() {
         myFixture.configureByText(
             "declared.rules",

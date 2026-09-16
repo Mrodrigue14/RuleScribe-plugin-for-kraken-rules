@@ -6,13 +6,10 @@ import com.kraken.plugin.parser.KrakenLexer
 import com.kraken.plugin.parser.KrakenTypes
 
 /**
- * Découpage des opérateurs.
+ * Operator tokenisation.
  *
- * Le lexer avalait auparavant toute suite de `+-=!?|&%^~` en un seul token
- * `OP`, que la grammaire acceptait ensuite sans broncher : `a &|&~ b` était du
- * Kraken valide. Il ne reconnaît plus que les opérateurs de `Common.g4`, ce qui
- * a deux effets — une faute de frappe devient une erreur au bon offset, et
- * `>=` / `<=` deviennent des tokens entiers au lieu de `GT` suivi de `OP('=')`.
+ * Only the operators of `Common.g4` are recognised, so a typo fails at the right offset
+ * and `>=` / `<=` are single tokens rather than `GT` followed by `OP('=')`.
  */
 class KrakenOperatorLexingTest : BasePlatformTestCase() {
 
@@ -26,8 +23,7 @@ class KrakenOperatorLexingTest : BasePlatformTestCase() {
                 val name = when (type) {
                     KrakenTypes.OP -> "OP"
 
-                    // `|` a son propre token depuis qu'il sert aussi à séparer
-                    // les membres d'un type union.
+                    // `|` has its own token because it also separates union type members.
                     KrakenTypes.PIPE -> "PIPE"
 
                     TokenType.BAD_CHARACTER -> "BAD"
@@ -58,21 +54,20 @@ class KrakenOperatorLexingTest : BasePlatformTestCase() {
 
     fun testSingleCharOperatorsStillLex() {
         for (op in listOf("+", "-", "=", "%")) {
-            assertEquals("opérateur $op", listOf("OP" to op), operators("a $op b"))
+            assertEquals("operator $op", listOf("OP" to op), operators("a $op b"))
         }
     }
 
     /**
-     * `|` seul est un token distinct de `OP` : il sépare aussi les membres d'un
-     * type union (`Date | DateTime`), position où la grammaire doit le
-     * reconnaître sans accepter n'importe quel opérateur. `||` reste un `OP`.
+     * A lone `|` is a token distinct from `OP`: it separates union type members
+     * (`Date | DateTime`), where the grammar must accept it without accepting any operator.
+     * `||` stays an `OP`.
      */
     fun testLoneBarIsItsOwnTokenButDoubleBarIsNot() {
         assertEquals(listOf("PIPE" to "|"), operators("a | b"))
         assertEquals(listOf("OP" to "||"), operators("a || b"))
     }
 
-    /** Le cas qui motivait le changement. */
     fun testGarbageOperatorRunIsRejectedPerCharacter() {
         assertEquals(
             listOf("BAD" to "&", "PIPE" to "|", "BAD" to "&", "BAD" to "~"),
@@ -80,27 +75,25 @@ class KrakenOperatorLexingTest : BasePlatformTestCase() {
         )
     }
 
-    /** `^` et `~` n'existent dans aucun opérateur de Common.g4. */
+    /** `^` and `~` are not part of any Common.g4 operator. */
     fun testCharactersOutsideTheGrammarAreRejected() {
         assertEquals(listOf("BAD" to "^", "BAD" to "~"), operators("a ^~ b"))
     }
 
-    /** `&` seul n'existe pas non plus : seul `&&` est un opérateur. */
+    /** A lone `&` is not an operator either; only `&&` is. */
     fun testLoneAmpersandIsRejected() {
         assertEquals(listOf("BAD" to "&"), operators("a & b"))
     }
 
     /**
-     * `>>` reste deux `GT`. Une borne générique se referme deux fois d'affilée
-     * (`Function <T is <G>>`), et l'inspection `kvf005` en dépend : un jour où
-     * `>>` deviendrait un opérateur, elle cesserait de voir ce cas.
+     * `>>` stays two `GT`s. A generic bound can close twice in a row
+     * (`Function <T is <G>>`), and the `kvf005` inspection depends on it.
      */
     fun testDoubleAngleClosesTwice() {
         assertEquals(listOf(">" to ">", ">" to ">"), tokens("<T is <G>>").takeLast(2))
         assertEquals(emptyList<Pair<String, String>>(), operators("a >> b"))
     }
 
-    /** Les bornes génériques et les dates ne doivent rien perdre au change. */
     fun testAngleBracketsAndDatesAreUnaffected() {
         assertEquals(emptyList<Pair<String, String>>(), operators("a < b"))
         assertEquals(emptyList<Pair<String, String>>(), operators("2020-01-01"))

@@ -9,22 +9,18 @@ import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
 
 /**
- * Libellés des usages dans le popup de la gouttière.
+ * Labels of usages in the gutter popup.
  *
- * Sans présentation, la plateforme affiche le texte brut : N entrées
- * identiques, sans indication du fichier. Ces tests vérifient que chaque
- * cible porte un texte distinctif *et* sa localisation.
- *
- * Depuis v0.8.1, ce popup n'est plus celui de Ctrl+B — la plateforme y montre
- * sa propre fenêtre d'usages — mais celui de l'icône de gouttière, qui passe
- * par `NavigationGutterIconBuilder.setTargets` et rend donc toujours ces
- * [com.intellij.navigation.ItemPresentation].
+ * Without a presentation the platform shows raw text: identical entries with no file.
+ * These tests check that each target has distinguishing text and its location. The
+ * gutter icon goes through `NavigationGutterIconBuilder.setTargets`, so it renders these
+ * [com.intellij.navigation.ItemPresentation]s.
  */
 class KrakenNavigationPresentationTest : BasePlatformTestCase() {
 
     private fun presentationOf(element: PsiElement) = (element as NavigationItem).presentation
 
-    /** Usages de la déclaration sous le curseur, tels que la gouttière les cible. */
+    /** Usages of the declaration at the caret, as the gutter targets them. */
     private fun usagesAtCaret(): List<PsiElement> {
         val source = myFixture.file.findElementAt(myFixture.caretOffset)
         assertNotNull("Expected an element at caret", source)
@@ -67,8 +63,8 @@ class KrakenNavigationPresentationTest : BasePlatformTestCase() {
             .map { "${it?.presentableText} @ ${it?.locationString}" }
             .sorted()
 
-        // Chaque entrée nomme son EntryPoint et son fichier : deux usages de la
-        // même règle ne peuvent plus être confondus dans le popup.
+        // Each entry names its EntryPoint and file, so two usages of one rule cannot be
+        // confused.
         assertEquals(
             listOf(
                 "EntryPoint \"Billing\" @ billing.rules",

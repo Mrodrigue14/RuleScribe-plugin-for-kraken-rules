@@ -1,11 +1,11 @@
 name: Publish
 
-# Publie le plugin sur le JetBrains Marketplace ET crée une GitHub Release,
-# déclenché par un tag de version (ex. v0.5.8). Chaque tag = une release
-# publique intentionnelle.
+# Publishes the plugin to the JetBrains Marketplace AND creates a GitHub Release,
+# triggered by a version tag (e.g. v0.5.8). Every tag is a deliberate public
+# release.
 #
-# Prérequis : secret JETBRAINS_MARKETPLACE_TOKEN (Marketplace → My Tokens).
-# Flux type : bumper `version` dans build.gradle.kts → commit →
+# Requires the JETBRAINS_MARKETPLACE_TOKEN secret (Marketplace → My Tokens).
+# Typical flow: bump `version` in build.gradle.kts → commit →
 #   git tag v0.5.8 && git push origin v0.5.8
 on:
   push:
@@ -13,23 +13,22 @@ on:
       - 'v*'
   workflow_dispatch:
 
-# contents: write pour créer la GitHub Release. Le token Marketplace, lui,
-# passe par un secret dédié (PUBLISH_TOKEN), jamais par le GITHUB_TOKEN.
+# contents: write to create the GitHub Release. The Marketplace token goes through
+# a dedicated secret (PUBLISH_TOKEN), never through GITHUB_TOKEN.
 permissions:
-  contents: write        # créer la GitHub Release
-  id-token: write        # signer l'attestation de provenance (OIDC)
-  attestations: write    # écrire l'attestation de build
+  contents: write        # create the GitHub Release
+  id-token: write        # sign the provenance attestation (OIDC)
+  attestations: write    # write the build attestation
 
-# Sérialise les publications, mais n'annule JAMAIS une publication en cours
-# (job critique non interruptible : un publishPlugin à moitié fait ne doit pas
-# être tué). Les runs supplémentaires attendent leur tour.
+# Serialises publications but NEVER cancels one in progress: a half-done
+# publishPlugin must not be killed. Extra runs wait their turn.
 concurrency:
   group: publish-marketplace
   cancel-in-progress: false
 
 jobs:
   publish:
-    name: Publier (Marketplace + GitHub Release)
+    name: Publish (Marketplace + GitHub Release)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -39,10 +38,9 @@ jobs:
       - name: Setup Java + Gradle
         uses: ./.github/actions/setup-java-gradle
 
-      # Garde-fou : le tag (sans "v") doit correspondre à la version déclarée
-      # dans build.gradle.kts, pour éviter de publier une version incohérente.
-      # Ignoré lors d'un déclenchement manuel (pas de tag).
-      - name: Vérifier la cohérence tag / version
+      # Guard: the tag (without "v") must match the version in build.gradle.kts, so
+      # an inconsistent version is never published. Skipped on manual runs (no tag).
+      - name: Check tag / version consistency
         if: startsWith(github.ref, 'refs/tags/')
         env:
           TAG: ${{ github.ref_name }}
@@ -52,35 +50,34 @@ jobs:
           TAG_VERSION="${TAG#v}"
           echo "Tag: $TAG_VERSION  |  build.gradle.kts: $FILE_VERSION"
           if [ "$TAG_VERSION" != "$FILE_VERSION" ]; then
-            echo "::error::Le tag ($TAG_VERSION) ne correspond pas à la version de build.gradle.kts ($FILE_VERSION)."
+            echo "::error::The tag ($TAG_VERSION) does not match the build.gradle.kts version ($FILE_VERSION)."
             exit 1
           fi
 
-      - name: Tests + vérification (ne publie pas si ça casse)
+      - name: Tests + verification (nothing is published if this fails)
         run: ./gradlew test verifyPluginProjectConfiguration
 
-      # Build PUIS signature, dans cet ordre et AVANT l'attestation : c'est
-      # l'artefact signé qui part sur le Marketplace, donc c'est lui qui doit
-      # être attesté, sinon le zip téléchargé par un utilisateur n'aurait pas
-      # l'empreinte couverte par l'attestation. signPlugin est sauté si les
-      # secrets de signature ne sont pas configurés (cf. build.gradle.kts).
-      # verifyPluginSignature relit l'archive signée et valide la signature
-      # contre le certificat : une clé mal formée ou dépareillée fait échouer
-      # la release ici, avant toute publication ou attestation.
-      - name: Build + signature du plugin
+      # Build THEN sign, in that order and BEFORE the attestation: the signed
+      # artifact is what goes to the Marketplace, so it is what must be attested;
+      # otherwise a downloaded zip would not have the attested digest. signPlugin
+      # is skipped when signing secrets are missing (see build.gradle.kts).
+      # verifyPluginSignature re-reads the signed archive and checks the signature
+      # against the certificate, so a malformed or mismatched key fails the
+      # release here, before anything is published or attested.
+      - name: Build and sign the plugin
         env:
           CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
         run: ./gradlew buildPlugin signPlugin verifyPluginSignature
 
-      # Sélectionne l'artefact réellement distribué : le zip signé s'il existe,
-      # sinon le zip simple. Sert à la fois pour la GitHub Release et pour que
-      # l'utilisateur télécharge exactement ce qui a été attesté.
-      - name: Identifier l'artefact distribué
+      # Selects the artifact actually distributed: the signed zip if it exists,
+      # otherwise the plain zip. Used for the GitHub Release, so users download
+      # exactly what was attested.
+      - name: Identify the distributed artifact
         id: artifact
-        # Sélection ancrée sur la version du tag (et non sur "le premier zip
-        # trouvé") : déterministe même si le dossier contient d'anciens builds.
+        # Selection is anchored on the tag version (not "the first zip found"), so
+        # it is deterministic even if the folder holds older builds.
         env:
           TAG: ${{ github.ref_name }}
         run: |
@@ -88,55 +85,52 @@ jobs:
           VERSION="${TAG#v}"
           ARTIFACT=$(ls build/distributions/*-"${VERSION}"-signed.zip 2>/dev/null | head -1 || true)
           if [ -n "$ARTIFACT" ]; then
-            echo "Plugin signé : $ARTIFACT"
+            echo "Signed plugin: $ARTIFACT"
           else
             ARTIFACT=$(ls build/distributions/*-"${VERSION}".zip | head -1)
-            echo "::warning::Plugin NON signé (secrets de signature absents) : $ARTIFACT"
+            echo "::warning::Plugin NOT signed (signing secrets missing): $ARTIFACT"
           fi
           echo "path=$ARTIFACT" >> "$GITHUB_OUTPUT"
 
-      # Attestation de provenance SLSA : lie cryptographiquement le zip livré au
-      # commit, au workflow et au runner qui l'ont produit. N'importe qui peut
-      # ensuite vérifier une release (même téléchargée du Marketplace) avec :
+      # SLSA provenance attestation: cryptographically binds the shipped zip to the
+      # commit, workflow and runner that produced it. Anyone can then verify a
+      # release (even one downloaded from the Marketplace) with:
       #   gh attestation verify rulescribe-X.Y.Z.zip \
       #     --repo Mrodrigue14/RuleScribe-plugin-for-kraken-rules
-      # Un zip uploadé hors pipeline échoue à cette vérification.
-      - name: Attester la provenance du build (SLSA)
+      # A zip uploaded outside the pipeline fails this check.
+      - name: Attest build provenance (SLSA)
         uses: actions/attest-build-provenance@v4
         with:
           subject-path: ${{ steps.artifact.outputs.path }}
 
-      # SBOM CycloneDX de l'artefact livré (périmètre runtimeClasspath, cf.
-      # build.gradle.kts). Complémentaire du rapport OWASP : celui-ci est un
-      # VERDICT daté qui se périme au prochain CVE publié, le SBOM est un
-      # INVENTAIRE durable et lisible par machine, qui permet à un utilisateur
-      # de rescanner lui-même en continu sans dépendre de notre calendrier.
-      - name: Générer le SBOM
+      # CycloneDX SBOM of the shipped artifact (runtimeClasspath scope, see
+      # build.gradle.kts). It complements the OWASP report: the report is a dated
+      # VERDICT that expires with the next published CVE, while the SBOM is a
+      # lasting machine-readable INVENTORY that users can rescan themselves.
+      - name: Generate the SBOM
         run: ./gradlew cyclonedxDirectBom
 
-      # Attesté, donc lié cryptographiquement au zip : le SBOM se vérifie avec
-      # le même `gh attestation verify` que la provenance.
+      # Attested, so cryptographically bound to the zip: the SBOM is verified with
+      # the same `gh attestation verify` as the provenance.
       #
-      # `actions/attest-sbom` est déprécié en faveur de `actions/attest`, qui
-      # est générique : le type de prédicat, implicite dans l'ancienne action,
-      # devient explicite. Sa valeur n'est pas libre — c'est celle que les
-      # notes de release publient dans la commande de vérification, et que les
-      # attestations déjà émises portent. La changer casserait la vérification
-      # des releases passées comme des futures.
-      - name: Attester le SBOM
+      # `actions/attest-sbom` is deprecated in favour of the generic
+      # `actions/attest`, where the predicate type becomes explicit. Its value is
+      # fixed: the release notes publish it in the verification command and past
+      # attestations carry it, so changing it would break verification of past and
+      # future releases.
+      - name: Attest the SBOM
         uses: actions/attest@v4
         with:
           subject-path: ${{ steps.artifact.outputs.path }}
           predicate-type: https://cyclonedx.org/bom
           predicate-path: build/reports/cyclonedx-direct/rulescribe-sbom.json
 
-      # Rôle LECTEUR de la stratégie OWASP "single updater + readers" : on
-      # restaure la base NVD pré-construite depuis la release `nvd-cache`
-      # (maintenue par le workflow dependency-check), puis on scanne avec
-      # autoUpdate DÉSACTIVÉ → aucun appel au NVD, donc rapide et fiable.
-      # Si l'archive n'existe pas encore (bootstrap), on retombe sur une mise à
-      # jour complète (lente) pour ne pas bloquer la release.
-      # Placé AVANT la publication : si le scan échoue, rien n'est publié.
+      # READER role in the OWASP "single updater + readers" strategy: restores the
+      # pre-built NVD database from the `nvd-cache` release (maintained by the
+      # dependency-check workflow), then scans with autoUpdate DISABLED, making no
+      # NVD calls. If the archive does not exist yet, falls back to a full (slow)
+      # update so the release is not blocked. Runs BEFORE publishing, so nothing is
+      # published if the scan fails.
       - name: Rapport OWASP Dependency-Check
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -150,19 +144,18 @@ jobs:
                --output /tmp/nvd-data.zip --clobber 2>/dev/null; then
             unzip -q -o /tmp/nvd-data.zip -d ~/.gradle/dependency-check-data
             rm -f /tmp/nvd-data.zip
-            echo "Base NVD restaurée depuis nvd-cache → scan sans mise à jour."
+            echo "NVD database restored from nvd-cache → scanning without update."
             ./gradlew dependencyCheckAnalyze -PodcAutoUpdate=false
           else
-            echo "Archive nvd-cache absente → mise à jour NVD complète (lente)."
+            echo "No nvd-cache archive → full NVD update (slow)."
             ./gradlew dependencyCheckAnalyze
           fi
           cp build/reports/dependency-check-report.html "dependency-check-report-${VERSION}.html"
 
-      # publishPlugin déclenche signPlugin en amont : si les trois secrets de
-      # signature existent, l'artefact publié est signé (l'IDE peut vérifier son
-      # authenticité). S'ils sont absents, signPlugin est sauté et la
-      # publication se fait sans signature — aucune régression.
-      - name: Publier sur le JetBrains Marketplace
+      # publishPlugin runs signPlugin first: with the three signing secrets the
+      # published artifact is signed (the IDE can verify it); without them
+      # signPlugin is skipped and the plugin is published unsigned.
+      - name: Publish to the JetBrains Marketplace
         env:
           PUBLISH_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_TOKEN }}
           CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
@@ -170,13 +163,12 @@ jobs:
           PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
         run: ./gradlew publishPlugin
 
-      - name: Créer la GitHub Release
+      - name: Create the GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
-        # TAG/COMMIT passés par env puis référencés comme variables shell :
-        # jamais interpolés via ${{ }} dans le script (pas d'injection).
-        # Notes = bloc <change-notes> de plugin.xml + section OWASP prouvant
-        # que le rapport joint est bien celui de cette release (version,
-        # commit, empreinte SHA-256).
+        # TAG/COMMIT come through env and are used as shell variables, never
+        # interpolated with ${{ }} into the script (no injection). Notes are the
+        # plugin.xml <change-notes> block plus an OWASP section proving the attached
+        # report belongs to this release (version, commit, SHA-256 digest).
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
@@ -194,11 +186,10 @@ jobs:
           SBOM_COMPONENTS=$(python3 -c "import json,sys; print(len(json.load(open(sys.argv[1]))\
             .get('components', [])))" "$SBOM")
 
-          # Certificat de signature publié avec la release : sans lui, personne
-          # ne peut vérifier la signature du zip, et la section « verify it
-          # yourself » de SECURITY.md promettrait plus qu'elle ne permet.
-          # Un certificat est du matériel PUBLIC — seule la clé privée est
-          # secrète, et elle ne quitte jamais les secrets GitHub.
+          # The signing certificate is published with the release: without it nobody
+          # can verify the zip signature, and the "verify it yourself" section of
+          # SECURITY.md would promise more than it allows. A certificate is PUBLIC;
+          # only the private key is secret, and it never leaves GitHub secrets.
           CERT=""
           CERT_FP=""
           if [ -n "${CERTIFICATE_CHAIN:-}" ]; then
@@ -208,13 +199,13 @@ jobs:
               | cut -d= -f2)
           fi
 
-          # Notes de version depuis plugin.xml (sinon en-tête minimal).
+          # Release notes from plugin.xml (otherwise a minimal header).
           if ! python3 .github/scripts/extract-notes.py "$VERSION" > RELEASE_NOTES.md || [ ! -s RELEASE_NOTES.md ]; then
             printf 'RuleScribe %s\n' "$VERSION" > RELEASE_NOTES.md
           fi
 
-          # Section OWASP : preuve de correspondance rapport <-> release.
-          # (echos indentés pour YAML ; le contenu markdown, lui, reste propre.)
+          # OWASP section: proves the report matches the release. (The echos are
+          # indented for YAML; the Markdown content itself stays clean.)
           {
             echo ""
             echo "---"
@@ -253,9 +244,8 @@ jobs:
             echo '```'
           } >> RELEASE_NOTES.md
 
-          # Section signature : le certificat public permet de vérifier le zip,
-          # et son empreinte permet de constater qu'il s'agit bien de la même
-          # clé de publication que les releases précédentes.
+          # Signing section: the public certificate verifies the zip, and its digest
+          # shows it is the same publishing key as in previous releases.
           if [ -n "$CERT" ]; then
             {
               echo ""
@@ -281,8 +271,8 @@ jobs:
           fi
 
           echo "--- Release notes ---"; cat RELEASE_NOTES.md
-          # shellcheck disable=SC2086 — $CERT est vide si non signé, et on veut
-          # alors qu'il disparaisse de la liste d'assets plutôt qu'un "".
+          # shellcheck disable=SC2086 — $CERT is empty when unsigned, and it should
+          # then vanish from the asset list rather than become an empty "" argument.
           gh release create "$TAG" \
             "$ARTIFACT" \
             "$REPORT" \

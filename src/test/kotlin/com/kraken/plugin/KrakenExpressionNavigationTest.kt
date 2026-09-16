@@ -8,11 +8,11 @@ import com.kraken.plugin.psi.KrakenPathSegment
 import com.kraken.plugin.psi.KrakenRefExpr
 
 /**
- * Ctrl+B depuis une expression : `Assert`, `When`, `Default To`.
+ * Ctrl+B from an expression: `Assert`, `When`, `Default To`.
  *
- * [KrakenScopeResolverTest] couvre la sémantique de portée ; ici on vérifie
- * qu'elle est bien câblée en références PSI, y compris là où elle doit
- * renoncer — une référence qui ne résout pas ne navigue simplement pas.
+ * [KrakenScopeResolverTest] covers scope semantics; this checks that they are wired into
+ * PSI references, including where they give up: a reference that does not resolve
+ * simply does not navigate.
  */
 class KrakenExpressionNavigationTest : BasePlatformTestCase() {
 
@@ -62,10 +62,6 @@ class KrakenExpressionNavigationTest : BasePlatformTestCase() {
         )
     }
 
-    // ------------------------------------------------------------------
-    // Identifiants nus
-    // ------------------------------------------------------------------
-
     fun testBareFieldNavigatesToItsDeclaration() {
         configureRule("Assert policyCd != null")
         assertResolvesTo(ref("policyCd").reference?.resolve(), "String policyCd")
@@ -75,8 +71,8 @@ class KrakenExpressionNavigationTest : BasePlatformTestCase() {
         configureRule("Assert Coverage != null")
         val target = ref("Coverage").reference?.resolve()
         assertNotNull(target)
-        // Coverage est un Child de Policy : la portée locale gagne, comme dans
-        // le moteur, donc on atterrit sur l'enfant et non sur le Context.
+        // Coverage is a Child of Policy: the local scope wins, as in the engine, so this lands
+        // on the child and not on the Context.
         assertEquals(KrakenTypes.CHILD_DECL, target!!.node.elementType)
     }
 
@@ -90,16 +86,12 @@ class KrakenExpressionNavigationTest : BasePlatformTestCase() {
         assertNull(ref("whatIsThis").reference?.resolve())
     }
 
-    // ------------------------------------------------------------------
-    // Chaînes d'accès
-    // ------------------------------------------------------------------
-
     fun testFieldOfAChildContextResolves() {
         configureRule("Assert AddressInfo.postalCode != null")
         assertResolvesTo(segment("postalCode").reference?.resolve(), "String postalCode")
     }
 
-    /** La chaîne se poursuit tant que chaque maillon désigne un contexte. */
+    /** The chain continues while each link denotes a context. */
     fun testTwoLevelChainResolves() {
         configureRule("Assert AddressInfo.Country.isoCode != null")
         assertResolvesTo(segment("isoCode").reference?.resolve(), "String isoCode")
@@ -111,24 +103,19 @@ class KrakenExpressionNavigationTest : BasePlatformTestCase() {
     }
 
     /**
-     * La tête est un champ scalaire : son type n'est pas un contexte, donc la
-     * chaîne s'arrête. Sans inférence de types on ne devine pas — c'est le
-     * comportement voulu, pas une lacune accidentelle.
+     * The head is a scalar field whose type is not a context, so the chain stops. Without
+     * type inference nothing is guessed, by design.
      */
     fun testChainOnAScalarHeadStopsResolving() {
         configureRule("Assert policyCd.something != null")
         assertNull(segment("something").reference?.resolve())
     }
 
-    /** Un segment suivi de parenthèses est un appel, pas un champ. */
+    /** A segment followed by parentheses is a call, not a field. */
     fun testMethodCallSegmentIsNotAFieldReference() {
         configureRule("Assert AddressInfo.postalCode.Trim() != null")
         assertNull(segment("Trim").reference)
     }
-
-    // ------------------------------------------------------------------
-    // Complétion
-    // ------------------------------------------------------------------
 
     fun testCompletionAfterADotUsesTheResolvedContext() {
         myFixture.configureByText(
@@ -142,7 +129,7 @@ class KrakenExpressionNavigationTest : BasePlatformTestCase() {
             """.trimIndent(),
         )
         val suggestions = myFixture.completeBasic()?.map { it.lookupString }.orEmpty()
-        assertTrue("champ du contexte résolu", suggestions.contains("postalCode"))
-        assertFalse("pas les champs d'un autre contexte", suggestions.contains("limitAmount"))
+        assertTrue("field of the resolved context", suggestions.contains("postalCode"))
+        assertFalse("not the fields of another context", suggestions.contains("limitAmount"))
     }
 }

@@ -10,10 +10,9 @@ import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
 
 /**
- * Signale deux règles portant le même nom sans annotation `@Dimension`
- * différenciante. Dupliquer un nom de règle est légitime en Kraken quand
- * chaque variante porte une dimension différente ; sans annotation, c'est
- * presque toujours une erreur.
+ * Reports two rules with the same name and no distinguishing `@Dimension` annotation.
+ * Duplicate names are legitimate in Kraken when each variant has a different
+ * dimension; without annotations it is almost always a mistake.
  */
 class KrakenDuplicateRuleInspection : LocalInspectionTool() {
 

@@ -9,22 +9,18 @@ import com.kraken.plugin.parser.KrakenTypes
 import javax.swing.Icon
 
 /**
- * Libellés des éléments Kraken dans les popups de navigation (Ctrl+clic,
- * find usages, gutter).
+ * Labels for Kraken elements in navigation popups (Ctrl+click, Find Usages, gutter).
  *
- * Sans [ItemPresentation], la plateforme retombe sur le texte brut de
- * l'élément : quand une déclaration est référencée à plusieurs endroits, le
- * popup affiche N entrées identiques et il devient impossible de savoir
- * laquelle mène où. On fournit donc deux informations distinctes :
+ * Without [ItemPresentation] the platform shows the raw element text, so a declaration
+ * referenced in several places produces identical entries. Each entry gets:
  *
- * - le **texte principal** : le conteneur qui référence, p. ex. l'EntryPoint ;
- * - la **localisation** (grisée à droite) : le fichier, et le namespace quand
- *   le fichier en déclare un — c'est ce qui distingue deux références portant
- *   le même nom dans des fichiers différents.
+ * - main text: the referencing container, such as the EntryPoint;
+ * - location (greyed, on the right): the file, plus the namespace when the file
+ *   declares one, which separates same-named references in different files.
  */
 internal object KrakenPresentations {
 
-    /** `police.rules · Base` — le namespace n'apparaît que s'il est déclaré. */
+    /** `policy.rules · Base`; the namespace only appears when declared. */
     fun location(element: PsiElement): String? {
         val file = element.containingFile as? KrakenFile ?: return null
         val namespace = KrakenPsiUtil.namespaceOf(file)?.takeIf { it.isNotBlank() }
@@ -32,9 +28,8 @@ internal object KrakenPresentations {
     }
 
     /**
-     * Texte principal d'une *référence* : l'EntryPoint qui la contient, seul
-     * élément qui distingue deux références au sein d'un même fichier. À
-     * défaut, le texte de la référence elle-même.
+     * Main text of a reference: its enclosing EntryPoint, the only thing that tells two
+     * references in one file apart. Falls back to the reference text.
      */
     fun containerText(reference: PsiElement, fallback: String?): String {
         val entryPoint = PsiTreeUtil.getParentOfType(reference, KrakenEntryPointDecl::class.java)
@@ -44,10 +39,9 @@ internal object KrakenPresentations {
     }
 
     /**
-     * Texte principal d'une *déclaration* : son nom, suivi de ses annotations
-     * quand elle en porte. Deux variantes `@Dimension` d'une même règle
-     * partagent le nom *et* le fichier — sans l'annotation, le popup de
-     * navigation afficherait deux lignes rigoureusement identiques.
+     * Main text of a declaration: its name, followed by its annotations. Two `@Dimension`
+     * variants of a rule share name and file, so without the annotation the popup would
+     * show two identical lines.
      */
     fun declarationText(declaration: PsiElement, name: String?, fallback: String): String {
         val base = name?.let { "\"$it\"" } ?: fallback

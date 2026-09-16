@@ -1,16 +1,16 @@
-// Règles du namespace Policy — référencées depuis policy-entrypoints.rules
-// (Ctrl+clic sur les noms là-bas doit atterrir ICI).
+// Rules of the Policy namespace, referenced from policy-entrypoints.rules
+// (Ctrl+click on the names there must land HERE).
 Namespace Policy
 
 Rule "Policy code mandatory" On Policy.policyCd {
     Set Mandatory
-    Error "policy_cd" : "Le code de la police est obligatoire"
+    Error "policy_cd" : "The policy code is mandatory"
 }
 
-// Deux variantes dimensionnelles du MÊME nom : c'est légitime en Kraken (chaque
-// @Dimension sélectionne la sienne à l'exécution). Ctrl+clic sur "Postal code
-// default" depuis un EntryPoint doit donc proposer LES DEUX, chaque ligne du
-// popup portant son annotation — le fichier seul ne les distinguerait pas.
+// Two dimensional variants of the SAME name, which is legitimate in Kraken (each
+// @Dimension selects its own at runtime). Ctrl+click on "Postal code default"
+// from an EntryPoint must therefore offer BOTH, each popup line showing its
+// annotation, since the file alone would not tell them apart.
 @Dimension("state", "CA")
 Rule "Postal code default" On AddressInfo.postalCode {
     Reset To "90210"
@@ -22,20 +22,19 @@ Rule "Postal code default" On AddressInfo.postalCode {
 }
 
 Rule "Effective date past" On Policy.effectiveDate {
-    Description "La date d'effet doit être passée"
+    Description "The effective date must be in the past"
     When Policy.policyCd != null
     Assert effectiveDate < Today()
-    Error "eff_date" : "La date doit être dans le passé"
+    Error "eff_date" : "The date must be in the past"
     Overridable
 }
 
-// Appels de fonction : Round est native, TotalLimit est déclarée dans
-// policy-functions.rules, "Rnd" n'existe pas et "Round" à 3 arguments non plus
-// — les deux dernières sont soulignées par l'inspection, avec des messages
-// différents (nom inconnu vs mauvaise arité).
+// Function calls: Round is native and TotalLimit is declared in
+// policy-functions.rules; "Rnd" does not exist and neither does "Round" with 3
+// arguments, so neither of those resolves.
 Rule "Total limit is rounded" On Policy.policyCd {
     Assert Round(TotalLimit(Policy.Coverage), 2) > 0
-    Error "total_limit" : "La limite totale doit être positive"
+    Error "total_limit" : "The total limit must be positive"
 }
 
 Rule "Broken function calls demo" On Policy.policyCd {

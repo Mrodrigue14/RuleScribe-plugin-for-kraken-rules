@@ -1,16 +1,16 @@
-// EntryPoints du namespace Policy, dans un fichier SÉPARÉ des règles.
-// À tester ici :
-//  - Ctrl+clic sur chaque nom → saute vers policy-rules.rules ou base.rules
-//  - Ctrl+Espace dans les accolades → propose les règles visibles
-//  - "Je n'existe pas" → souligné par l'inspection (règle inconnue)
-//  - "Hidden elsewhere" → souligné aussi : le namespace Other n'est pas inclus
+// EntryPoints of the Policy namespace, in a file SEPARATE from the rules.
+// To try here:
+//  - Ctrl+click on each name → jumps to policy-rules.rules or base.rules
+//  - Ctrl+Space inside the braces → offers the visible rules
+//  - "Does not exist" → underlined by the inspection (unknown rule)
+//  - "Hidden elsewhere" → underlined too: the Other namespace is not included
 //
-// Navigation dans les DEUX sens (voir aussi policy-rules.rules) :
-//  - item → implémentation : "Postal code default" a deux variantes
-//    @Dimension → popup à 2 entrées, annotation affichée sur chacune ;
-//  - implémentation → EntryPoints : Ctrl+clic sur le nom d'une règle dans
-//    policy-rules.rules / base.rules liste les EntryPoints qui la citent —
-//    "Policy code mandatory" et "Base sanity check" en ont deux chacun.
+// Navigation in BOTH directions (see also policy-rules.rules):
+//  - item → implementation: "Postal code default" has two @Dimension
+//    variants → popup with 2 entries, each showing its annotation;
+//  - implementation → EntryPoints: Ctrl+click on a rule name in
+//    policy-rules.rules / base.rules lists the EntryPoints citing it;
+//    "Policy code mandatory" and "Base sanity check" have two each.
 Namespace Policy
 
 EntryPoint "Validation" {
@@ -24,14 +24,14 @@ EntryPoint "Defaults" {
     EntryPoint "Validation"
 }
 
-// Deuxième citation de deux règles déjà référencées par "Validation" : c'est ce
-// qui rend le sens implémentation → EntryPoint intéressant (popup, pas saut direct).
+// A second citation of two rules already referenced by "Validation": this is what
+// makes the implementation → EntryPoint direction interesting (popup, not a jump).
 EntryPoint "Quick check" {
     "Policy code mandatory",
     "Base sanity check"
 }
 
 EntryPoint "Broken references demo" {
-    "Je n'existe pas",
+    "Does not exist",
     "Hidden elsewhere"
 }

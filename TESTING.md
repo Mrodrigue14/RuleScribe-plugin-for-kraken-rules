@@ -1,143 +1,140 @@
-# Guide de test manuel
+# Manual testing guide
 
-Lancer un IDE sandbox avec le plugin : `.\gradlew.bat runIde` (Windows) ou
-`./gradlew runIde` (Linux/macOS), puis ouvrir ce projet et le dossier `examples/`.
+Start a sandbox IDE with the plugin: `.\gradlew.bat runIde` (Windows) or
+`./gradlew runIde` (Linux/macOS), then open this project and the `examples/` folder.
 
-## Tests automatisés
+## Automated tests
 
 ```bash
-.\gradlew.bat test    # 168 tests : parser, complétion, inspections, navigation
-                      # inter-fichiers et bidirectionnelle, renommage,
-                      # namespaces, quick doc, fonctions, inlays, portées d'expression, types
+.\gradlew.bat test    # parser, completion, inspections, cross-file and bidirectional
+                      # navigation, rename, namespaces, quick doc, functions, inlays,
+                      # expression scopes, types
 ```
 
-## Checklist manuelle (dossier examples/multi/)
+## Manual checklist (examples/multi/)
 
-Le dossier `examples/multi/` est un mini-projet Kraken multi-fichiers :
-contextes, règles et EntryPoints dans des fichiers séparés, trois namespaces
-(`Policy` inclut `Base` ; `Other` est isolé).
+`examples/multi/` is a small multi-file Kraken project: contexts, rules and
+EntryPoints in separate files, and three namespaces (`Policy` includes `Base`;
+`Other` is isolated).
 
 ### Navigation (policy-entrypoints.rules)
-- [ ] Ctrl+clic sur `"Policy code mandatory"` → ouvre **policy-rules.rules** sur la règle
-- [ ] Ctrl+clic sur `"Base sanity check"` → ouvre **base.rules** (namespace inclus)
-- [ ] `"Je n'existe pas"` et `"Hidden elsewhere"` sont soulignés (références inconnues —
-      `Other` n'est pas inclus par `Policy`)
-- [ ] Dans **policy-rules.rules** : icône de gouttière sur chaque règle référencée →
-      clic = navigation vers les items d'EntryPoint
-- [ ] Dans **other.rules** : `"Hidden elsewhere"` n'a PAS d'icône de gouttière et
-      est signalée « not referenced » — sa seule référence vient d'un namespace
-      qui ne la voit pas (sémantique stricte)
+- [ ] Ctrl+click on `"Policy code mandatory"` → opens **policy-rules.rules** at the rule
+- [ ] Ctrl+click on `"Base sanity check"` → opens **base.rules** (included namespace)
+- [ ] `"Does not exist"` and `"Hidden elsewhere"` are underlined (unknown references;
+      `Other` is not included by `Policy`)
+- [ ] In **policy-rules.rules**: a gutter icon on each referenced rule → clicking it
+      navigates to the EntryPoint items
+- [ ] In **other.rules**: `"Hidden elsewhere"` has NO gutter icon and is reported as
+      "not referenced": its only reference comes from a namespace that cannot see it
+      (strict semantics)
 
-### Navigation bidirectionnelle (plusieurs cibles)
-- [ ] Ctrl+clic sur `"Postal code default"` dans `EntryPoint "Defaults"` → popup à
-      **deux** entrées, une par variante `@Dimension` (`"state", "CA"` et
-      `"state", "NY"`), l'annotation étant affichée sur chaque ligne
-- [ ] Ctrl+clic sur le nom `"Policy code mandatory"` **dans sa déclaration**
-      (policy-rules.rules) → popup listant `EntryPoint "Validation"` et
-      `EntryPoint "Quick check"`, chacun avec son fichier
-- [ ] Idem sur `"Base sanity check"` dans **base.rules** : les deux EntryPoints
-      de `Policy` apparaissent (le namespace inclut `Base`)
-- [ ] Ctrl+clic sur `EntryPoint "Validation"` imbriqué dans `"Defaults"` → saute
-      à la déclaration de `"Validation"` dans le même fichier
+### Bidirectional navigation (several targets)
+- [ ] Ctrl+click on `"Postal code default"` in `EntryPoint "Defaults"` → popup with
+      **two** entries, one per `@Dimension` variant (`"state", "CA"` and
+      `"state", "NY"`), each line showing its annotation
+- [ ] Ctrl+click on the name `"Policy code mandatory"` **in its declaration**
+      (policy-rules.rules) → popup listing `EntryPoint "Validation"` and
+      `EntryPoint "Quick check"`, each with its file
+- [ ] Same on `"Base sanity check"` in **base.rules**: both `Policy` EntryPoints
+      appear (the namespace includes `Base`)
+- [ ] Ctrl+click on the `EntryPoint "Validation"` nested in `"Defaults"` → jumps to
+      the `"Validation"` declaration in the same file
 
-### Inlays d'usages (toutes les déclarations)
-- [ ] Au-dessus de chaque `Rule`, `EntryPoint` et `Function` : un inlay gris
-      « N usages » (ou « no usages »)
-- [ ] Clic sur l'inlay → popup standard d'usages, groupée par fichier avec
-      l'aperçu du code
-- [ ] Ctrl+B sur le NOM d'une déclaration → la même popup (et non plus la liste
-      plate de libellés d'avant v0.8.1)
-- [ ] `"Hidden elsewhere"` dans **other.rules** affiche « no usages » : sa seule
-      référence vient d'un namespace qui ne la voit pas
-- [ ] Ctrl+B sur un item d'EntryPoint → inchangé : saut direct, ou popup des
-      variantes `@Dimension`
+### Usage inlays (all declarations)
+- [ ] Above each `Rule`, `EntryPoint` and `Function`: a grey "N usages" inlay (or
+      "no usages")
+- [ ] Clicking the inlay → the standard usages popup, grouped by file with a code
+      preview
+- [ ] Ctrl+B on a declaration's NAME → the same popup
+- [ ] `"Hidden elsewhere"` in **other.rules** shows "no usages": its only reference
+      comes from a namespace that cannot see it
+- [ ] Ctrl+B on an EntryPoint item → a direct jump, or a popup of the `@Dimension`
+      variants
 
-### Inlays auteur et date (dépôt sous git requis)
-- [ ] À côté de « N usages » : un second inlay avec le dernier auteur du bloc
-- [ ] Présent aussi sur les `Context`, qui n'ont pourtant pas d'usages à compter
-- [ ] Clic → ouvre l'annotation dans la gouttière, une date par ligne
-- [ ] Sur un fichier hors contrôle de version : aucun inlay d'auteur, et
-      « N usages » reste affiché
+### Author and date inlays (requires a git repository)
+- [ ] Next to "N usages": a second inlay with the block's last author
+- [ ] Also present on `Context`s, even though they have no usages to count
+- [ ] Clicking it → opens the annotation in the gutter, one date per line
+- [ ] On a file outside version control: no author inlay, and "N usages" still shows
 
-### Fonctions (policy-functions.rules et policy-rules.rules)
-- [ ] Ctrl+Espace dans un corps de règle → les 55 natives (icône fonction, signature
-      en légende) **et** `TotalLimit` / `ResolvePlanCd` du projet
-- [ ] Ctrl+Q sur `Round` → description, exemples et « Since », venus du moteur
-- [ ] Ctrl+Q sur `TotalLimit` → le commentaire `/** … */`, avec `@since` et `@parameter`
-- [ ] Ctrl+Q sur `ResolvePlanCd` → mention « signature only, implemented in Java »
-- [ ] Ctrl+P entre les parenthèses de `Round(` → les deux signatures (1 et 2 paramètres)
-- [ ] Ctrl+B sur `TotalLimit` depuis policy-rules.rules → policy-functions.rules
-- [ ] `Round` et `TotalLimit` ont deux couleurs distinctes (native vs projet) ;
-      `Rnd`, non résolu, garde la couleur d'un identifiant ordinaire
+### Functions (policy-functions.rules and policy-rules.rules)
+- [ ] Ctrl+Space in a rule body → the 55 natives (function icon, signature as a hint)
+      **and** the project's `TotalLimit` / `ResolvePlanCd`
+- [ ] Ctrl+Q on `Round` → description, examples and "Since", from the engine
+- [ ] Ctrl+Q on `TotalLimit` → the `/** … */` comment, with `@since` and `@parameter`
+- [ ] Ctrl+Q on `ResolvePlanCd` → "signature only, implemented in Java"
+- [ ] Ctrl+P inside `Round(` → both signatures (1 and 2 parameters)
+- [ ] Ctrl+B on `TotalLimit` from policy-rules.rules → policy-functions.rules
+- [ ] `Round` and `TotalLimit` have two distinct colours (native vs project);
+      `Rnd`, unresolved, keeps the plain identifier colour
 
-### Identifiants dans les expressions (policy-rules.rules)
-- [ ] Ctrl+B sur `effectiveDate` dans un `Assert` → le champ dans policy-contexts.rules
-- [ ] Ctrl+B sur `Policy` dans `When Policy.policyCd != null` → le contexte racine
-- [ ] Ctrl+B sur `policyCd` du même `When` → le champ, via la chaîne d'accès
-- [ ] Dans policy-functions.rules, Ctrl+B sur `coverages` → le paramètre de `TotalLimit`
-- [ ] Écrire `Assert nimportequoi > 0` → « [kvr049] Reference 'nimportequoi' not found. »
-- [ ] Écrire `Assert Policy.nimportequoi > 0` → **rien** : un segment de chaîne
-      n'est pas jugeable sans les types
-- [ ] Écrire `Assert Count(Policy.Coverage[limitAmount > 0]) = 1` → Ctrl+B sur
-      `limitAmount` mène au champ de `Coverage`, et rien n'est souligné : dans
-      un filtre, le prédicat voit les champs de l'élément filtré
+### Identifiers in expressions (policy-rules.rules)
+- [ ] Ctrl+B on `effectiveDate` in an `Assert` → the field in policy-contexts.rules
+- [ ] Ctrl+B on `Policy` in `When Policy.policyCd != null` → the root context
+- [ ] Ctrl+B on `policyCd` in the same `When` → the field, through the access chain
+- [ ] In policy-functions.rules, Ctrl+B on `coverages` → the `TotalLimit` parameter
+- [ ] Type `Assert whatever > 0` → "[kvr049] Reference 'whatever' not found."
+- [ ] Type `Assert Policy.whatever > 0` → **nothing**: a chain segment cannot be
+      judged without types
+- [ ] Type `Assert Count(Policy.Coverage[limitAmount > 0]) = 1` → Ctrl+B on
+      `limitAmount` leads to the `Coverage` field, and nothing is underlined: in a
+      filter, the predicate sees the filtered element's fields
 
 ### Types (policy-rules.rules)
-- [ ] `Assert effectiveDate < Today()` → **rien** : Date contre Date
-- [ ] Écrire `Assert effectiveDate < 2020-01-01T10:00:00Z` → « [kvr049] Operation
-      LessThan can only be performed on comparable types… » — le piège classique
-      de KEL
-- [ ] Écrire `Assert policyCd < policyCd` → même message : deux `String` ne
-      s'ordonnent pas non plus
-- [ ] Écrire `Assert policyCd = policyCd` → **rien** : l'égalité, elle, l'accepte
-- [ ] Écrire `Assert Round(policyCd) > 0` → « [kvr049] Incompatible type 'String'
-      of function parameter at index 0… »
-- [ ] `Assert Round(TotalLimit(Policy.Coverage), 2) > 0` → **rien** : le type
-      d'un appel est son retour, pas celui de ses arguments
+- [ ] `Assert effectiveDate < Today()` → **nothing**: Date against Date
+- [ ] Type `Assert effectiveDate < 2020-01-01T10:00:00Z` → "[kvr049] Operation
+      LessThan can only be performed on comparable types…", the classic KEL trap
+- [ ] Type `Assert policyCd < policyCd` → the same message: two `String`s cannot be
+      ordered either
+- [ ] Type `Assert policyCd = policyCd` → **nothing**: equality accepts it
+- [ ] Type `Assert Round(policyCd) > 0` → "[kvr049] Incompatible type 'String'
+      of function parameter at index 0…"
+- [ ] `Assert Round(TotalLimit(Policy.Coverage), 2) > 0` → **nothing**: a call's type
+      is its return type, not that of its arguments
 
-### Complétion
-- [ ] Dans un `EntryPoint { }` : Ctrl+Espace propose les règles visibles (pas `"Hidden elsewhere"`)
-- [ ] Après `On ` : propose `Policy`, `AddressInfo`, `BaseEntity` (namespace inclus)
-- [ ] Après `On Policy.` : propose `policyCd`, `state`, `effectiveDate`, `AddressInfo`
-      et `id` (hérité de `BaseEntity` via `Is`)
-- [ ] Dans `@Dimension(` : propose `"state"` et `"plan"`
-- [ ] Corps de règle : propose `Assert`, `Set Mandatory`, `Default To`…
+### Completion
+- [ ] In an `EntryPoint { }`: Ctrl+Space offers the visible rules (not `"Hidden elsewhere"`)
+- [ ] After `On `: offers `Policy`, `AddressInfo`, `BaseEntity` (included namespace)
+- [ ] After `On Policy.`: offers `policyCd`, `state`, `effectiveDate`, `AddressInfo`
+      and `id` (inherited from `BaseEntity` through `Is`)
+- [ ] In `@Dimension(`: offers `"state"` and `"plan"`
+- [ ] Rule body: offers `Assert`, `Set Mandatory`, `Default To`…
 
-### Édition
-- [ ] Alt+7 : Structure View liste contextes, règles, entry points, dimensions
-- [ ] Icônes ± dans la gouttière : replier un corps de règle / un bloc
-- [ ] Ctrl+Alt+L : réindente le fichier
-- [ ] Taper `rule` puis Tab : squelette de règle avec navigation entre variables
-      (idem `ep`, `ctx`, `dim`)
-- [ ] Ctrl+Q sur un nom de règle : popup avec description, cible et payload
+### Editing
+- [ ] Alt+7: the Structure View lists contexts, rules, entry points and dimensions
+- [ ] ± icons in the gutter: fold a rule body or a block
+- [ ] Ctrl+Alt+L: reindents the file
+- [ ] Type `rule` then Tab: rule skeleton with navigation between variables
+      (also `ep`, `ctx`, `dim`)
+- [ ] Ctrl+Q on a rule name: popup with description, target and payload
 
-### Refactoring et inspections
-- [ ] Maj+F6 sur une règle dans policy-rules.rules : renomme aussi sa référence
-      dans policy-entrypoints.rules
-- [ ] Supprimer le nom d'une règle → erreur « [kvr001] Rule name is not defined. »
-- [ ] Dupliquer une règle sans `@Dimension` → avertissement « [kvr053] Rule version has duplicates… »
-- [ ] Une règle jamais référencée → « not referenced by any entry point »
-- [ ] `@Dimension("inconnu", "x")` → « Dimension 'inconnu' is not declared »
-- [ ] `On ContexteInconnu.x` → « [kvr027] Missing context definition with name… »
-- [ ] Alt+Entrée dans une règle sans `On` → intention « Add missing 'On' clause »
+### Refactoring and inspections
+- [ ] Shift+F6 on a rule in policy-rules.rules: also renames its reference in
+      policy-entrypoints.rules
+- [ ] Delete a rule's name → error "[kvr001] Rule name is not defined."
+- [ ] Duplicate a rule without `@Dimension` → warning "[kvr053] Rule version has duplicates…"
+- [ ] A rule that is never referenced → "not referenced by any entry point"
+- [ ] `@Dimension("unknown", "x")` → "Dimension 'unknown' is not declared"
+- [ ] `On UnknownContext.x` → "[kvr027] Missing context definition with name…"
+- [ ] Alt+Enter in a rule without `On` → the "Add missing 'On' clause" intention
 
-### Accolades colorées (examples/brackets-broken.rules)
-Ce fichier est volontairement déséquilibré — ne pas le « corriger ».
-- [ ] Règle « Nested » : les trois niveaux d'imbrication ont trois teintes
-      distinctes, et aucune n'est rouge
-- [ ] Règle « Unclosed paren » : la `(` jamais refermée est rouge
-- [ ] Règle « Stray close » : la `)` en trop est rouge
-- [ ] Règle « Mismatched » : `Round(limit]` → le `]` dépareillé **et** la `(`
-      restée seule sont rouges
-- [ ] Règle « Null safe » : `Coverage?[limit > 0]` n'a **rien** de rouge — `?[`
-      compte comme une ouvrante
-- [ ] Settings → Editor → Color Scheme → Kraken Rules : la case « Rainbow »
-      décoche les teintes de profondeur, mais le rouge des orphelines reste
+### Coloured brackets (examples/brackets-broken.rules)
+This file is deliberately unbalanced; do not "fix" it.
+- [ ] Rule "Nested": the three nesting levels have three distinct colours, none of
+      them red
+- [ ] Rule "Unclosed paren": the `(` that is never closed is red
+- [ ] Rule "Stray close": the extra `)` is red
+- [ ] Rule "Mismatched": `Round(limit]` → the mismatched `]` **and** the `(` left
+      alone are red
+- [ ] Rule "Null safe": nothing in `Coverage?[limit > 0]` is red, since `?[` counts
+      as an opener
+- [ ] Settings → Editor → Color Scheme → Kraken Rules: the "Rainbow" checkbox turns
+      off the depth colours, but unmatched brackets stay red
 
-### Vérifications hors IDE
+### Checks outside the IDE
 
 ```bash
-python3 tools/validate.py                     # cohérence plugin.xml / BNF / lexer
-python3 tools/sim_parser.py                   # grammaire vs fichiers de test
+python3 tools/validate.py                     # plugin.xml / BNF / lexer consistency
+python3 tools/sim_parser.py                   # grammar against the test files
 python3 tools/sim_parser.py examples/multi/*.rules
 ```

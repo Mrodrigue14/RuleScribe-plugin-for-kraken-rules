@@ -1,5 +1,5 @@
-// Namespace volontairement NON inclus par Policy : sa règle est invisible
-// depuis policy-entrypoints.rules (démo de la résolution par namespace).
+// Namespace deliberately NOT included by Policy: its rule is invisible from
+// policy-entrypoints.rules (demonstrates namespace resolution).
 Namespace Other
 
 Context Widget {
