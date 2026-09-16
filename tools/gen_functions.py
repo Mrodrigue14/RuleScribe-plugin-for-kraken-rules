@@ -75,8 +75,12 @@ def kel_type(java_type: str, generics: set) -> str:
     return JAVA_TO_KEL.get(java_type, java_type)
 
 
+# A Java string literal, possibly split with `+` over several lines, as one capture group.
+JAVA_STRING_CONCAT = r'((?:"[^"]*"\s*\+?\s*)+)'
+
+
 def strip_comments(source: str) -> str:
-    """Strips block comments, keeping the annotations that are parsed."""
+    """Strips `//` comments, so annotations commented out in the engine sources are not parsed."""
     return re.sub(r"//[^\n]*", "", source)
 
 
@@ -104,10 +108,10 @@ def parse_examples(block: str) -> list:
     examples = []
     for raw in re.finditer(r"@Example\s*\(", block):
         args = parse_annotation_args(block[raw.end() - 1:])
-        value = re.search(r'value\s*=\s*((?:"[^"]*"\s*\+?\s*)+)', args)
+        value = re.search(r'value\s*=\s*' + JAVA_STRING_CONCAT, args)
         if value is None:
-            value = re.match(r'\s*((?:"[^"]*"\s*\+?\s*)+)', args)
-        result = re.search(r'result\s*=\s*((?:"[^"]*"\s*\+?\s*)+)', args)
+            value = re.match(r'\s*' + JAVA_STRING_CONCAT, args)
+        result = re.search(r'result\s*=\s*' + JAVA_STRING_CONCAT, args)
         if value:
             examples.append({
                 "expression": unescape(value.group(1)),
@@ -116,7 +120,7 @@ def parse_examples(block: str) -> list:
     return examples
 
 
-def parse_parameters(signature: str, block: str, generics: set) -> list:
+def parse_parameters(signature: str, generics: set) -> list:
     """A method's parameters, with their KEL type and documented name."""
     inner = parse_annotation_args("(" + signature.split("(", 1)[1])
     if not inner.strip():
@@ -169,7 +173,7 @@ def parse_library(path: Path) -> dict:
     if doc:
         args = parse_annotation_args(source[doc.end() - 1:])
         for key in ("name", "description", "since"):
-            found = re.search(key + r'\s*=\s*((?:"[^"]*"\s*\+?\s*)+)', args)
+            found = re.search(key + r'\s*=\s*' + JAVA_STRING_CONCAT, args)
             if found:
                 library[key] = unescape(found.group(1))
 
@@ -186,7 +190,7 @@ def parse_library(path: Path) -> dict:
         generics |= set(re.findall(r"<\s*(\w)\s*>\s*\w", signature))
 
         description = re.search(
-            r'description\s*=\s*((?:"[^"]*"\s*\+?\s*)+)', block
+            r'description\s*=\s*' + JAVA_STRING_CONCAT, block
         )
         since = re.search(r'since\s*=\s*"([^"]*)"', block)
         returns = re.search(r'@ReturnType\s*\(\s*"([^"]*)"', block + signature)
@@ -205,7 +209,7 @@ def parse_library(path: Path) -> dict:
         functions.append({
             "name": name,
             "library": library["name"],
-            "parameters": parse_parameters(signature, block, generics),
+            "parameters": parse_parameters(signature, generics),
             "returnType": returns.group(1) if returns
             else kel_type(java_return, generics),
             "description": unescape(description.group(1)) if description else None,

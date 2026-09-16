@@ -51,7 +51,7 @@ class KrakenParseErrorMessageTest : BasePlatformTestCase() {
      */
     fun testMessagesStayReadableInLength() {
         for (message in errors(brokenExpression)) {
-            assertTrue("message trop long (${message.length}) : $message", message.length < 150)
+            assertTrue("message too long (${message.length}): $message", message.length < 150)
         }
     }
 

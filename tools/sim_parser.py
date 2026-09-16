@@ -48,7 +48,7 @@ def lex(s):
             toks.append(('STRING',s[i:j])); i=j; continue
         if c.isdigit():
             m=DATE_RE.match(s,i)
-            if m and m.group(0).count('-')==2:
+            if m:
                 toks.append(('NUMBER_LIT',m.group(0))); i=m.end(); continue
             j=i+1
             while j<n and s[j].isdigit(): j+=1
@@ -143,7 +143,7 @@ def seqp(pin, rule, *ps):
         for i, p in enumerate(ps):
             if not p(s):
                 if i + 1 > pin:
-                    ERRORS.append((s.p, f"[{rule}] elem#{i} attendu, token #{s.p}: " +
+                    ERRORS.append((s.p, f"[{rule}] elem#{i} expected, token #{s.p}: " +
                                    " ".join(t[1] for t in s.t[max(0,s.p-5):s.p+3])))
                     return True
                 s.p = save
@@ -310,7 +310,7 @@ def parse_file(path):
     full = ok and s.p==len(toks)
     if ERRORS:
         full=False
-    status='OK' if (full and not bad) else 'ECHEC'
+    status='OK' if (full and not bad) else 'FAILED'
     print(f"{status}  {path}  ({len(toks)} tokens)")
     if bad: print("   invalid tokens:",bad[:5])
     for off,msg in ERRORS[:4]: print("   FALSE POSITIVE:", msg)
