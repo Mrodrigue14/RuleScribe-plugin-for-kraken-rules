@@ -41,10 +41,10 @@ class KrakenEntryPointReference(element: KrakenEpRef, range: TextRange) : PsiRef
 
     override fun resolve(): PsiElement? {
         val name = element.entryPointName ?: return null
-        return KrakenPsiUtil.findEntryPointVisible(element, name)
+        return KrakenDeclarations.findEntryPointVisible(element, name)
     }
 
-    override fun getVariants(): Array<Any> = KrakenPsiUtil.findEntryPointsVisible(element)
+    override fun getVariants(): Array<Any> = KrakenDeclarations.findEntryPointsVisible(element)
         .mapNotNull { it.name }
         .distinct()
         .toTypedArray()

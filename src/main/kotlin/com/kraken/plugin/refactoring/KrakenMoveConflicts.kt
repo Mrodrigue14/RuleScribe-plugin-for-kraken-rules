@@ -3,8 +3,10 @@ package com.kraken.plugin.refactoring
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.lang.KrakenFile
+import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.psi.KrakenEpRef
+import com.kraken.plugin.psi.KrakenNamespaces
 import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
 import com.kraken.plugin.psi.KrakenRuleRef
@@ -29,9 +31,9 @@ object KrakenMoveConflicts {
      */
     fun brokenBy(declaration: KrakenRuleDecl, target: KrakenFile): List<KrakenRuleRef> {
         val name = declaration.name ?: return emptyList()
-        val targetNamespace = KrakenPsiUtil.namespaceOf(target)
-        return KrakenPsiUtil.findRuleRefsVisibleTo(declaration)
-            .filterNot { KrakenPsiUtil.seesRule(it.containingFile, name, target, targetNamespace) }
+        val targetNamespace = KrakenNamespaces.namespaceOf(target)
+        return KrakenDeclarations.findRuleRefsVisibleTo(declaration)
+            .filterNot { KrakenNamespaces.seesRule(it.containingFile, name, target, targetNamespace) }
     }
 
     /**
@@ -56,8 +58,8 @@ object KrakenMoveConflicts {
         // Incoming. There is no import axis here: `KrakenDSL.g4` only has `Include` and
         // `Import Rule` (`anImport : namespaceImport | ruleImport`), so nothing rescues an entry
         // point that became invisible.
-        val incoming = KrakenPsiUtil.findEpRefsVisibleTo(declaration)
-            .filterNot { KrakenPsiUtil.sees(it.containingFile, target) }
+        val incoming = KrakenDeclarations.findEpRefsVisibleTo(declaration)
+            .filterNot { KrakenNamespaces.sees(it.containingFile, target) }
 
         // Outgoing. An item that already fails to resolve is not broken by the move.
         val outgoing = mutableListOf<PsiElement>()
@@ -72,12 +74,12 @@ object KrakenMoveConflicts {
     private fun ruleItemSurvives(item: KrakenRuleRef, target: KrakenFile): Boolean {
         val declaration = item.reference.resolve() as? KrakenRuleDecl ?: return true
         val declarationFile = declaration.containingFile as? KrakenFile ?: return true
-        return KrakenPsiUtil.seesRule(target, item.ruleName, declarationFile, KrakenPsiUtil.namespaceOf(declarationFile))
+        return KrakenNamespaces.seesRule(target, item.ruleName, declarationFile, KrakenNamespaces.namespaceOf(declarationFile))
     }
 
     /** A nested entry point item only has the visibility axis. */
     private fun epItemSurvives(item: KrakenEpRef, target: KrakenFile): Boolean {
         val declarationFile = item.reference?.resolve()?.containingFile ?: return true
-        return KrakenPsiUtil.sees(target, declarationFile)
+        return KrakenNamespaces.sees(target, declarationFile)
     }
 }

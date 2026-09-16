@@ -6,6 +6,7 @@ import com.intellij.lang.parameterInfo.ParameterInfoUIContext
 import com.intellij.lang.parameterInfo.UpdateParameterInfoContext
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.functions.KrakenFunctionCatalog
+import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenFunctionDecl
 import com.kraken.plugin.psi.KrakenPsiUtil
@@ -58,7 +59,7 @@ class KrakenParameterInfoHandler : ParameterInfoHandler<KrakenFunctionCall, Stri
         val native = KrakenFunctionCatalog.byName(name)
             .sortedBy { it.parameters.size }
             .map { it.signature() }
-        val declared = KrakenPsiUtil.findFunctionsVisible(call)
+        val declared = KrakenDeclarations.findFunctionsVisible(call)
             .filter { it.name == name }
             .sortedBy(KrakenFunctionDecl::arity)
             .map { it.signature() }

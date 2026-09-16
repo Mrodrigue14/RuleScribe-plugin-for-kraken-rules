@@ -5,6 +5,7 @@ import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
+import com.kraken.plugin.psi.KrakenContexts
 import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
 
@@ -16,7 +17,7 @@ import com.kraken.plugin.psi.KrakenRuleDecl
 class KrakenUnknownContextInspection : LocalInspectionTool() {
 
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : PsiElementVisitor() {
-        private val known by lazy { KrakenPsiUtil.findContextNamesVisible(holder.file).toSet() }
+        private val known by lazy { KrakenContexts.findContextNamesVisible(holder.file).toSet() }
 
         override fun visitElement(element: PsiElement) {
             if (element !is KrakenRuleDecl) return

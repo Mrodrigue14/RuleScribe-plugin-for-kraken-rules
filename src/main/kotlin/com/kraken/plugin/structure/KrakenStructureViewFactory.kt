@@ -20,6 +20,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.lang.KrakenFile
 import com.kraken.plugin.lang.KrakenIcons
 import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.psi.KrakenContexts
 import com.kraken.plugin.psi.KrakenDimensionDecl
 import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.psi.KrakenFunctionDecl
@@ -86,7 +87,7 @@ class KrakenStructureViewElement(private val element: PsiElement) :
         Kind.RULE -> (element as KrakenRuleDecl).name
         Kind.ENTRY_POINT -> (element as KrakenEntryPointDecl).name
         Kind.DIMENSION -> (element as KrakenDimensionDecl).dimensionName
-        Kind.CONTEXT -> KrakenPsiUtil.contextName(element)
+        Kind.CONTEXT -> KrakenContexts.contextName(element)
         Kind.FUNCTION -> (element as KrakenFunctionDecl).name
         null -> null
     }

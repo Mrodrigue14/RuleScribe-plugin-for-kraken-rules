@@ -10,6 +10,7 @@ import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.functions.KrakenFunctionCatalog
 import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenFunctionDecl
 import com.kraken.plugin.psi.KrakenPresentations
@@ -41,7 +42,7 @@ class KrakenDocumentationProvider : AbstractDocumentationProvider() {
     }
 
     private fun renderCall(call: KrakenFunctionCall): String? {
-        KrakenPsiUtil.findFunctionVisible(call, call.functionName, call.argumentCount)
+        KrakenDeclarations.findFunctionVisible(call, call.functionName, call.argumentCount)
             ?.let { return KrakenFunctionDoc.render(it) }
         return KrakenFunctionCatalog.find(call.functionName, call.argumentCount)?.let { KrakenFunctionDoc.render(it) }
     }

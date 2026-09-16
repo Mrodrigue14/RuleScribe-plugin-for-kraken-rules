@@ -42,7 +42,7 @@ object KrakenScopeResolver {
         targetContextName(reference)?.let { context ->
             findField(reference, context, name)?.let { return it }
         }
-        return KrakenPsiUtil.findContextDecl(reference.containingFile, name)
+        return KrakenContexts.findContextDecl(reference.containingFile, name)
     }
 
     /**
@@ -114,9 +114,9 @@ object KrakenScopeResolver {
         variableScopes(reference).mapNotNullTo(names) { variableNameOf(it) }
         enclosingFunction(reference)?.parameterList?.mapNotNullTo(names) { it.name }
         targetContextName(reference)?.let {
-            names.addAll(KrakenPsiUtil.contextFieldNames(reference.containingFile, it))
+            names.addAll(KrakenContexts.contextFieldNames(reference.containingFile, it))
         }
-        names.addAll(KrakenPsiUtil.findContextNamesVisible(reference.containingFile))
+        names.addAll(KrakenContexts.findContextNamesVisible(reference.containingFile))
         return names.toList()
     }
 
@@ -129,15 +129,15 @@ object KrakenScopeResolver {
         targetContextName(reference)?.let { target ->
             contextOfField(reference, target, name)?.let { return it }
         }
-        if (KrakenPsiUtil.findContextDecl(reference.containingFile, name) != null) return name
+        if (KrakenContexts.findContextDecl(reference.containingFile, name) != null) return name
         return null
     }
 
     fun targetContextName(element: PsiElement): String? = PsiTreeUtil.getParentOfType(element, KrakenRuleDecl::class.java, false)?.targetContextLeaf()?.text
 
     /** Declaration of [field] in [context], including fields inherited through `Is`. */
-    fun findField(from: PsiElement, context: String, field: String): PsiElement? = KrakenPsiUtil.contextMembers(from.containingFile, context)
-        .firstOrNull { KrakenPsiUtil.memberName(it) == field }
+    fun findField(from: PsiElement, context: String, field: String): PsiElement? = KrakenContexts.contextMembers(from.containingFile, context)
+        .firstOrNull { KrakenContexts.memberName(it) == field }
         ?.psi
 
     /**
@@ -151,7 +151,7 @@ object KrakenScopeResolver {
         if (field.node.elementType == KrakenTypes.CHILD_DECL) return name
         // `Address address`: the first identifier is the type.
         val type = fieldDeclType(field.node) ?: return null
-        return type.takeIf { KrakenPsiUtil.findContextDecl(from.containingFile, it) != null }
+        return type.takeIf { KrakenContexts.findContextDecl(from.containingFile, it) != null }
     }
 
     /**

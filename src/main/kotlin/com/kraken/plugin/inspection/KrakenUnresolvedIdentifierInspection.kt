@@ -7,6 +7,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.psi.KrakenContexts
 import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenFunctionDecl
 import com.kraken.plugin.psi.KrakenPsiUtil
@@ -64,7 +65,7 @@ class KrakenUnresolvedIdentifierInspection : LocalInspectionTool() {
 
     private fun hasResolvableTarget(element: PsiElement): Boolean {
         val target = KrakenScopeResolver.targetContextName(element) ?: return false
-        return KrakenPsiUtil.findContextDecl(element.containingFile, target) != null
+        return KrakenContexts.findContextDecl(element.containingFile, target) != null
     }
 
     /**

@@ -7,6 +7,7 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenPsiUtil
 
 /**
@@ -16,7 +17,7 @@ import com.kraken.plugin.psi.KrakenPsiUtil
 class KrakenUndeclaredDimensionInspection : LocalInspectionTool() {
 
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : PsiElementVisitor() {
-        private val declared by lazy { KrakenPsiUtil.findDimensionNamesVisible(holder.file) }
+        private val declared by lazy { KrakenDeclarations.findDimensionNamesVisible(holder.file) }
 
         override fun visitElement(element: PsiElement) {
             if (element.node?.elementType != KrakenTypes.DIMENSION_ANNOTATION) return

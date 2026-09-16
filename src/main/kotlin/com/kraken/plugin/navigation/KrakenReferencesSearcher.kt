@@ -5,6 +5,7 @@ import com.intellij.psi.PsiReference
 import com.intellij.psi.search.PsiSearchScopeUtil
 import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.util.Processor
+import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
@@ -24,14 +25,14 @@ class KrakenReferencesSearcher : QueryExecutorBase<PsiReference, ReferencesSearc
         val scope = queryParameters.effectiveSearchScope
         when (target) {
             is KrakenRuleDecl -> {
-                for (ref in KrakenPsiUtil.findRuleRefsVisibleTo(target)) {
+                for (ref in KrakenDeclarations.findRuleRefsVisibleTo(target)) {
                     if (!PsiSearchScopeUtil.isInScope(scope, ref)) continue
                     consumer.process(ref.reference)
                 }
             }
 
             is KrakenEntryPointDecl -> {
-                for (ref in KrakenPsiUtil.findEpRefsVisibleTo(target)) {
+                for (ref in KrakenDeclarations.findEpRefsVisibleTo(target)) {
                     if (!PsiSearchScopeUtil.isInScope(scope, ref)) continue
                     val reference = ref.reference ?: continue
                     consumer.process(reference)

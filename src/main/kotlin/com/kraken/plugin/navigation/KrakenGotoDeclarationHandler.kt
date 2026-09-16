@@ -4,6 +4,7 @@ import com.intellij.codeInsight.navigation.actions.GotoDeclarationHandler
 import com.intellij.openapi.editor.Editor
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
+import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenEpRef
 import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleRef
@@ -22,14 +23,14 @@ class KrakenGotoDeclarationHandler : GotoDeclarationHandler {
         // several @Dimension variants.
         val ruleRef = PsiTreeUtil.getParentOfType(sourceElement, KrakenRuleRef::class.java, false)
         if (ruleRef != null) {
-            return KrakenPsiUtil.findRulesVisible(ruleRef, ruleRef.ruleName)
+            return KrakenDeclarations.findRulesVisible(ruleRef, ruleRef.ruleName)
                 .toTypedArray<PsiElement>()
                 .takeIf { it.isNotEmpty() }
         }
         val epRef = PsiTreeUtil.getParentOfType(sourceElement, KrakenEpRef::class.java, false)
         if (epRef != null) {
             val name = epRef.entryPointName ?: return null
-            return KrakenPsiUtil.findEntryPointsVisible(epRef, name)
+            return KrakenDeclarations.findEntryPointsVisible(epRef, name)
                 .toTypedArray<PsiElement>()
                 .takeIf { it.isNotEmpty() }
         }

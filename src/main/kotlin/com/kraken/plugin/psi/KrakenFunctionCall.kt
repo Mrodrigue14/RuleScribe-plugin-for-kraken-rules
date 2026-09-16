@@ -40,7 +40,7 @@ class KrakenFunctionCall(node: ASTNode) : ASTWrapperPsiElement(node) {
     }
 
     fun isResolvable(): Boolean = KrakenFunctionCatalog.find(functionName, argumentCount) != null ||
-        KrakenPsiUtil.findFunctionVisible(this, functionName, argumentCount) != null
+        KrakenDeclarations.findFunctionVisible(this, functionName, argumentCount) != null
 
     private fun headRange(): TextRange? {
         val args = node.findChildByType(KrakenTypes.CALL_ARGS) ?: return null
@@ -54,9 +54,9 @@ class KrakenFunctionCall(node: ASTNode) : ASTWrapperPsiElement(node) {
  */
 class KrakenFunctionReference(element: KrakenFunctionCall, range: TextRange) : PsiReferenceBase<KrakenFunctionCall>(element, range, true) {
 
-    override fun resolve(): PsiElement? = KrakenPsiUtil.findFunctionVisible(element, element.functionName, element.argumentCount)
+    override fun resolve(): PsiElement? = KrakenDeclarations.findFunctionVisible(element, element.functionName, element.argumentCount)
 
-    override fun getVariants(): Array<Any> = KrakenPsiUtil.findFunctionsVisible(element)
+    override fun getVariants(): Array<Any> = KrakenDeclarations.findFunctionsVisible(element)
         .mapNotNull { it.name }
         .distinct()
         .toTypedArray()

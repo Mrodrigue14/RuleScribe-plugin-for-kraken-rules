@@ -4,6 +4,7 @@ import com.intellij.navigation.NavigationItem
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
@@ -25,10 +26,10 @@ class KrakenNavigationPresentationTest : BasePlatformTestCase() {
         val source = myFixture.file.findElementAt(myFixture.caretOffset)
         assertNotNull("Expected an element at caret", source)
         PsiTreeUtil.getParentOfType(source, KrakenRuleDecl::class.java)?.let {
-            return KrakenPsiUtil.findRuleRefsVisibleTo(it)
+            return KrakenDeclarations.findRuleRefsVisibleTo(it)
         }
         PsiTreeUtil.getParentOfType(source, KrakenEntryPointDecl::class.java)?.let {
-            return KrakenPsiUtil.findEpRefsVisibleTo(it)
+            return KrakenDeclarations.findEpRefsVisibleTo(it)
         }
         fail("No declaration at caret")
         return emptyList()

@@ -17,6 +17,8 @@ import com.intellij.util.ProcessingContext
 import com.kraken.plugin.functions.KrakenFunctionCatalog
 import com.kraken.plugin.lang.KrakenFile
 import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.psi.KrakenContexts
+import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.psi.KrakenEpRef
 import com.kraken.plugin.psi.KrakenPresentations
@@ -49,7 +51,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
 
         when {
             isInside(position, KrakenTypes.DIMENSION_ANNOTATION) -> {
-                for (name in KrakenPsiUtil.findDimensionNamesVisible(file)) {
+                for (name in KrakenDeclarations.findDimensionNamesVisible(file)) {
                     result.addElement(
                         LookupElementBuilder.create("\"$name\"")
                             .withPresentableText(name)
@@ -66,7 +68,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
             dot != null && (!inRuleTarget || prevType == KrakenTypes.DOT) -> addFieldCompletions(file, dot, result)
 
             inRuleTarget -> {
-                for (name in KrakenPsiUtil.findContextNamesVisible(file)) {
+                for (name in KrakenContexts.findContextNamesVisible(file)) {
                     result.addElement(
                         LookupElementBuilder.create(name).withTypeText("context", true),
                     )
@@ -95,7 +97,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
     /** Fields and children of the context named just before [dot]. */
     private fun addFieldCompletions(file: KrakenFile, dot: PsiElement, result: CompletionResultSet) {
         val contextName = PsiTreeUtil.prevCodeLeaf(dot)?.text ?: return
-        for (field in KrakenPsiUtil.contextFieldNames(file, contextName)) {
+        for (field in KrakenContexts.contextFieldNames(file, contextName)) {
             result.addElement(LookupElementBuilder.create(field).withTypeText("field", true))
         }
     }
@@ -122,7 +124,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
             emptySet()
         }
 
-        for (rule in KrakenPsiUtil.findRulesVisible(file)) {
+        for (rule in KrakenDeclarations.findRulesVisible(file)) {
             val name = rule.name ?: continue
             if (name in alreadyListed) continue
             result.addElement(
@@ -132,7 +134,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
                     .withTypeText(rule.containingFile.name, true),
             )
         }
-        for (entryPoint in KrakenPsiUtil.findEntryPointsVisible(file)) {
+        for (entryPoint in KrakenDeclarations.findEntryPointsVisible(file)) {
             val name = entryPoint.name ?: continue
             if (name == currentName || name in alreadyListed) continue
             result.addElement(
@@ -159,7 +161,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
                     .withInsertHandler(ParenthesesInsertHandler.getInstance(function.parameters.isNotEmpty())),
             )
         }
-        for (declaration in KrakenPsiUtil.findFunctionsVisible(position)) {
+        for (declaration in KrakenDeclarations.findFunctionsVisible(position)) {
             val name = declaration.name ?: continue
             result.addElement(
                 LookupElementBuilder.create(name)

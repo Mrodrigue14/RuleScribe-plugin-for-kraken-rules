@@ -6,6 +6,7 @@ import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
 
@@ -21,7 +22,7 @@ class KrakenDuplicateRuleInspection : LocalInspectionTool() {
             if (element !is KrakenRuleDecl) return
             val name = element.name ?: return
             if (hasAnnotations(element)) return
-            val duplicates = KrakenPsiUtil.findRulesVisible(element)
+            val duplicates = KrakenDeclarations.findRulesVisible(element)
                 .filter { it.name == name && !hasAnnotations(it) }
             if (duplicates.size > 1) {
                 holder.registerProblem(

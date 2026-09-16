@@ -5,6 +5,7 @@ import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
+import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
 
@@ -18,7 +19,7 @@ class KrakenUnusedRuleInspection : LocalInspectionTool() {
         override fun visitElement(element: PsiElement) {
             if (element !is KrakenRuleDecl) return
             val name = element.name ?: return
-            if (KrakenPsiUtil.findRuleRefsVisibleTo(element).isEmpty()) {
+            if (KrakenDeclarations.findRuleRefsVisibleTo(element).isEmpty()) {
                 holder.registerProblem(
                     element.nameIdentifier ?: element,
                     "Rule '$name' is not referenced by any entry point that can see its namespace",
