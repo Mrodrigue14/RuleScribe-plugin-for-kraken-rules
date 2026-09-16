@@ -6,7 +6,6 @@ import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.kraken.plugin.psi.KrakenDeclarations
-import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
 
 /**

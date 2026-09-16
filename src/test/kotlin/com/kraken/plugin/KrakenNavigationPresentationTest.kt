@@ -6,7 +6,6 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenEntryPointDecl
-import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
 
 /**

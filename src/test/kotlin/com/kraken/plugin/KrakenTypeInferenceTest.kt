@@ -2,7 +2,6 @@ package com.kraken.plugin
 
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.psi.KrakenFunctionCall
-import com.kraken.plugin.psi.KrakenRefExpr
 import com.kraken.plugin.types.KrakenType
 import com.kraken.plugin.types.KrakenTypeInference
 

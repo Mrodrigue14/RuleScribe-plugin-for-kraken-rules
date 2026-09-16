@@ -6,7 +6,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenEpRef
-import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleRef
 
 /** Ctrl+B / Ctrl+click from a reference (an EntryPoint item) to its declarations. */

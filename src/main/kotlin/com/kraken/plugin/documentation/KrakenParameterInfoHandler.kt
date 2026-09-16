@@ -9,7 +9,6 @@ import com.kraken.plugin.functions.KrakenFunctionCatalog
 import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenFunctionDecl
-import com.kraken.plugin.psi.KrakenPsiUtil
 
 /**
  * Parameter info (Ctrl+P) for a KEL function call.

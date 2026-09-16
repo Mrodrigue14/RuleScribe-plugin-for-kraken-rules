@@ -7,7 +7,6 @@ import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.completion.CompletionType
 import com.intellij.codeInsight.completion.util.ParenthesesInsertHandler
 import com.intellij.codeInsight.lookup.LookupElementBuilder
-import com.intellij.icons.AllIcons
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.PsiElement
 import com.intellij.psi.impl.source.tree.TreeUtil
@@ -22,7 +21,6 @@ import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.psi.KrakenEpRef
 import com.kraken.plugin.psi.KrakenPresentations
-import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleRef
 
 class KrakenCompletionContributor : CompletionContributor() {
