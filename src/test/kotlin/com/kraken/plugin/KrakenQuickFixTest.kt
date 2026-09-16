@@ -1,7 +1,5 @@
 package com.kraken.plugin
 
-import com.intellij.psi.PsiErrorElement
-import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.inspection.KrakenDuplicateRuleInspection
 import com.kraken.plugin.inspection.KrakenUndeclaredDimensionInspection

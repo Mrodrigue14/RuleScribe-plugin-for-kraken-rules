@@ -10,7 +10,6 @@ import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenContexts
 import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenFunctionDecl
-import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRefExpr
 import com.kraken.plugin.psi.KrakenScopeResolver
 

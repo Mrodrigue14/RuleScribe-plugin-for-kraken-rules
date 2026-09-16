@@ -1,7 +1,6 @@
 package com.kraken.plugin
 
 import com.intellij.psi.PsiElement
-import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenScopeResolver
 

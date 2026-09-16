@@ -9,7 +9,6 @@ import com.kraken.plugin.lang.KrakenFile
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenNamespaces
-import com.kraken.plugin.psi.KrakenPsiUtil
 
 /**
  * Base of the `Import Rule "X" From Ns` inspections, which mirror the engine's four

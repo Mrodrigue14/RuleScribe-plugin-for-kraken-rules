@@ -8,7 +8,6 @@ import com.intellij.psi.PsiElement
 import com.kraken.plugin.functions.KrakenFunctionCatalog
 import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenFunctionCall
-import com.kraken.plugin.psi.KrakenPsiUtil
 
 /**
  * Colours the called name in a KEL expression.

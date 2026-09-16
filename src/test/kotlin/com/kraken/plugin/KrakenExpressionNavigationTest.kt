@@ -4,7 +4,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenPathSegment
-import com.kraken.plugin.psi.KrakenRefExpr
 
 /**
  * Ctrl+B from an expression: `Assert`, `When`, `Default To`.

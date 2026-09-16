@@ -8,7 +8,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenDeclarations
-import com.kraken.plugin.psi.KrakenPsiUtil
 
 /**
  * Reports a `@Dimension("name", ...)` whose name no `Dimension "name" : Type` declares.
