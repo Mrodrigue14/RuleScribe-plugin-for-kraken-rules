@@ -152,9 +152,11 @@ object KrakenPsiUtil {
             collected.addAll(model.filesByNamespace[null].orEmpty())
             result = collected
         }
-        // The current file may not be indexed yet (light editor, tests).
-        return if (result.any { it.isEquivalentTo(fromKraken) }) result else result + fromKraken
+        return withUnindexed(result, fromKraken)
     }
+
+    /** [file] may not be indexed yet (light editor, tests), so it is added when missing. */
+    private fun withUnindexed(files: List<KrakenFile>, file: KrakenFile): List<KrakenFile> = if (files.any { it.isEquivalentTo(file) }) files else files + file
 
     /**
      * A declared `Import Rule "X" From Ns`: rule name, source namespace, and the PSI
@@ -195,32 +197,27 @@ object KrakenPsiUtil {
     /** Imports that apply to [from]'s namespace: those of all its files, as the engine merges them. */
     fun ruleImportsForNamespaceOf(from: PsiFile?): List<RuleImport> {
         val fromKraken = from as? KrakenFile ?: return emptyList()
-        val ns = namespaceOf(fromKraken)
-        val files = krakenFiles(fromKraken.project).filter { namespaceOf(it) == ns }
-        val importing =
-            if (files.any { it.isEquivalentTo(fromKraken) }) files else files + fromKraken
-        return importing.flatMap { ruleImportsOf(it) }
+        val files = filesOfNamespace(fromKraken.project, namespaceOf(fromKraken))
+        return withUnindexed(files, fromKraken).flatMap { ruleImportsOf(it) }
     }
 
-    fun namespaceExists(project: Project, ns: String): Boolean = krakenFiles(project).any { namespaceOf(it) == ns }
+    fun namespaceExists(project: Project, ns: String): Boolean = ns in namespaceModel(project).filesByNamespace
 
     /** Files of namespace [ns]; null means files without a namespace. */
-    fun filesOfNamespace(project: Project, ns: String?): List<KrakenFile> = krakenFiles(project).filter { namespaceOf(it) == ns }
+    fun filesOfNamespace(project: Project, ns: String?): List<KrakenFile> = namespaceModel(project).filesByNamespace[ns].orEmpty()
+
+    /** Rules named [name] in [files], read from the stub index without loading ASTs. */
+    private fun indexedRules(project: Project, files: List<KrakenFile>, name: String): List<KrakenRuleDecl> {
+        val virtualFiles = files.mapNotNull { it.virtualFile }
+        if (virtualFiles.isEmpty()) return emptyList()
+        val scope = GlobalSearchScope.filesScope(project, virtualFiles)
+        return StubIndex.getElements(KrakenRuleNameIndex.KEY, name, project, scope, KrakenRuleDecl::class.java).toList()
+    }
 
     /** Resolves a rule declared in namespace [ns], bypassing Include visibility as `Import Rule` does. */
     fun findRuleInNamespace(project: Project, ns: String?, name: String): KrakenRuleDecl? {
         val files = filesOfNamespace(project, ns)
-        val virtualFiles = files.mapNotNull { it.virtualFile }
-        if (virtualFiles.isNotEmpty()) {
-            val scope = GlobalSearchScope.filesScope(project, virtualFiles)
-            StubIndex.getElements(
-                KrakenRuleNameIndex.KEY,
-                name,
-                project,
-                scope,
-                KrakenRuleDecl::class.java,
-            ).firstOrNull()?.let { return it }
-        }
+        indexedRules(project, files, name).firstOrNull()?.let { return it }
         return files
             .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenRuleDecl::class.java) }
             .firstOrNull { it.name == name }
@@ -252,20 +249,7 @@ object KrakenPsiUtil {
      * all of them.
      */
     fun findRulesVisible(from: PsiElement, name: String): List<KrakenRuleDecl> {
-        // Fast path: the stub index, without loading ASTs.
-        val project = from.project
-        val virtualFiles = visibleFiles(from.containingFile).mapNotNull { it.virtualFile }
-        val indexed = if (virtualFiles.isEmpty()) {
-            emptyList()
-        } else {
-            StubIndex.getElements(
-                KrakenRuleNameIndex.KEY,
-                name,
-                project,
-                GlobalSearchScope.filesScope(project, virtualFiles),
-                KrakenRuleDecl::class.java,
-            ).toList()
-        }
+        val indexed = indexedRules(from.project, visibleFiles(from.containingFile), name)
         // Fallback for unindexed files (light editor, fragments, tests).
         val declared = indexed.ifEmpty { findRulesVisible(from).filter { it.name == name } }
         // Explicitly imported rule, independent of Include.
