@@ -3,6 +3,7 @@ package com.kraken.plugin.psi
 import com.intellij.extapi.psi.ASTWrapperPsiElement
 import com.intellij.lang.ASTNode
 import com.intellij.navigation.ItemPresentation
+import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.kraken.plugin.parser.KrakenTypes
@@ -14,7 +15,7 @@ class KrakenEntryPointDecl(node: ASTNode) :
 
     override fun getNameIdentifier(): PsiElement? = nameLeaf()?.psi
 
-    override fun getName(): String? = nameLeaf()?.text?.let(KrakenPsiUtil::unquote)
+    override fun getName(): String? = nameLeaf()?.text?.let(StringUtil::unquoteString)
 
     override fun getPresentation(): ItemPresentation = KrakenPresentations.of(
         this,

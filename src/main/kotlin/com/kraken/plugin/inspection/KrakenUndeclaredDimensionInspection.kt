@@ -3,9 +3,11 @@ package com.kraken.plugin.inspection
 import com.intellij.codeInspection.LocalInspectionTool
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
+import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenPsiUtil
 
 /**
@@ -15,12 +17,13 @@ import com.kraken.plugin.psi.KrakenPsiUtil
 class KrakenUndeclaredDimensionInspection : LocalInspectionTool() {
 
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : PsiElementVisitor() {
+        private val declared by lazy { KrakenDeclarations.findDimensionNamesVisible(holder.file) }
+
         override fun visitElement(element: PsiElement) {
             if (element.node?.elementType != KrakenTypes.DIMENSION_ANNOTATION) return
             val firstArg = element.node.findChildByType(KrakenTypes.ANNOTATION_ARG) ?: return
             val stringLeaf = firstArg.findChildByType(KrakenTypes.STRING) ?: return
-            val name = KrakenPsiUtil.unquote(stringLeaf.text)
-            val declared = KrakenPsiUtil.findDimensionNamesVisible(element.containingFile)
+            val name = StringUtil.unquoteString(stringLeaf.text)
             if (declared.isNotEmpty() && name !in declared) {
                 holder.registerProblem(
                     stringLeaf.psi,

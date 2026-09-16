@@ -3,6 +3,7 @@ package com.kraken.plugin.parser
 import com.intellij.lexer.LexerBase
 import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IElementType
+import com.intellij.psi.tree.TokenSet
 
 /**
  * Hand-written lexer for the Kraken `.rules` DSL.
@@ -59,26 +60,12 @@ class KrakenLexer : LexerBase() {
 
             c.isLetter() || c == '_' -> scanWord()
 
-            c == '?' && peek(1) == '.' -> twoCharToken(KrakenTypes.QDOT)
-
-            c == '?' && peek(1) == '[' -> twoCharToken(KrakenTypes.QLBRACKET)
-
-            c == '*' && peek(1) == '*' -> twoCharToken(KrakenTypes.OP)
-
-            // Checked before SINGLE_CHAR_TOKENS, which would split `>=` into `>` and `=`; `>=` is
-            // a single operator in the engine (`OP_MORE_EQUALS` in Common.g4).
-            (c == '>' || c == '<') && peek(1) == '=' -> twoCharToken(KrakenTypes.OP)
-
-            // Same reason: `|` is in the single-character table (PIPE), which is consulted before
-            // two-character operators, so `||` would otherwise become two PIPEs.
-            c == '|' && peek(1) == '|' -> twoCharToken(KrakenTypes.OP)
-
             else -> scanSymbol(c)
         }
     }
 
-    private fun twoCharToken(type: IElementType) {
-        tokenEnd = tokenStart + 2
+    private fun token(type: IElementType, length: Int) {
+        tokenEnd = tokenStart + length
         currentToken = type
     }
 
@@ -132,7 +119,7 @@ class KrakenLexer : LexerBase() {
 
     private fun scanNumber() {
         // KEL date and datetime literals: 2020-01-01 or 2020-01-01T10:00:00Z
-        val dateMatch = DATE_TIME_REGEX.matchAt(buffer, tokenStart)
+        val dateMatch = DATE_TIME_LITERAL.matchAt(buffer, tokenStart) ?: DATE_LITERAL.matchAt(buffer, tokenStart)
         if (dateMatch != null) {
             tokenEnd = dateMatch.range.last + 1
             currentToken = KrakenTypes.NUMBER_LIT
@@ -153,131 +140,127 @@ class KrakenLexer : LexerBase() {
         currentToken = KEYWORDS[word] ?: KrakenTypes.IDENTIFIER
     }
 
+    /**
+     * Longest match first, so `>=` and `||` are one operator rather than `>` then `=` or two
+     * PIPEs. Only real operators are recognised, rather than any run of operator
+     * characters, which would accept `a &|&~ b` as one OP: a typo fails at the right offset.
+     */
     private fun scanSymbol(c: Char) {
-        val single = SINGLE_CHAR_TOKENS[c]
-        if (single != null) {
-            tokenEnd = tokenStart + 1
-            currentToken = single
-            return
+        val pair = TWO_CHAR_TOKENS["$c${peek(1)}"]
+        when {
+            pair != null -> token(pair, 2)
+            c in SINGLE_CHAR_TOKENS -> token(SINGLE_CHAR_TOKENS.getValue(c), 1)
+            c in SINGLE_CHAR_OPERATORS -> token(KrakenTypes.OP, 1)
+            else -> token(TokenType.BAD_CHARACTER, 1)
         }
-        // Only real operators, longest first, rather than any run of operator characters,
-        // which would accept `a &|&~ b` as one OP. A typo fails at the right offset instead.
-        if ("$c${peek(1)}" in TWO_CHAR_OPERATORS) {
-            twoCharToken(KrakenTypes.OP)
-            return
-        }
-        if (c in SINGLE_CHAR_OPERATORS) {
-            tokenEnd = tokenStart + 1
-            currentToken = KrakenTypes.OP
-            return
-        }
-        tokenEnd = tokenStart + 1
-        currentToken = TokenType.BAD_CHARACTER
     }
 
     companion object {
-        /**
-         * The operators of `Common.g4` and nothing else: `^`, `~` and a lone `&` are not
-         * operators.
-         *
-         * `**`, `?.`, `?[`, `>=`, `<=` and `||` are recognised earlier, before the
-         * single-character table.
-         */
-        private val TWO_CHAR_OPERATORS = setOf("!=", "==", "&&")
+        /** The operators of `Common.g4` and nothing else: `^`, `~` and a lone `&` are not operators. */
+        private val TWO_CHAR_TOKENS: Map<String, IElementType> = mapOf(
+            "?." to KrakenTypes.QDOT,
+            "?[" to KrakenTypes.QLBRACKET,
+            "**" to KrakenTypes.OP,
+            ">=" to KrakenTypes.OP,
+            "<=" to KrakenTypes.OP,
+            "||" to KrakenTypes.OP,
+            "!=" to KrakenTypes.OP,
+            "==" to KrakenTypes.OP,
+            "&&" to KrakenTypes.OP,
+        )
         private const val SINGLE_CHAR_OPERATORS = "+-=!?%"
 
-        private val DATE_TIME_REGEX =
-            Regex("""\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z?)?""")
+        val DATE_LITERAL = Regex("""\d{4}-\d{2}-\d{2}""")
+        val DATE_TIME_LITERAL = Regex("""\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z?""")
 
-        private val SINGLE_CHAR_TOKENS: Map<Char, IElementType> by lazy {
-            mapOf(
-                '{' to KrakenTypes.LBRACE,
-                '}' to KrakenTypes.RBRACE,
-                '(' to KrakenTypes.LPAREN,
-                ')' to KrakenTypes.RPAREN,
-                '[' to KrakenTypes.LBRACKET,
-                ']' to KrakenTypes.RBRACKET,
-                ',' to KrakenTypes.COMMA,
-                '.' to KrakenTypes.DOT,
-                ':' to KrakenTypes.COLON,
-                '@' to KrakenTypes.AT,
-                '*' to KrakenTypes.STAR,
-                '<' to KrakenTypes.LT,
-                '>' to KrakenTypes.GT,
-                '/' to KrakenTypes.OP,
-                // A lone `|` is its own token because it also separates union type members.
-                '|' to KrakenTypes.PIPE,
-            )
-        }
+        private val SINGLE_CHAR_TOKENS: Map<Char, IElementType> = mapOf(
+            '{' to KrakenTypes.LBRACE,
+            '}' to KrakenTypes.RBRACE,
+            '(' to KrakenTypes.LPAREN,
+            ')' to KrakenTypes.RPAREN,
+            '[' to KrakenTypes.LBRACKET,
+            ']' to KrakenTypes.RBRACKET,
+            ',' to KrakenTypes.COMMA,
+            '.' to KrakenTypes.DOT,
+            ':' to KrakenTypes.COLON,
+            '@' to KrakenTypes.AT,
+            '*' to KrakenTypes.STAR,
+            '<' to KrakenTypes.LT,
+            '>' to KrakenTypes.GT,
+            '/' to KrakenTypes.OP,
+            // A lone `|` is its own token because it also separates union type members.
+            '|' to KrakenTypes.PIPE,
+        )
 
-        private val KEYWORDS: Map<String, IElementType> by lazy {
-            val map = HashMap<String, IElementType>()
-            map["namespace"] = KrakenTypes.NAMESPACE_KW
-            map["include"] = KrakenTypes.INCLUDE_KW
-            map["import"] = KrakenTypes.IMPORT_KW
-            map["from"] = KrakenTypes.FROM_KW
-            map["rule"] = KrakenTypes.RULE_KW
-            map["rules"] = KrakenTypes.RULES_KW
-            map["on"] = KrakenTypes.ON_KW
-            map["context"] = KrakenTypes.CONTEXT_KW
-            map["contexts"] = KrakenTypes.CONTEXTS_KW
-            map["system"] = KrakenTypes.SYSTEM_KW
-            map["root"] = KrakenTypes.ROOT_KW
-            map["external"] = KrakenTypes.EXTERNAL_KW
-            map["externalcontext"] = KrakenTypes.EXTERNAL_CONTEXT_KW
-            map["externalentity"] = KrakenTypes.EXTERNAL_ENTITY_KW
-            map["child"] = KrakenTypes.CHILD_KW
-            map["is"] = KrakenTypes.IS_KW
-            map["entrypoint"] = KrakenTypes.ENTRYPOINT_KW
-            map["entrypoints"] = KrakenTypes.ENTRYPOINTS_KW
-            map["when"] = KrakenTypes.WHEN_KW
-            map["assert"] = KrakenTypes.ASSERT_KW
-            map["set"] = KrakenTypes.SET_KW
-            map["default"] = KrakenTypes.DEFAULT_KW
-            map["reset"] = KrakenTypes.RESET_KW
-            map["to"] = KrakenTypes.TO_KW
-            map["mandatory"] = KrakenTypes.MANDATORY_KW
-            map["empty"] = KrakenTypes.EMPTY_KW
-            map["disabled"] = KrakenTypes.DISABLED_KW
-            map["hidden"] = KrakenTypes.HIDDEN_KW
-            map["matches"] = KrakenTypes.MATCHES_KW
-            map["size"] = KrakenTypes.SIZE_KW
-            map["min"] = KrakenTypes.MIN_KW
-            map["max"] = KrakenTypes.MAX_KW
-            map["length"] = KrakenTypes.LENGTH_KW
-            map["number"] = KrakenTypes.NUMBER_KW
-            map["step"] = KrakenTypes.STEP_KW
-            map["in"] = KrakenTypes.IN_KW
-            map["overridable"] = KrakenTypes.OVERRIDABLE_KW
-            map["error"] = KrakenTypes.ERROR_KW
-            map["warn"] = KrakenTypes.WARN_KW
-            map["info"] = KrakenTypes.INFO_KW
-            map["dimension"] = KrakenTypes.DIMENSION_KW
-            map["function"] = KrakenTypes.FUNCTION_KW
-            map["priority"] = KrakenTypes.PRIORITY_KW
-            map["description"] = KrakenTypes.DESCRIPTION_KW
-            map["notstrict"] = KrakenTypes.NOT_STRICT_KW
-            map["forbidtarget"] = KrakenTypes.FORBID_TARGET_KW
-            map["forbidreference"] = KrakenTypes.FORBID_REFERENCE_KW
-            map["serversideonly"] = KrakenTypes.SERVER_SIDE_ONLY_KW
-            map["true"] = KrakenTypes.TRUE_KW
-            map["false"] = KrakenTypes.FALSE_KW
-            map["null"] = KrakenTypes.NULL_KW
-            map["and"] = KrakenTypes.AND_KW
-            map["or"] = KrakenTypes.OR_KW
-            map["not"] = KrakenTypes.NOT_KW
-            map["if"] = KrakenTypes.IF_KW
-            map["then"] = KrakenTypes.THEN_KW
-            map["else"] = KrakenTypes.ELSE_KW
-            map["for"] = KrakenTypes.FOR_KW
-            map["every"] = KrakenTypes.EVERY_KW
-            map["some"] = KrakenTypes.SOME_KW
-            map["return"] = KrakenTypes.RETURN_KW
-            map["this"] = KrakenTypes.THIS_KW
-            map["instanceof"] = KrakenTypes.INSTANCEOF_KW
-            map["typeof"] = KrakenTypes.TYPEOF_KW
-            map["satisfies"] = KrakenTypes.SATISFIES_KW
-            map
-        }
+        private val KEYWORDS: Map<String, IElementType> = mapOf(
+            "namespace" to KrakenTypes.NAMESPACE_KW,
+            "include" to KrakenTypes.INCLUDE_KW,
+            "import" to KrakenTypes.IMPORT_KW,
+            "from" to KrakenTypes.FROM_KW,
+            "rule" to KrakenTypes.RULE_KW,
+            "rules" to KrakenTypes.RULES_KW,
+            "on" to KrakenTypes.ON_KW,
+            "context" to KrakenTypes.CONTEXT_KW,
+            "contexts" to KrakenTypes.CONTEXTS_KW,
+            "system" to KrakenTypes.SYSTEM_KW,
+            "root" to KrakenTypes.ROOT_KW,
+            "external" to KrakenTypes.EXTERNAL_KW,
+            "externalcontext" to KrakenTypes.EXTERNAL_CONTEXT_KW,
+            "externalentity" to KrakenTypes.EXTERNAL_ENTITY_KW,
+            "child" to KrakenTypes.CHILD_KW,
+            "is" to KrakenTypes.IS_KW,
+            "entrypoint" to KrakenTypes.ENTRYPOINT_KW,
+            "entrypoints" to KrakenTypes.ENTRYPOINTS_KW,
+            "when" to KrakenTypes.WHEN_KW,
+            "assert" to KrakenTypes.ASSERT_KW,
+            "set" to KrakenTypes.SET_KW,
+            "default" to KrakenTypes.DEFAULT_KW,
+            "reset" to KrakenTypes.RESET_KW,
+            "to" to KrakenTypes.TO_KW,
+            "mandatory" to KrakenTypes.MANDATORY_KW,
+            "empty" to KrakenTypes.EMPTY_KW,
+            "disabled" to KrakenTypes.DISABLED_KW,
+            "hidden" to KrakenTypes.HIDDEN_KW,
+            "matches" to KrakenTypes.MATCHES_KW,
+            "size" to KrakenTypes.SIZE_KW,
+            "min" to KrakenTypes.MIN_KW,
+            "max" to KrakenTypes.MAX_KW,
+            "length" to KrakenTypes.LENGTH_KW,
+            "number" to KrakenTypes.NUMBER_KW,
+            "step" to KrakenTypes.STEP_KW,
+            "in" to KrakenTypes.IN_KW,
+            "overridable" to KrakenTypes.OVERRIDABLE_KW,
+            "error" to KrakenTypes.ERROR_KW,
+            "warn" to KrakenTypes.WARN_KW,
+            "info" to KrakenTypes.INFO_KW,
+            "dimension" to KrakenTypes.DIMENSION_KW,
+            "function" to KrakenTypes.FUNCTION_KW,
+            "priority" to KrakenTypes.PRIORITY_KW,
+            "description" to KrakenTypes.DESCRIPTION_KW,
+            "notstrict" to KrakenTypes.NOT_STRICT_KW,
+            "forbidtarget" to KrakenTypes.FORBID_TARGET_KW,
+            "forbidreference" to KrakenTypes.FORBID_REFERENCE_KW,
+            "serversideonly" to KrakenTypes.SERVER_SIDE_ONLY_KW,
+            "true" to KrakenTypes.TRUE_KW,
+            "false" to KrakenTypes.FALSE_KW,
+            "null" to KrakenTypes.NULL_KW,
+            "and" to KrakenTypes.AND_KW,
+            "or" to KrakenTypes.OR_KW,
+            "not" to KrakenTypes.NOT_KW,
+            "if" to KrakenTypes.IF_KW,
+            "then" to KrakenTypes.THEN_KW,
+            "else" to KrakenTypes.ELSE_KW,
+            "for" to KrakenTypes.FOR_KW,
+            "every" to KrakenTypes.EVERY_KW,
+            "some" to KrakenTypes.SOME_KW,
+            "return" to KrakenTypes.RETURN_KW,
+            "this" to KrakenTypes.THIS_KW,
+            "instanceof" to KrakenTypes.INSTANCEOF_KW,
+            "typeof" to KrakenTypes.TYPEOF_KW,
+            "satisfies" to KrakenTypes.SATISFIES_KW,
+        )
+
+        /** Every keyword token, for features that treat keywords alike. */
+        val KEYWORD_TOKENS: TokenSet = TokenSet.create(*KEYWORDS.values.toTypedArray())
     }
 }

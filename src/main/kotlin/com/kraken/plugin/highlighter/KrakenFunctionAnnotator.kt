@@ -6,6 +6,7 @@ import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.kraken.plugin.functions.KrakenFunctionCatalog
+import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenPsiUtil
 
@@ -31,7 +32,7 @@ class KrakenFunctionAnnotator : Annotator {
             KrakenFunctionCatalog.find(name, arity) != null ->
                 KrakenSyntaxHighlighter.NATIVE_FUNCTION
 
-            KrakenPsiUtil.findFunctionVisible(element, name, arity) != null ->
+            KrakenDeclarations.findFunctionVisible(element, name, arity) != null ->
                 KrakenSyntaxHighlighter.DECLARED_FUNCTION
 
             // Unresolved call: left uncoloured, since colouring an unknown name as a function

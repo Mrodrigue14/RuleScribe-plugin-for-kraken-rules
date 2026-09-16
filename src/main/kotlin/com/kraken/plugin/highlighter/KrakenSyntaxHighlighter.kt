@@ -94,33 +94,7 @@ class KrakenSyntaxHighlighter : SyntaxHighlighterBase() {
 
         private val ATTRIBUTES: Map<IElementType, TextAttributesKey> by lazy {
             val map = HashMap<IElementType, TextAttributesKey>()
-            for (keyword in listOf(
-                KrakenTypes.NAMESPACE_KW, KrakenTypes.INCLUDE_KW, KrakenTypes.IMPORT_KW,
-                KrakenTypes.FROM_KW, KrakenTypes.RULE_KW, KrakenTypes.RULES_KW,
-                KrakenTypes.ON_KW, KrakenTypes.CONTEXT_KW, KrakenTypes.CONTEXTS_KW,
-                KrakenTypes.SYSTEM_KW, KrakenTypes.ROOT_KW, KrakenTypes.EXTERNAL_KW,
-                KrakenTypes.EXTERNAL_CONTEXT_KW, KrakenTypes.EXTERNAL_ENTITY_KW,
-                KrakenTypes.CHILD_KW, KrakenTypes.IS_KW, KrakenTypes.ENTRYPOINT_KW,
-                KrakenTypes.ENTRYPOINTS_KW, KrakenTypes.WHEN_KW, KrakenTypes.ASSERT_KW,
-                KrakenTypes.SET_KW, KrakenTypes.DEFAULT_KW, KrakenTypes.RESET_KW,
-                KrakenTypes.TO_KW, KrakenTypes.MANDATORY_KW, KrakenTypes.EMPTY_KW,
-                KrakenTypes.DISABLED_KW, KrakenTypes.HIDDEN_KW, KrakenTypes.MATCHES_KW,
-                KrakenTypes.SIZE_KW, KrakenTypes.MIN_KW, KrakenTypes.MAX_KW,
-                KrakenTypes.LENGTH_KW, KrakenTypes.NUMBER_KW, KrakenTypes.STEP_KW,
-                KrakenTypes.IN_KW, KrakenTypes.OVERRIDABLE_KW, KrakenTypes.ERROR_KW,
-                KrakenTypes.WARN_KW, KrakenTypes.INFO_KW, KrakenTypes.DIMENSION_KW,
-                KrakenTypes.FUNCTION_KW, KrakenTypes.PRIORITY_KW, KrakenTypes.DESCRIPTION_KW,
-                KrakenTypes.NOT_STRICT_KW, KrakenTypes.FORBID_TARGET_KW,
-                KrakenTypes.FORBID_REFERENCE_KW, KrakenTypes.SERVER_SIDE_ONLY_KW,
-                KrakenTypes.TRUE_KW, KrakenTypes.FALSE_KW, KrakenTypes.NULL_KW,
-                KrakenTypes.AND_KW, KrakenTypes.OR_KW, KrakenTypes.NOT_KW,
-                KrakenTypes.IF_KW, KrakenTypes.THEN_KW, KrakenTypes.ELSE_KW,
-                KrakenTypes.FOR_KW, KrakenTypes.EVERY_KW, KrakenTypes.SOME_KW,
-                KrakenTypes.RETURN_KW, KrakenTypes.THIS_KW, KrakenTypes.INSTANCEOF_KW,
-                KrakenTypes.TYPEOF_KW, KrakenTypes.SATISFIES_KW,
-            )) {
-                map[keyword] = KEYWORD
-            }
+            SyntaxHighlighterBase.fillMap(map, KrakenLexer.KEYWORD_TOKENS, KEYWORD)
             map[KrakenTypes.STRING] = STRING
             map[KrakenTypes.NUMBER_LIT] = NUMBER
             map[KrakenTypes.LINE_COMMENT] = LINE_COMMENT

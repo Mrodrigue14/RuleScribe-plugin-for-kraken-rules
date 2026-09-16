@@ -3,6 +3,7 @@ package com.kraken.plugin.psi
 import com.intellij.extapi.psi.StubBasedPsiElementBase
 import com.intellij.lang.ASTNode
 import com.intellij.navigation.ItemPresentation
+import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.StubBasedPsiElement
@@ -34,7 +35,7 @@ class KrakenRuleDecl :
     override fun getName(): String? {
         val stub = this.stub
         if (stub != null) return stub.name
-        return nameLeaf()?.text?.let(KrakenPsiUtil::unquote)
+        return nameLeaf()?.text?.let(StringUtil::unquoteString)
     }
 
     override fun setName(name: String): PsiElement {
@@ -55,6 +56,11 @@ class KrakenRuleDecl :
     )
 
     fun hasTarget(): Boolean = node.findChildByType(KrakenTypes.RULE_TARGET) != null
+
+    /** `Policy` in `On Policy.state`. */
+    fun targetContextLeaf(): PsiElement? = node.findChildByType(KrakenTypes.RULE_TARGET)
+        ?.let { KrakenPsiUtil.firstIdAfter(it, KrakenTypes.ON_KW) }
+        ?.psi
 
     fun ruleKeyword(): PsiElement? = node.findChildByType(KrakenTypes.RULE_KW)?.psi
 

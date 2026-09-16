@@ -73,6 +73,6 @@ class KrakenPathSegmentReference(element: KrakenPathSegment) :
 
     override fun getVariants(): Array<Any> {
         val context = element.owningContext() ?: return emptyArray()
-        return KrakenPsiUtil.contextFieldNames(element.containingFile, context).toTypedArray()
+        return KrakenContexts.contextFieldNames(element.containingFile, context).toTypedArray()
     }
 }

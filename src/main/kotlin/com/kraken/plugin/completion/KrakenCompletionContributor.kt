@@ -5,21 +5,20 @@ import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionProvider
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.completion.CompletionType
-import com.intellij.codeInsight.completion.InsertHandler
 import com.intellij.codeInsight.completion.util.ParenthesesInsertHandler
-import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.icons.AllIcons
 import com.intellij.patterns.PlatformPatterns
-import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiWhiteSpace
+import com.intellij.psi.impl.source.tree.TreeUtil
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.ProcessingContext
 import com.kraken.plugin.functions.KrakenFunctionCatalog
 import com.kraken.plugin.lang.KrakenFile
 import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.psi.KrakenContexts
+import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.psi.KrakenEpRef
 import com.kraken.plugin.psi.KrakenPresentations
@@ -43,20 +42,16 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
         // Position in the original file, without the dummy identifier, where the tree is intact.
         val position = parameters.originalPosition ?: parameters.position
         val file = position.containingFile as? KrakenFile ?: return
-        val prev = prevVisibleLeaf(position)
-
+        val prev = PsiTreeUtil.prevCodeLeaf(position)
+        val prevType = prev?.node?.elementType
+        val dot = prev?.takeIf { prevType == KrakenTypes.DOT || prevType == KrakenTypes.QDOT }
         val inRuleTarget = isInside(position, KrakenTypes.RULE_TARGET) ||
-            (
-                prev != null &&
-                    (
-                        prev.node?.elementType == KrakenTypes.ON_KW ||
-                            isInside(prev, KrakenTypes.RULE_TARGET)
-                        )
-                )
+            prevType == KrakenTypes.ON_KW ||
+            (prev != null && isInside(prev, KrakenTypes.RULE_TARGET))
 
         when {
             isInside(position, KrakenTypes.DIMENSION_ANNOTATION) -> {
-                for (name in KrakenPsiUtil.findDimensionNamesVisible(file)) {
+                for (name in KrakenDeclarations.findDimensionNamesVisible(file)) {
                     result.addElement(
                         LookupElementBuilder.create("\"$name\"")
                             .withPresentableText(name)
@@ -69,40 +64,14 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
                 addKeywords(result, ANNOTATION_KEYWORDS)
             }
 
-            inRuleTarget -> {
-                if (prev != null && prev.node?.elementType == KrakenTypes.DOT) {
-                    // "On Context.<caret>": fields and children of the context.
-                    val contextLeaf = prevVisibleLeaf(prev)
-                    val contextName = contextLeaf?.text
-                    if (contextName != null) {
-                        for (field in KrakenPsiUtil.contextFieldNames(file, contextName)) {
-                            result.addElement(
-                                LookupElementBuilder.create(field).withTypeText("field", true),
-                            )
-                        }
-                    }
-                } else {
-                    for (name in KrakenPsiUtil.findContextNamesVisible(file)) {
-                        result.addElement(
-                            LookupElementBuilder.create(name).withTypeText("context", true),
-                        )
-                    }
-                }
-            }
+            // "On Context.<caret>" and "Context.<caret>" in an expression (When, Assert, Default To…).
+            dot != null && (!inRuleTarget || prevType == KrakenTypes.DOT) -> addFieldCompletions(file, dot, result)
 
-            prev != null &&
-                (
-                    prev.node?.elementType == KrakenTypes.DOT ||
-                        prev.node?.elementType == KrakenTypes.QDOT
-                    ) -> {
-                // "Context.<caret>" in an expression (When, Assert, Default To…).
-                val headName = prevVisibleLeaf(prev)?.text
-                if (headName != null) {
-                    for (field in KrakenPsiUtil.contextFieldNames(file, headName)) {
-                        result.addElement(
-                            LookupElementBuilder.create(field).withTypeText("field", true),
-                        )
-                    }
+            inRuleTarget -> {
+                for (name in KrakenContexts.findContextNamesVisible(file)) {
+                    result.addElement(
+                        LookupElementBuilder.create(name).withTypeText("context", true),
+                    )
                 }
             }
 
@@ -122,6 +91,14 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
             else -> {
                 addKeywords(result, TOP_LEVEL_KEYWORDS)
             }
+        }
+    }
+
+    /** Fields and children of the context named just before [dot]. */
+    private fun addFieldCompletions(file: KrakenFile, dot: PsiElement, result: CompletionResultSet) {
+        val contextName = PsiTreeUtil.prevCodeLeaf(dot)?.text ?: return
+        for (field in KrakenContexts.contextFieldNames(file, contextName)) {
+            result.addElement(LookupElementBuilder.create(field).withTypeText("field", true))
         }
     }
 
@@ -147,7 +124,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
             emptySet()
         }
 
-        for (rule in KrakenPsiUtil.findRulesVisible(file)) {
+        for (rule in KrakenDeclarations.findRulesVisible(file)) {
             val name = rule.name ?: continue
             if (name in alreadyListed) continue
             result.addElement(
@@ -157,7 +134,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
                     .withTypeText(rule.containingFile.name, true),
             )
         }
-        for (entryPoint in KrakenPsiUtil.findEntryPointsVisible(file)) {
+        for (entryPoint in KrakenDeclarations.findEntryPointsVisible(file)) {
             val name = entryPoint.name ?: continue
             if (name == currentName || name in alreadyListed) continue
             result.addElement(
@@ -181,22 +158,20 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
                     .withIcon(KrakenPresentations.FUNCTION_ICON)
                     .withTailText("(${function.parameters.joinToString(", ") { it.presentation() }})", true)
                     .withTypeText(function.returnType, true)
-                    .withInsertHandler(parenthesesFor(function.parameters.isNotEmpty())),
+                    .withInsertHandler(ParenthesesInsertHandler.getInstance(function.parameters.isNotEmpty())),
             )
         }
-        for (declaration in KrakenPsiUtil.findFunctionsVisible(position)) {
+        for (declaration in KrakenDeclarations.findFunctionsVisible(position)) {
             val name = declaration.name ?: continue
             result.addElement(
                 LookupElementBuilder.create(name)
                     .withIcon(KrakenPresentations.FUNCTION_ICON)
                     .withTailText("(${declaration.parameters.joinToString(", ")})", true)
                     .withTypeText(declaration.returnType ?: declaration.containingFile.name, true)
-                    .withInsertHandler(parenthesesFor(declaration.arity > 0)),
+                    .withInsertHandler(ParenthesesInsertHandler.getInstance(declaration.arity > 0)),
             )
         }
     }
-
-    private fun parenthesesFor(hasParameters: Boolean): InsertHandler<LookupElement> = ParenthesesInsertHandler.getInstance(hasParameters)
 
     private fun addKeywords(result: CompletionResultSet, keywords: List<String>) {
         for (keyword in keywords) {
@@ -204,24 +179,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
         }
     }
 
-    private fun isInside(position: PsiElement, elementType: IElementType): Boolean {
-        var current: PsiElement? = position
-        while (current != null && current !is KrakenFile) {
-            if (current.node?.elementType == elementType) return true
-            current = current.parent
-        }
-        return false
-    }
-
-    private fun prevVisibleLeaf(element: PsiElement): PsiElement? {
-        var current = PsiTreeUtil.prevLeaf(element)
-        while (current != null &&
-            (current is PsiWhiteSpace || current is PsiComment || current.textLength == 0)
-        ) {
-            current = PsiTreeUtil.prevLeaf(current)
-        }
-        return current
-    }
+    private fun isInside(leaf: PsiElement, elementType: IElementType): Boolean = TreeUtil.findParent(leaf.node, elementType) != null
 
     companion object {
         private val TOP_LEVEL_KEYWORDS = listOf(
@@ -247,7 +205,6 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
             "NotStrict",
             "ForbidTarget",
             "ForbidReference",
-
         )
     }
 }

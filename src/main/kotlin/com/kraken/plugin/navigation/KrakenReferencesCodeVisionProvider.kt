@@ -5,6 +5,7 @@ import com.intellij.codeInsight.hints.codeVision.ReferencesCodeVisionProvider
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.kraken.plugin.lang.KrakenFile
+import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.psi.KrakenFunctionDecl
 import com.kraken.plugin.psi.KrakenPsiUtil
@@ -28,9 +29,9 @@ class KrakenReferencesCodeVisionProvider : ReferencesCodeVisionProvider() {
 
     override fun getHint(element: PsiElement, file: PsiFile): String? {
         val usages = when (element) {
-            is KrakenRuleDecl -> KrakenPsiUtil.findRuleRefsVisibleTo(element).size
-            is KrakenEntryPointDecl -> KrakenPsiUtil.findEpRefsVisibleTo(element).size
-            is KrakenFunctionDecl -> KrakenPsiUtil.findFunctionCallsVisibleTo(element).size
+            is KrakenRuleDecl -> KrakenDeclarations.findRuleRefsVisibleTo(element).size
+            is KrakenEntryPointDecl -> KrakenDeclarations.findEpRefsVisibleTo(element).size
+            is KrakenFunctionDecl -> KrakenDeclarations.findFunctionCallsVisibleTo(element).size
             else -> return null
         }
         return when (usages) {

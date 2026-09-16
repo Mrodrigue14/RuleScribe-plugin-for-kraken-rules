@@ -1,13 +1,19 @@
 package com.kraken.plugin.documentation
 
 import com.intellij.lang.documentation.AbstractDocumentationProvider
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
+import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
+import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.functions.KrakenFunctionCatalog
 import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenFunctionDecl
+import com.kraken.plugin.psi.KrakenPresentations
 import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
 
@@ -22,76 +28,66 @@ class KrakenDocumentationProvider : AbstractDocumentationProvider() {
      * documentation; without this, Ctrl+Q on `Round(x)` would show nothing.
      */
     override fun getCustomDocumentationElement(
-        editor: com.intellij.openapi.editor.Editor,
-        file: com.intellij.psi.PsiFile,
+        editor: Editor,
+        file: PsiFile,
         contextElement: PsiElement?,
         targetOffset: Int,
-    ): PsiElement? = contextElement?.let {
-        com.intellij.psi.util.PsiTreeUtil.getParentOfType(it, KrakenFunctionCall::class.java, false)
+    ): PsiElement? = contextElement?.let { PsiTreeUtil.getParentOfType(it, KrakenFunctionCall::class.java, false) }
+
+    override fun generateDoc(element: PsiElement?, originalElement: PsiElement?): String? = when (element) {
+        is KrakenFunctionDecl -> KrakenFunctionDoc.render(element)
+        is KrakenFunctionCall -> renderCall(element)
+        is KrakenRuleDecl -> renderRule(element)
+        else -> null
     }
 
-    override fun generateDoc(element: PsiElement?, originalElement: PsiElement?): String? {
-        (element as? KrakenFunctionDecl)?.let { return KrakenFunctionDoc.render(it) }
-        (element as? KrakenFunctionCall)?.let { call ->
-            KrakenPsiUtil.findFunctionVisible(call, call.functionName, call.argumentCount)
-                ?.let { return KrakenFunctionDoc.render(it) }
-            KrakenFunctionCatalog.find(call.functionName, call.argumentCount)
-                ?.let { return KrakenFunctionDoc.render(it) }
-            return null
-        }
+    private fun renderCall(call: KrakenFunctionCall): String? {
+        KrakenDeclarations.findFunctionVisible(call, call.functionName, call.argumentCount)
+            ?.let { return KrakenFunctionDoc.render(it) }
+        return KrakenFunctionCatalog.find(call.functionName, call.argumentCount)?.let { KrakenFunctionDoc.render(it) }
+    }
 
-        val rule = element as? KrakenRuleDecl ?: return null
+    private fun renderRule(rule: KrakenRuleDecl): String? {
         val name = rule.name ?: return null
-
         val sb = StringBuilder()
-        sb.append("<b>Rule</b> \"").append(StringUtil.escapeXmlEntities(name)).append("\"")
+        sb.append("<b>Rule</b> \"").append(escape(name)).append("\"")
 
-        rule.node.findChildByType(KrakenTypes.RULE_TARGET)?.let {
-            sb.append("<br/><b>On</b> ").append(StringUtil.escapeXmlEntities(compact(it.text.removePrefix("On").trim())))
+        rule.node.findChildByType(KrakenTypes.RULE_TARGET)?.let { target ->
+            val path = target.text.drop(target.findChildByType(KrakenTypes.ON_KW)?.textLength ?: 0)
+            sb.append("<br/><b>On</b> ").append(escape(KrakenPresentations.compact(path)))
         }
 
         val annotations = rule.node.getChildren(TokenSet.create(KrakenTypes.ANNOTATION))
         if (annotations.isNotEmpty()) {
             sb.append("<br/><b>Annotations:</b> ")
-            sb.append(annotations.joinToString(" ") { StringUtil.escapeXmlEntities(compact(it.text)) })
+            sb.append(annotations.joinToString(" ") { escape(KrakenPresentations.compact(it.text)) })
         }
 
-        val body = rule.node.findChildByType(KrakenTypes.RULE_BODY)
-        if (body != null) {
-            body.findChildrenRecursively(KrakenTypes.DESCRIPTION_CLAUSE).firstOrNull()?.let { desc ->
-                desc.findChildByType(KrakenTypes.STRING)?.let {
-                    sb.append("<br/><b>Description:</b> ")
-                        .append(StringUtil.escapeXmlEntities(KrakenPsiUtil.unquote(it.text)))
-                }
-            }
-            for (clauseType in listOf(
-                KrakenTypes.WHEN_CLAUSE,
-                KrakenTypes.SET_PAYLOAD,
-                KrakenTypes.DEFAULT_PAYLOAD,
-                KrakenTypes.ASSERT_PAYLOAD,
-            )) {
-                for (clause in body.findChildrenRecursively(clauseType)) {
-                    sb.append("<br/><code>")
-                        .append(StringUtil.escapeXmlEntities(StringUtil.shortenTextWithEllipsis(compact(clause.text), 120, 0)))
-                        .append("</code>")
-                }
+        val body = rule.node.findChildByType(KrakenTypes.RULE_BODY)?.psi ?: return sb.toString()
+        descendantsOf(body, KrakenTypes.DESCRIPTION_CLAUSE).firstOrNull()
+            ?.node?.findChildByType(KrakenTypes.STRING)
+            ?.let { sb.append("<br/><b>Description:</b> ").append(escape(StringUtil.unquoteString(it.text))) }
+        for (clauseType in SUMMARISED_CLAUSES) {
+            for (clause in descendantsOf(body, clauseType)) {
+                val summary = StringUtil.shortenTextWithEllipsis(KrakenPresentations.compact(clause.text), MAX_CLAUSE_LENGTH, 0)
+                sb.append("<br/><code>").append(escape(summary)).append("</code>")
             }
         }
         return sb.toString()
     }
 
-    private fun compact(text: String): String = text.replace(Regex("\\s+"), " ").trim()
+    private fun descendantsOf(root: PsiElement, type: IElementType): List<PsiElement> = PsiTreeUtil.collectElements(root) { it.node?.elementType == type }.toList()
 
-    private fun com.intellij.lang.ASTNode.findChildrenRecursively(
-        type: com.intellij.psi.tree.IElementType,
-    ): List<com.intellij.lang.ASTNode> {
-        val out = mutableListOf<com.intellij.lang.ASTNode>()
-        var child = firstChildNode
-        while (child != null) {
-            if (child.elementType == type) out.add(child)
-            out.addAll(child.findChildrenRecursively(type))
-            child = child.treeNext
-        }
-        return out
+    private fun escape(text: String): String = StringUtil.escapeXmlEntities(text)
+
+    private companion object {
+        val SUMMARISED_CLAUSES = listOf(
+            KrakenTypes.WHEN_CLAUSE,
+            KrakenTypes.SET_PAYLOAD,
+            KrakenTypes.DEFAULT_PAYLOAD,
+            KrakenTypes.ASSERT_PAYLOAD,
+        )
+
+        const val MAX_CLAUSE_LENGTH = 120
     }
 }

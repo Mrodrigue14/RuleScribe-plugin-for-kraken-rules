@@ -3,17 +3,20 @@
 import re, sys, os, glob
 import xml.etree.ElementTree as ET
 
-import os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 errors, warnings = [], []
 
 # 1. Well-formed plugin.xml, and every class it references exists.
 plugin_xml = os.path.join(ROOT, "src/main/resources/META-INF/plugin.xml")
 tree = ET.parse(plugin_xml)
-kt_files = glob.glob(os.path.join(ROOT, "src/main/kotlin/**/*.kt"), recursive=True)
+def read(path):
+    with open(path, encoding="utf-8") as handle:
+        return handle.read()
+
+
+kt_sources = {f: read(f) for f in glob.glob(os.path.join(ROOT, "src/main/kotlin/**/*.kt"), recursive=True)}
 kt_classes = set()
-for f in kt_files:
-    src = open(f, encoding="utf-8").read()
+for src in kt_sources.values():
     pkg = re.search(r'package\s+([\w.]+)', src).group(1)
     for m in re.finditer(r'\b(?:class|object)\s+(\w+)', src):
         kt_classes.add(pkg + "." + m.group(1))
@@ -70,21 +73,20 @@ for m in re.finditer(r'^\s*(?:private\s+)?([a-z_][a-z0-9_]*)\s*::=\s*(.*?)(?=^\s
 print(f"[2] BNF: {len(tokens)} tokens, {len(rule_set)} rules")
 
 # 3. KrakenTypes.* consistency, Kotlin against the BNF.
-def upper_snake(rule):
-    return rule.upper()
-generated_consts = tokens | {upper_snake(r) for r in rule_set}
-kt_all = "\n".join(open(f, encoding="utf-8").read() for f in kt_files + glob.glob(os.path.join(ROOT, "src/test/kotlin/**/*.kt"), recursive=True))
+generated_consts = tokens | {r.upper() for r in rule_set}
+test_sources = [read(f) for f in glob.glob(os.path.join(ROOT, "src/test/kotlin/**/*.kt"), recursive=True)]
+kt_all = "\n".join(list(kt_sources.values()) + test_sources)
 used_consts = set(re.findall(r'KrakenTypes\.([A-Z_][A-Z0-9_]*)', kt_all))
 for c in sorted(used_consts - generated_consts):
     errors.append(f"Kotlin uses KrakenTypes.{c}, which Grammar-Kit will not generate")
 print(f"[3] KrakenTypes: {len(used_consts)} constants used in Kotlin, all checked")
 
 # 4. The Kotlin lexer covers every BNF token.
-lexer_src = open(os.path.join(ROOT, "src/main/kotlin/com/kraken/plugin/parser/KrakenLexer.kt"), encoding="utf-8").read()
+lexer_src = read(os.path.join(ROOT, "src/main/kotlin/com/kraken/plugin/parser/KrakenLexer.kt"))
 lexer_tokens = set(re.findall(r'KrakenTypes\.([A-Z_][A-Z0-9_]*)', lexer_src))
 missing = tokens - lexer_tokens
 if missing:
-    errors.append(f"Tokens du BNF jamais produits par le lexer: {sorted(missing)}")
+    errors.append(f"BNF tokens the lexer never produces: {sorted(missing)}")
 print(f"[4] Lexer: produces {len(lexer_tokens)} token types")
 
 # 5. Every inspection has its HTML description.
@@ -102,8 +104,7 @@ for short in sorted(short_names):
 print(f"[5] Inspections: {len(short_names)} declared, descriptions checked")
 
 # 6. Balanced braces in .kt files.
-for f in kt_files:
-    src = open(f, encoding="utf-8").read()
+for f, src in kt_sources.items():
     src2 = re.sub(r'"""', '@@@', src)
     src2 = re.sub(r'@@@.*?@@@', '""', src2, flags=re.S)
     src2 = re.sub(r"'([^'\\]|\\.)'", "''", src2)   # chars BEFORE strings (otherwise '"' breaks the matching)
@@ -112,7 +113,7 @@ for f in kt_files:
     src2 = re.sub(r'/\*.*?\*/', '', src2, flags=re.S)
     if src2.count('{') != src2.count('}'):
         errors.append(f"Unbalanced braces: {f} ({src2.count('{')} vs {src2.count('}')})")
-print(f"[6] Braces: {len(kt_files)} Kotlin files checked")
+print(f"[6] Braces: {len(kt_sources)} Kotlin files checked")
 
 print()
 for w in warnings:

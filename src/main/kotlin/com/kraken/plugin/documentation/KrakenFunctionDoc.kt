@@ -14,58 +14,62 @@ import com.kraken.plugin.psi.KrakenFunctionDecl
  */
 internal object KrakenFunctionDoc {
 
-    fun render(function: KelFunction): String = buildString {
-        append("<b>Function</b> <code>").append(escape(function.signature())).append("</code>")
-        append("<br/><i>").append(escape(function.library)).append(" (built-in)</i>")
-        function.description?.takeIf { it.isNotBlank() }?.let {
-            append("<br/><br/>").append(escape(it))
-        }
-        val documented = function.parameters.filter { it.name.isNotBlank() }
-        if (documented.isNotEmpty()) {
-            append("<br/><br/><b>Parameters</b>")
-            for (parameter in documented) {
-                append("<br/><code>").append(escape(parameter.name)).append("</code> : ")
-                append(escape(parameter.type))
-                if (parameter.required) append(" <i>(required)</i>")
-            }
-        }
-        if (function.examples.isNotEmpty()) {
-            append("<br/><br/><b>Examples</b>")
-            for (example in function.examples) {
-                append("<br/><code>").append(escape(example.expression)).append("</code>")
-                example.result?.let { append(" &rarr; <code>").append(escape(it)).append("</code>") }
-            }
-        }
-        function.since?.let { append("<br/><br/><i>Since ").append(escape(it)).append("</i>") }
+    fun render(function: KelFunction): String = render(
+        signature = function.signature(),
+        origin = escape(function.library) + " (built-in)",
+        description = function.description,
+        parameters = function.parameters
+            .filter { it.name.isNotBlank() }
+            .map { it.name to " : " + escape(it.type) + if (it.required) " <i>(required)</i>" else "" },
+        examples = function.examples.map { it.expression to it.result },
+        since = function.since,
+    )
+
+    fun render(declaration: KrakenFunctionDecl): String {
+        val origin = escape(declaration.containingFile.name) + if (declaration.hasBody()) "" else SIGNATURE_ONLY
+        val doc = declaration.docComment()?.text?.let(::parse) ?: EMPTY_DOC
+        return render(
+            signature = declaration.signature(),
+            origin = origin,
+            description = doc.description,
+            parameters = doc.parameters.map { (name, description) -> name to " — " + escape(description) },
+            examples = doc.examples,
+            since = doc.since,
+        )
     }
 
-    fun render(declaration: KrakenFunctionDecl): String = buildString {
-        append("<b>Function</b> <code>").append(escape(declaration.signature())).append("</code>")
-        append("<br/><i>").append(escape(declaration.containingFile.name))
-        if (!declaration.hasBody()) {
-            // A bare signature delegates to registered Java code; saying so saves looking for a
-            // KEL body.
-            append(" — signature only, implemented in Java")
-        }
-        append("</i>")
-
-        val doc = declaration.docComment()?.text?.let(::parse) ?: return@buildString
-        doc.description.takeIf { it.isNotBlank() }?.let { append("<br/><br/>").append(escape(it)) }
-        if (doc.parameters.isNotEmpty()) {
+    /** [parameters] pairs a name with the HTML that follows it on its line. */
+    private fun render(
+        signature: String,
+        origin: String,
+        description: String?,
+        parameters: List<Pair<String, String>>,
+        examples: List<Pair<String, String?>>,
+        since: String?,
+    ): String = buildString {
+        append("<b>Function</b> <code>").append(escape(signature)).append("</code>")
+        append("<br/><i>").append(origin).append("</i>")
+        description?.takeIf { it.isNotBlank() }?.let { append("<br/><br/>").append(escape(it)) }
+        if (parameters.isNotEmpty()) {
             append("<br/><br/><b>Parameters</b>")
-            for ((name, description) in doc.parameters) {
-                append("<br/><code>").append(escape(name)).append("</code> — ").append(escape(description))
+            for ((name, detail) in parameters) {
+                append("<br/><code>").append(escape(name)).append("</code>").append(detail)
             }
         }
-        if (doc.examples.isNotEmpty()) {
+        if (examples.isNotEmpty()) {
             append("<br/><br/><b>Examples</b>")
-            for ((expression, result) in doc.examples) {
+            for ((expression, result) in examples) {
                 append("<br/><code>").append(escape(expression)).append("</code>")
                 result?.let { append(" &rarr; <code>").append(escape(it)).append("</code>") }
             }
         }
-        doc.since?.let { append("<br/><br/><i>Since ").append(escape(it)).append("</i>") }
+        since?.let { append("<br/><br/><i>Since ").append(escape(it)).append("</i>") }
     }
+
+    /** A bare signature delegates to registered Java code; saying so saves looking for a KEL body. */
+    private const val SIGNATURE_ONLY = " — signature only, implemented in Java"
+
+    private val EMPTY_DOC = DocComment("", null, emptyList(), emptyList())
 
     class DocComment(
         val description: String,

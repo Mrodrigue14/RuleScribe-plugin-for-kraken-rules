@@ -1,6 +1,5 @@
 package com.kraken.plugin
 
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.inspection.KrakenUnresolvedIdentifierInspection
 
 /**
@@ -9,9 +8,9 @@ import com.kraken.plugin.inspection.KrakenUnresolvedIdentifierInspection
  * Without type inference the risk is inventing errors, not missing them, so most of
  * these tests check that the inspection stays silent.
  */
-class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
+class KrakenUnresolvedIdentifierTest : KrakenRuleBodyTestCase() {
 
-    private val model = """
+    override val model = """
         Root Context Policy {
             String policyCd
             Child AddressInfo
@@ -26,22 +25,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
         }
     """.trimIndent()
 
-    private fun problems(body: String): List<String> {
-        myFixture.configureByText(
-            "inspect.rules",
-            """
-            $model
-
-            Rule "Under test" On Policy.policyCd {
-                $body
-            }
-            """.trimIndent(),
-        )
-        myFixture.enableInspections(KrakenUnresolvedIdentifierInspection())
-        return myFixture.doHighlighting()
-            .mapNotNull { it.description }
-            .filter { it.startsWith("[kvr049] Reference ") }
-    }
+    private fun problems(body: String): List<String> = problemsIn(body, KrakenUnresolvedIdentifierInspection()).filter { it.startsWith("[kvr049] Reference ") }
 
     /**
      * A called name is not a reference to resolve. `isCallHead` excludes it, and Qodana
@@ -53,7 +37,7 @@ class KrakenUnresolvedIdentifierTest : BasePlatformTestCase() {
 
     /** Same for a name nothing declares: calls are not checked. */
     fun testUnknownCallHeadIsNotReported() {
-        assertEquals(emptyList<String>(), problems("Assert Inconnue(Policy.policyCd) > 0"))
+        assertEquals(emptyList<String>(), problems("Assert Undeclared(Policy.policyCd) > 0"))
     }
 
     /** The guard must not overreach: an unknown argument is still reported. */

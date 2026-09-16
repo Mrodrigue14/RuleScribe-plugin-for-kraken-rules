@@ -1,7 +1,6 @@
 package com.kraken.plugin.functions
 
 import com.google.gson.Gson
-import com.google.gson.annotations.SerializedName
 
 /**
  * Fixed catalogue of KEL native functions.
@@ -16,10 +15,12 @@ import com.google.gson.annotations.SerializedName
  */
 object KrakenFunctionCatalog {
 
-    /** All native functions, sorted by name then arity. */
-    val functions: List<KelFunction> by lazy { load().functions }
+    private val catalog: Catalog by lazy { load() }
 
-    val libraries: List<KelLibrary> by lazy { load().libraries }
+    /** All native functions, sorted by name then arity. */
+    val functions: List<KelFunction> get() = catalog.functions
+
+    val libraries: List<KelLibrary> get() = catalog.libraries
 
     private val byName: Map<String, List<KelFunction>> by lazy {
         functions.groupBy { it.name }
@@ -59,7 +60,7 @@ class KelFunction(
     val name: String,
     val library: String,
     val parameters: List<KelParameter>,
-    @SerializedName("returnType") val returnType: String,
+    val returnType: String,
     val description: String?,
     val since: String?,
     val examples: List<KelExample>,

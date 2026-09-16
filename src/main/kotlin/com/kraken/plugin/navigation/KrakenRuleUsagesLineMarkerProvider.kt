@@ -7,6 +7,7 @@ import com.intellij.icons.AllIcons
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRuleDecl
@@ -26,13 +27,13 @@ class KrakenRuleUsagesLineMarkerProvider : RelatedItemLineMarkerProvider() {
         when (element.parent?.node?.elementType) {
             KrakenTypes.RULE_NAME -> {
                 val declaration = PsiTreeUtil.getParentOfType(element, KrakenRuleDecl::class.java) ?: return
-                val references = KrakenPsiUtil.findRuleRefsVisibleTo(declaration)
+                val references = KrakenDeclarations.findRuleRefsVisibleTo(declaration)
                 addMarker(element, references, "Referenced by ${references.size} entry point item(s)", result)
             }
 
             KrakenTypes.EP_NAME -> {
                 val declaration = PsiTreeUtil.getParentOfType(element, KrakenEntryPointDecl::class.java) ?: return
-                val references = KrakenPsiUtil.findEpRefsVisibleTo(declaration)
+                val references = KrakenDeclarations.findEpRefsVisibleTo(declaration)
                 addMarker(element, references, "Included by ${references.size} entry point(s)", result)
             }
         }

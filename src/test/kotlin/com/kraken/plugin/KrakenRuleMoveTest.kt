@@ -1,6 +1,7 @@
 package com.kraken.plugin
 
 import com.intellij.openapi.command.WriteCommandAction
+import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.refactoring.KrakenDeclarationMover
 
 /**
@@ -91,7 +92,7 @@ class KrakenRuleMoveTest : KrakenMoveTestCase() {
 
         WriteCommandAction.runWriteCommandAction(project) { KrakenDeclarationMover.move(project, ruleIn(a, "Moved"), b) }
 
-        val found = com.kraken.plugin.psi.KrakenPsiUtil.findRulesVisible(b, "Moved")
+        val found = com.kraken.plugin.psi.KrakenDeclarations.findRulesVisible(b, "Moved")
         assertEquals("a single declaration, in the destination", 1, found.size)
         assertEquals("b.rules", found.first().containingFile.name)
     }

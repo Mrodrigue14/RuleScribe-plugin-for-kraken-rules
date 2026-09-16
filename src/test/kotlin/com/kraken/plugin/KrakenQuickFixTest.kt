@@ -24,18 +24,13 @@ class KrakenQuickFixTest : BasePlatformTestCase() {
         myFixture.configureByText(fileName, before)
         val fix = myFixture.getAllQuickFixes().firstOrNull { it.familyName.startsWith(label) }
             ?: error(
-                "correctif '$label' absent, disponibles: " +
+                "no fix labelled '$label', available: " +
                     myFixture.getAllQuickFixes().map { it.familyName },
             )
         myFixture.launchAction(fix)
         val after = myFixture.file.text
         // The fix writes text, so what matters is that the file still parses.
-        val errors = PsiTreeUtil.findChildrenOfType(myFixture.file, PsiErrorElement::class.java)
-        assertEquals(
-            "the fix broke the file:\n$after",
-            emptyList<String>(),
-            errors.map { it.errorDescription },
-        )
+        assertEquals("the fix broke the file:\n$after", emptyList<String>(), parseErrors(myFixture.file))
         return after
     }
 

@@ -20,6 +20,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.lang.KrakenFile
 import com.kraken.plugin.lang.KrakenIcons
 import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.psi.KrakenContexts
 import com.kraken.plugin.psi.KrakenDimensionDecl
 import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.psi.KrakenFunctionDecl
@@ -65,69 +66,49 @@ class KrakenStructureViewElement(private val element: PsiElement) :
 
     override fun getAlphaSortKey(): String = presentableText()
 
-    override fun getPresentation(): ItemPresentation = PresentationData(presentableText(), typeText(), icon(), null)
+    override fun getPresentation(): ItemPresentation = PresentationData(presentableText(), kind?.typeText, kind?.icon ?: KrakenIcons.FILE, null)
+
+    private val kind: Kind? get() = kindOf(element)
 
     override fun getChildren(): Array<TreeElement> {
         if (element !is KrakenFile) return TreeElement.EMPTY_ARRAY
-        val items = mutableListOf<PsiElement>()
-        items.addAll(PsiTreeUtil.findChildrenOfType(element, KrakenRuleDecl::class.java))
-        items.addAll(PsiTreeUtil.findChildrenOfType(element, KrakenEntryPointDecl::class.java))
-        items.addAll(PsiTreeUtil.findChildrenOfType(element, KrakenDimensionDecl::class.java))
-        items.addAll(KrakenPsiUtil.contextDecls(element))
-        items.addAll(PsiTreeUtil.findChildrenOfType(element, KrakenFunctionDecl::class.java))
-        return items
+        return PsiTreeUtil.collectElements(element) { it !== element && kindOf(it) != null }
             .sortedBy { it.textOffset }
             .map { KrakenStructureViewElement(it) }
             .toTypedArray()
     }
 
-    private fun presentableText(): String = when {
-        element is KrakenFile -> element.name
-
-        element is KrakenRuleDecl -> element.name ?: "Rule"
-
-        element is KrakenEntryPointDecl -> element.name ?: "EntryPoint"
-
-        element is KrakenDimensionDecl -> element.dimensionName ?: "Dimension"
-
-        element.node?.elementType == KrakenTypes.CONTEXT_DECL ->
-            KrakenPsiUtil.contextName(element) ?: "Context"
-
-        element.node?.elementType == KrakenTypes.FUNCTION_DECL -> functionName()
-
-        else -> element.text.take(30)
+    private fun presentableText(): String = when (element) {
+        is KrakenFile -> element.name
+        else -> declaredName() ?: kind?.label ?: element.text.take(30)
     }
 
-    private fun typeText(): String? = when {
-        element is KrakenRuleDecl -> "rule"
-        element is KrakenEntryPointDecl -> "entry point"
-        element is KrakenDimensionDecl -> "dimension"
-        element.node?.elementType == KrakenTypes.CONTEXT_DECL -> "context"
-        element.node?.elementType == KrakenTypes.FUNCTION_DECL -> "function"
-        else -> null
+    private fun declaredName(): String? = when (kind) {
+        Kind.RULE -> (element as KrakenRuleDecl).name
+        Kind.ENTRY_POINT -> (element as KrakenEntryPointDecl).name
+        Kind.DIMENSION -> (element as KrakenDimensionDecl).dimensionName
+        Kind.CONTEXT -> KrakenContexts.contextName(element)
+        Kind.FUNCTION -> (element as KrakenFunctionDecl).name
+        null -> null
     }
 
-    private fun icon(): Icon = when {
-        element is KrakenFile -> KrakenIcons.FILE
-        element is KrakenRuleDecl -> KrakenPresentations.RULE_ICON
-        element is KrakenEntryPointDecl -> KrakenPresentations.ENTRY_POINT_ICON
-        element is KrakenDimensionDecl -> AllIcons.Nodes.Variable
-        element.node?.elementType == KrakenTypes.CONTEXT_DECL -> AllIcons.Nodes.Class
-        element.node?.elementType == KrakenTypes.FUNCTION_DECL -> KrakenPresentations.FUNCTION_ICON
-        else -> KrakenIcons.FILE
+    /** The declarations the structure view lists. */
+    private enum class Kind(val label: String, val typeText: String, val icon: Icon) {
+        RULE("Rule", "rule", KrakenPresentations.RULE_ICON),
+        ENTRY_POINT("EntryPoint", "entry point", KrakenPresentations.ENTRY_POINT_ICON),
+        DIMENSION("Dimension", "dimension", AllIcons.Nodes.Variable),
+        CONTEXT("Context", "context", AllIcons.Nodes.Class),
+        FUNCTION("Function", "function", KrakenPresentations.FUNCTION_ICON),
     }
 
-    private fun functionName(): String {
-        var node = element.node.firstChildNode
-        var seenKw = false
-        while (node != null) {
-            if (node.elementType == KrakenTypes.FUNCTION_KW) {
-                seenKw = true
-            } else if (seenKw && node.elementType in KrakenPsiUtil.ID_TOKENS) {
-                return node.text
-            }
-            node = node.treeNext
+    private companion object {
+        fun kindOf(element: PsiElement): Kind? = when {
+            element is KrakenRuleDecl -> Kind.RULE
+            element is KrakenEntryPointDecl -> Kind.ENTRY_POINT
+            element is KrakenDimensionDecl -> Kind.DIMENSION
+            element is KrakenFunctionDecl -> Kind.FUNCTION
+            element.node?.elementType == KrakenTypes.CONTEXT_DECL -> Kind.CONTEXT
+            else -> null
         }
-        return "Function"
     }
 }

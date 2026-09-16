@@ -1,6 +1,5 @@
 package com.kraken.plugin
 
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.highlighter.KrakenSyntaxHighlighter
 
 /**
@@ -10,9 +9,9 @@ import com.kraken.plugin.highlighter.KrakenSyntaxHighlighter
  * `IDENTIFIER`), the annotator separates through scope resolution. The key case is the
  * negative one: an unresolved name gets no colour.
  */
-class KrakenSemanticHighlightingTest : BasePlatformTestCase() {
+class KrakenSemanticHighlightingTest : KrakenRuleBodyTestCase() {
 
-    private val model = """
+    override val model = """
         Root Context Policy {
             String policyCd
             Child Coverage
@@ -29,16 +28,7 @@ class KrakenSemanticHighlightingTest : BasePlatformTestCase() {
 
     /** Keys the annotator sets on [needle]. */
     private fun attributesFor(body: String, needle: String): List<String> {
-        myFixture.configureByText(
-            "sem.rules",
-            """
-            $model
-
-            Rule "Under test" On Policy.policyCd {
-                $body
-            }
-            """.trimIndent(),
-        )
+        configureRule(body)
         val text = myFixture.file.text
         val start = text.lastIndexOf(needle)
         require(start >= 0) { "'$needle' is not in the file" }

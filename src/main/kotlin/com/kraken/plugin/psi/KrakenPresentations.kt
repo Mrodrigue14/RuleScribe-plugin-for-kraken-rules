@@ -23,7 +23,7 @@ internal object KrakenPresentations {
     /** `policy.rules · Base`; the namespace only appears when declared. */
     fun location(element: PsiElement): String? {
         val file = element.containingFile as? KrakenFile ?: return null
-        val namespace = KrakenPsiUtil.namespaceOf(file)?.takeIf { it.isNotBlank() }
+        val namespace = KrakenNamespaces.namespaceOf(file)?.takeIf { it.isNotBlank() }
         return if (namespace == null) file.name else "${file.name} · $namespace"
     }
 
@@ -47,7 +47,7 @@ internal object KrakenPresentations {
         val base = name?.let { "\"$it\"" } ?: fallback
         val annotations = declaration.node.getChildren(null)
             .filter { it.elementType == KrakenTypes.ANNOTATION }
-            .joinToString(" ") { it.text.replace(WHITESPACE, " ") }
+            .joinToString(" ") { compact(it.text) }
         return if (annotations.isEmpty()) base else "$base $annotations"
     }
 
@@ -56,6 +56,9 @@ internal object KrakenPresentations {
         override fun getLocationString(): String? = location(element)
         override fun getIcon(unused: Boolean): Icon? = icon
     }
+
+    /** [text] on one line, with each run of whitespace collapsed to a single space. */
+    fun compact(text: String): String = text.replace(WHITESPACE, " ").trim()
 
     private val WHITESPACE = Regex("""\s+""")
 

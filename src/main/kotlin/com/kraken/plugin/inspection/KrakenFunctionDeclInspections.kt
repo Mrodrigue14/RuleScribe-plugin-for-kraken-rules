@@ -23,9 +23,7 @@ import com.kraken.plugin.types.KrakenTypeToken
  * A `Function` without a body is a `FunctionSignature` for the engine, validated with
  * other codes; see [KrakenDiagnostic].
  */
-private abstract class KrakenFunctionDeclVisitor(
-    private val holder: ProblemsHolder,
-) : PsiElementVisitor() {
+private abstract class KrakenFunctionDeclVisitor : PsiElementVisitor() {
 
     final override fun visitElement(element: PsiElement) {
         if (element is KrakenFunctionDecl) check(element)
@@ -34,8 +32,15 @@ private abstract class KrakenFunctionDeclVisitor(
     abstract fun check(function: KrakenFunctionDecl)
 }
 
-/** The engine code depends on whether the function has a body. */
-private fun pick(signature: Boolean, forSignature: KrakenDiagnostic, forFunction: KrakenDiagnostic): KrakenDiagnostic = if (signature) forSignature else forFunction
+/** A diagnostic whose engine code depends on whether the function has a body. */
+private class BodyDependent(private val withBody: KrakenDiagnostic, private val withoutBody: KrakenDiagnostic) {
+    fun of(function: KrakenFunctionDecl): KrakenDiagnostic = if (function.hasBody()) withBody else withoutBody
+}
+
+private val GENERIC_BOUND_DUPLICATE = BodyDependent(KrakenDiagnostic.FUNCTION_GENERIC_BOUND_DUPLICATE, KrakenDiagnostic.SIGNATURE_GENERIC_BOUND_DUPLICATE)
+private val GENERIC_BOUND_IS_ITSELF_GENERIC = BodyDependent(KrakenDiagnostic.FUNCTION_GENERIC_BOUND_IS_ITSELF_GENERIC, KrakenDiagnostic.SIGNATURE_GENERIC_BOUND_IS_ITSELF_GENERIC)
+private val RETURN_TYPE_UNION_GENERIC_MIX = BodyDependent(KrakenDiagnostic.FUNCTION_RETURN_TYPE_UNION_GENERIC_MIX, KrakenDiagnostic.SIGNATURE_RETURN_TYPE_UNION_GENERIC_MIX)
+private val PARAMETER_TYPE_UNION_GENERIC_MIX = BodyDependent(KrakenDiagnostic.FUNCTION_PARAMETER_TYPE_UNION_GENERIC_MIX, KrakenDiagnostic.SIGNATURE_PARAMETER_TYPE_UNION_GENERIC_MIX)
 
 /** Duplicates are reported from the second occurrence on: that is the one to remove. */
 private fun <T> Iterable<T>.afterFirstOccurrenceOf(key: (T) -> String?): List<T> {
@@ -48,17 +53,15 @@ private fun <T> Iterable<T>.afterFirstOccurrenceOf(key: (T) -> String?): List<T>
  * bound that is itself generic (`kvf005`/`kvf018`).
  */
 class KrakenFunctionGenericBoundInspection : LocalInspectionTool() {
-    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor(holder) {
+    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor() {
         override fun check(function: KrakenFunctionDecl) {
             val bounds = function.genericBounds
             if (bounds.isEmpty()) return
-            val signature = !function.hasBody()
 
             for (duplicate in bounds.afterFirstOccurrenceOf { it.generic }) {
-                val diagnostic = pick(signature, KrakenDiagnostic.SIGNATURE_GENERIC_BOUND_DUPLICATE, KrakenDiagnostic.FUNCTION_GENERIC_BOUND_DUPLICATE)
                 holder.registerProblem(
                     duplicate.nameElement,
-                    diagnostic.format(duplicate.generic),
+                    GENERIC_BOUND_DUPLICATE.of(function).format(duplicate.generic),
                     ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
                 )
             }
@@ -69,10 +72,9 @@ class KrakenFunctionGenericBoundInspection : LocalInspectionTool() {
                 // The engine resolves a bound without a bounds environment (single-argument
                 // `resolveTypeOf`), so a bound cannot refer to another generic.
                 if (KrakenTypeToken.parse(text)?.isGeneric != true) continue
-                val diagnostic = pick(signature, KrakenDiagnostic.SIGNATURE_GENERIC_BOUND_IS_ITSELF_GENERIC, KrakenDiagnostic.FUNCTION_GENERIC_BOUND_IS_ITSELF_GENERIC)
                 holder.registerProblem(
                     element,
-                    diagnostic.format(text, bound.generic),
+                    GENERIC_BOUND_IS_ITSELF_GENERIC.of(function).format(text, bound.generic),
                     ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
                 )
             }
@@ -85,22 +87,20 @@ class KrakenFunctionGenericBoundInspection : LocalInspectionTool() {
  * return type (`kvf007`/`kvf020`) and as a parameter type (`kvf010`/`kvf021`).
  */
 class KrakenFunctionTypeUnionGenericMixInspection : LocalInspectionTool() {
-    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor(holder) {
+    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor() {
         override fun check(function: KrakenFunctionDecl) {
-            val signature = !function.hasBody()
-
             report(
                 holder,
                 function.returnTypeElement,
                 function.returnType,
-                pick(signature, KrakenDiagnostic.SIGNATURE_RETURN_TYPE_UNION_GENERIC_MIX, KrakenDiagnostic.FUNCTION_RETURN_TYPE_UNION_GENERIC_MIX),
+                RETURN_TYPE_UNION_GENERIC_MIX.of(function),
             )
             for (parameter in function.parameterList) {
                 report(
                     holder,
                     parameter.typeElement,
                     parameter.type,
-                    pick(signature, KrakenDiagnostic.SIGNATURE_PARAMETER_TYPE_UNION_GENERIC_MIX, KrakenDiagnostic.FUNCTION_PARAMETER_TYPE_UNION_GENERIC_MIX),
+                    PARAMETER_TYPE_UNION_GENERIC_MIX.of(function),
                 )
             }
         }
@@ -131,7 +131,7 @@ class KrakenFunctionTypeUnionGenericMixInspection : LocalInspectionTool() {
  * (`functionSignatureParameter : type`); RuleScribe's grammar is just more lenient.
  */
 class KrakenFunctionParameterDuplicateInspection : LocalInspectionTool() {
-    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor(holder) {
+    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor() {
         override fun check(function: KrakenFunctionDecl) {
             if (!function.hasBody()) return
             for (duplicate in function.parameterList.afterFirstOccurrenceOf { it.name }) {
@@ -156,7 +156,7 @@ class KrakenFunctionParameterDuplicateInspection : LocalInspectionTool() {
  * `FunctionSignatureValidator` does not run this check.
  */
 class KrakenFunctionNativeDuplicateInspection : LocalInspectionTool() {
-    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor(holder) {
+    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor() {
         override fun check(function: KrakenFunctionDecl) {
             if (!function.hasBody()) return
             val name = function.name ?: return

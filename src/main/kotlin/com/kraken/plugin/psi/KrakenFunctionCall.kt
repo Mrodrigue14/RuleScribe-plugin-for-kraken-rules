@@ -23,13 +23,16 @@ class KrakenFunctionCall(node: ASTNode) : ASTWrapperPsiElement(node) {
     val functionName: String
         get() = headRange()?.substring(text)?.trim().orEmpty()
 
+    val arguments: List<PsiElement>
+        get() = node.findChildByType(KrakenTypes.CALL_ARGS)
+            ?.getChildren(null)
+            ?.filter { it.elementType == KrakenTypes.EXPRESSION }
+            ?.map { it.psi }
+            .orEmpty()
+
     /** The engine identifies a function by (name, arity), so this, not the types, selects the overload. */
     val argumentCount: Int
-        get() {
-            val args = node.findChildByType(KrakenTypes.CALL_ARGS) ?: return 0
-            return args.getChildren(null)
-                .count { it.elementType == KrakenTypes.EXPRESSION }
-        }
+        get() = arguments.size
 
     override fun getReference(): PsiReference? {
         val range = headRange()?.takeIf { !it.isEmpty } ?: return null
@@ -37,7 +40,7 @@ class KrakenFunctionCall(node: ASTNode) : ASTWrapperPsiElement(node) {
     }
 
     fun isResolvable(): Boolean = KrakenFunctionCatalog.find(functionName, argumentCount) != null ||
-        KrakenPsiUtil.findFunctionVisible(this, functionName, argumentCount) != null
+        KrakenDeclarations.findFunctionVisible(this, functionName, argumentCount) != null
 
     private fun headRange(): TextRange? {
         val args = node.findChildByType(KrakenTypes.CALL_ARGS) ?: return null
@@ -51,9 +54,9 @@ class KrakenFunctionCall(node: ASTNode) : ASTWrapperPsiElement(node) {
  */
 class KrakenFunctionReference(element: KrakenFunctionCall, range: TextRange) : PsiReferenceBase<KrakenFunctionCall>(element, range, true) {
 
-    override fun resolve(): PsiElement? = KrakenPsiUtil.findFunctionVisible(element, element.functionName, element.argumentCount)
+    override fun resolve(): PsiElement? = KrakenDeclarations.findFunctionVisible(element, element.functionName, element.argumentCount)
 
-    override fun getVariants(): Array<Any> = KrakenPsiUtil.findFunctionsVisible(element)
+    override fun getVariants(): Array<Any> = KrakenDeclarations.findFunctionsVisible(element)
         .mapNotNull { it.name }
         .distinct()
         .toTypedArray()
