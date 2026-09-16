@@ -5,7 +5,6 @@ import com.intellij.openapi.project.Project
 import com.kraken.plugin.lang.KrakenFile
 import com.kraken.plugin.lang.KrakenFileType
 
-/** Destination `.rules` file dialog shared by the move handlers. */
 internal fun chooseMoveTarget(project: Project, source: KrakenFile, title: String): KrakenFile? {
     val chooser = TreeFileChooserFactory.getInstance(project).createFileChooser(
         title,

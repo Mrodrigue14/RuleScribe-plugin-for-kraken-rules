@@ -59,7 +59,6 @@ class KrakenTypeInferenceTest : BasePlatformTestCase() {
         assertEquals(KrakenType.String, typeOfRef("policyCd"))
     }
 
-    /** DSL `Integer` and `Decimal` are both KEL `Number`. */
     fun testIntegerAndDecimalCollapseToNumber() {
         configureRule("Assert premium > 0 and termNo > 0")
         assertEquals(KrakenType.Number, typeOfRef("premium"))

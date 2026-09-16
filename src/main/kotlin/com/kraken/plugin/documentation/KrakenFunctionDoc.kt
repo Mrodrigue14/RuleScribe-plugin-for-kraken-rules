@@ -74,7 +74,6 @@ internal object KrakenFunctionDoc {
         val examples: List<Pair<String, String?>>,
     )
 
-    /** Parses a doc comment using the `FunctionDoc.g4` tags. */
     fun parse(text: String): DocComment {
         val body = text.removePrefix("/**").removeSuffix("*/")
             .lines()

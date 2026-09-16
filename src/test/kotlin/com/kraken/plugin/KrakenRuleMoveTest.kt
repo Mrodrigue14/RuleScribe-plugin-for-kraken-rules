@@ -79,7 +79,6 @@ class KrakenRuleMoveTest : KrakenMoveTestCase() {
         assertNull("but it no longer resolves", ruleRefIn(ep, "Moved").reference.resolve())
     }
 
-    /** After the move, the stub index finds the rule in its new file. */
     fun testTheStubIndexFindsTheRuleInItsNewHome() {
         val a = file(
             "a.rules",
@@ -97,7 +96,6 @@ class KrakenRuleMoveTest : KrakenMoveTestCase() {
         assertEquals("b.rules", found.first().containingFile.name)
     }
 
-    /** Moving into the same file does nothing. */
     fun testMovingIntoTheSameFileIsARefusal() {
         val a = file(
             "a.rules",

@@ -47,7 +47,6 @@ class KrakenSpellcheckTest : BasePlatformTestCase() {
         )
     }
 
-    /** A correct message triggers nothing. */
     fun testACleanMessageIsNotReported() {
         assertEquals(
             emptyList<String>(),

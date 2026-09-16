@@ -146,7 +146,6 @@ object KrakenScopeResolver {
         return null
     }
 
-    /** Context named by the `On` clause of the enclosing rule. */
     fun targetContextName(element: PsiElement): String? {
         val rule = PsiTreeUtil.getParentOfType(element, KrakenRuleDecl::class.java, false) ?: return null
         val target = rule.node.findChildByType(KrakenTypes.RULE_TARGET) ?: return null

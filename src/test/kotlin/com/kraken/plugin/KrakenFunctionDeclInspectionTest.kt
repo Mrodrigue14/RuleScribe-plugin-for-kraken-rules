@@ -60,7 +60,6 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
         "Function <T is <G>> Itself(<T> p) : Number",
     )
 
-    /** A generic bound also hides behind an array suffix. */
     fun testArrayOfGenericIsStillAGenericBound() = assertCodes(
         listOf("kvf005"),
         """
@@ -85,7 +84,6 @@ class KrakenFunctionDeclInspectionTest : BasePlatformTestCase() {
         "Function <T is Number> First(<T>[] | String p) : <T> | String",
     )
 
-    /** A union without generics is valid. */
     fun testPlainUnionIsNotReported() = assertCodes(
         emptyList(),
         """

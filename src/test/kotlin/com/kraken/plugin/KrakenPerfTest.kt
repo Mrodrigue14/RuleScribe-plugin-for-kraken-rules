@@ -13,7 +13,7 @@ class KrakenPerfTest : BasePlatformTestCase() {
 
     fun testResolutionScalesToFiveHundredFiles() {
         val namespaces = 10
-        val perNamespace = 50 // 10 x 50 = 500 files
+        val perNamespace = 50
 
         for (n in 0 until namespaces) {
             for (i in 0 until perNamespace) {

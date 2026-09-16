@@ -37,7 +37,6 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
 
     private inline fun <reified T : PsiElement> allOf(file: PsiElement): List<T> = PsiTreeUtil.findChildrenOfType(file, T::class.java).toList()
 
-    /** Each EntryPoint item leads to its own rule, not to the first one found. */
     fun testEachEntryPointItemResolvesToItsOwnRule() {
         val file = myFixture.configureByText(
             "coverage.rules",
@@ -183,7 +182,6 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
         assertEquals("library.rules", target.containingFile.name)
     }
 
-    /** Nested `EntryPoint "x"` item: same requirement as for rules. */
     fun testNestedEntryPointItemResolvesToItsDeclaration() {
         val file = myFixture.configureByText(
             "composed.rules",
@@ -210,7 +208,6 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
 
     private fun codeVisionHintOf(declaration: PsiElement): String? = KrakenReferencesCodeVisionProvider().getHint(declaration, declaration.containingFile)
 
-    /** A rule shared by several EntryPoints: all of them are usages. */
     fun testImplementationIsUsedByEveryEntryPointReferencingIt() {
         myFixture.addFileToProject(
             "billing.rules",
@@ -292,7 +289,6 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
         )
     }
 
-    /** An EntryPoint reused by several others counts every caller. */
     fun testEntryPointDeclarationCountsEveryCaller() {
         myFixture.addFileToProject(
             "first.rules",

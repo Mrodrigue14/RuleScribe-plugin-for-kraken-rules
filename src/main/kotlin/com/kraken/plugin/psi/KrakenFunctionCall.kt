@@ -20,7 +20,6 @@ import com.kraken.plugin.parser.KrakenTypes
  */
 class KrakenFunctionCall(node: ASTNode) : ASTWrapperPsiElement(node) {
 
-    /** Everything before the argument list. */
     val functionName: String
         get() = headRange()?.substring(text)?.trim().orEmpty()
 
@@ -37,11 +36,9 @@ class KrakenFunctionCall(node: ASTNode) : ASTWrapperPsiElement(node) {
         return KrakenFunctionReference(this, range)
     }
 
-    /** True if a native function or a visible declared function matches this call. */
     fun isResolvable(): Boolean = KrakenFunctionCatalog.find(functionName, argumentCount) != null ||
         KrakenPsiUtil.findFunctionVisible(this, functionName, argumentCount) != null
 
-    /** Range of the called name, relative to this element. */
     private fun headRange(): TextRange? {
         val args = node.findChildByType(KrakenTypes.CALL_ARGS) ?: return null
         return TextRange(0, args.startOffset - node.startOffset)

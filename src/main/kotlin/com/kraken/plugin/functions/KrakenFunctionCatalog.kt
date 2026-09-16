@@ -19,7 +19,6 @@ object KrakenFunctionCatalog {
     /** All native functions, sorted by name then arity. */
     val functions: List<KelFunction> by lazy { load().functions }
 
-    /** Engine libraries (Math, String, Date…) and their descriptions. */
     val libraries: List<KelLibrary> by lazy { load().libraries }
 
     private val byName: Map<String, List<KelFunction>> by lazy {

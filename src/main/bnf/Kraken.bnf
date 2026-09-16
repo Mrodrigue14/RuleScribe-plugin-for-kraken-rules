@@ -127,16 +127,12 @@ private model_item ::= contexts_block
                      | dimension_decl
                      | function_decl
 
-// ---------- File header ----------
-
 namespace_decl ::= NAMESPACE_KW qualified_name {pin=1}
 private import_decl ::= include_decl | rule_import_decl
 include_decl ::= INCLUDE_KW qualified_name {pin=1}
 rule_import_decl ::= IMPORT_KW RULE_KW import_rule_names FROM_KW qualified_name {pin=1}
 import_rule_names ::= STRING (COMMA STRING)*
 qualified_name ::= id (DOT id)*
-
-// ---------- Annotations ----------
 
 annotation ::= AT annotation_body {pin=1}
 private annotation_body ::= dimension_annotation
@@ -147,8 +143,6 @@ private annotation_body ::= dimension_annotation
                           | id
 dimension_annotation ::= DIMENSION_KW LPAREN annotation_arg COMMA annotation_arg RPAREN {pin=2}
 annotation_arg ::= STRING | signed_number | TRUE_KW | FALSE_KW | qualified_name
-
-// ---------- Contexts ----------
 
 contexts_block ::= CONTEXTS_KW LBRACE contexts_member* RBRACE {pin=1}
 private contexts_member ::= contexts_block | context_decl
@@ -168,8 +162,6 @@ private external_context_value ::= LBRACE external_context_items? RBRACE | id
 
 external_entity_decl ::= EXTERNAL_ENTITY_KW id LBRACE external_field_decl* RBRACE {pin=1}
 external_field_decl ::= id STAR? id
-
-// ---------- Rules ----------
 
 rules_block ::= annotation* RULES_KW LBRACE rules_member* RBRACE {pin=2}
 private rules_member ::= rules_block | rule_decl
@@ -232,8 +224,6 @@ value_list ::= value_item (COMMA value_item)*
 private value_item ::= STRING | signed_number
 signed_number ::= OP? NUMBER_LIT
 
-// ---------- Entry points ----------
-
 entry_points_block ::= annotation* ENTRYPOINTS_KW LBRACE ep_block_member* RBRACE {pin=2}
 private ep_block_member ::= entry_points_block | entry_point_decl
 entry_point_decl ::= annotation* ENTRYPOINT_KW ep_name? LBRACE ep_items_opt RBRACE {pin=2}
@@ -244,8 +234,6 @@ entry_point_items ::= entry_point_item (COMMA entry_point_item)*
 private entry_point_item ::= ep_ref | rule_ref
 ep_ref ::= ENTRYPOINT_KW STRING {pin=1}
 rule_ref ::= STRING
-
-// ---------- Dimensions and functions ----------
 
 dimension_decl ::= DIMENSION_KW STRING COLON id {pin=1}
 
@@ -270,7 +258,6 @@ private atom_type ::= LPAREN type_ref RPAREN
                     | id (LT type_ref (COMMA type_ref)* GT)?
 function_body ::= LBRACE expression RBRACE {pin=1}
 
-// ---------- KEL expressions ----------
 // Ported from Value.g4: valueBlock = variable* RETURN? value?
 
 expression ::= variable_block | return_block | value_chain

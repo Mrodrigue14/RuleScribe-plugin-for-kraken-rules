@@ -11,7 +11,6 @@ import com.kraken.plugin.refactoring.KrakenMoveConflicts
  */
 class KrakenMoveConflictsTest : KrakenMoveTestCase() {
 
-    /** Same namespace: nothing can break. */
     fun testMovingWithinTheSameNamespaceIsSafe() {
         val a = file(
             "a.rules",
@@ -55,7 +54,6 @@ class KrakenMoveConflictsTest : KrakenMoveTestCase() {
         assertEquals("Shared", broken.first().ruleName)
     }
 
-    /** An `Include` of the destination is enough to keep resolution. */
     fun testIncludingTheDestinationKeepsItResolving() {
         val a = file(
             "a.rules",
@@ -128,7 +126,6 @@ class KrakenMoveConflictsTest : KrakenMoveTestCase() {
         assertEquals("l'import pointe vers l'ancien namespace : $broken", 1, broken.size)
     }
 
-    /** A rule that nobody references moves safely. */
     fun testAnUnreferencedRuleHasNoConflicts() {
         val a = file(
             "a.rules",

@@ -15,7 +15,8 @@ import com.kraken.plugin.psi.stubs.KrakenRuleStub
  *
  * Stub-based: when the file is not open, the name comes from the stub index without
  * loading the AST. [StubBasedPsiElement] must be implemented explicitly because
- * DefaultStubBuilder checks for it.
+ * DefaultStubBuilder checks for it, while `getElementType()` is left to
+ * StubBasedPsiElementBase, which already resolves it from the stub or the node.
  */
 class KrakenRuleDecl :
     StubBasedPsiElementBase<KrakenRuleStub>,
@@ -25,11 +26,6 @@ class KrakenRuleDecl :
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: KrakenRuleStub, nodeType: IStubElementType<*, *>) : super(stub, nodeType)
-
-    // getElementType() is intentionally NOT overridden: StubBasedPsiElementBase
-    // already resolves it from the stub (when present) or the node, and its own
-    // override satisfies the StubBasedPsiElement contract. Re-implementing it
-    // here only reintroduced deprecated getElementType()/getStubType() usages.
 
     override fun toString(): String = "KrakenRuleDecl"
 

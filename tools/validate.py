@@ -7,7 +7,7 @@ import os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 errors, warnings = [], []
 
-# ---------- 1. Well-formed plugin.xml + existing classes ----------
+# 1. Well-formed plugin.xml, and every class it references exists.
 plugin_xml = os.path.join(ROOT, "src/main/resources/META-INF/plugin.xml")
 tree = ET.parse(plugin_xml)
 kt_files = glob.glob(os.path.join(ROOT, "src/main/kotlin/**/*.kt"), recursive=True)
@@ -31,7 +31,7 @@ for c in sorted(referenced):
         errors.append(f"plugin.xml references a missing class: {c}")
 print(f"[1] plugin.xml OK, {len(referenced)} referenced classes, {len(kt_classes)} Kotlin classes found")
 
-# ---------- 2. BNF analysis ----------
+# 2. BNF analysis.
 bnf = open(os.path.join(ROOT, "src/main/bnf/Kraken.bnf"), encoding="utf-8").read()
 bnf_body = re.sub(r'/\*.*?\*/', '', bnf, flags=re.S)
 bnf_body = re.sub(r'//[^\n]*', '', bnf_body)
@@ -69,7 +69,7 @@ for m in re.finditer(r'^\s*(?:private\s+)?([a-z_][a-z0-9_]*)\s*::=\s*(.*?)(?=^\s
             errors.append(f"BNF: direct left recursion in {name}")
 print(f"[2] BNF: {len(tokens)} tokens, {len(rule_set)} rules")
 
-# ---------- 3. KrakenTypes.* consistency, Kotlin <-> BNF ----------
+# 3. KrakenTypes.* consistency, Kotlin against the BNF.
 def upper_snake(rule):
     return rule.upper()
 generated_consts = tokens | {upper_snake(r) for r in rule_set}
@@ -79,7 +79,7 @@ for c in sorted(used_consts - generated_consts):
     errors.append(f"Kotlin uses KrakenTypes.{c}, which Grammar-Kit will not generate")
 print(f"[3] KrakenTypes: {len(used_consts)} constants used in Kotlin, all checked")
 
-# ---------- 4. The Kotlin lexer covers every BNF token ----------
+# 4. The Kotlin lexer covers every BNF token.
 lexer_src = open(os.path.join(ROOT, "src/main/kotlin/com/kraken/plugin/parser/KrakenLexer.kt"), encoding="utf-8").read()
 lexer_tokens = set(re.findall(r'KrakenTypes\.([A-Z_][A-Z0-9_]*)', lexer_src))
 missing = tokens - lexer_tokens
@@ -87,7 +87,7 @@ if missing:
     errors.append(f"Tokens du BNF jamais produits par le lexer: {sorted(missing)}")
 print(f"[4] Lexer: produces {len(lexer_tokens)} token types")
 
-# ---------- 5. Every inspection has its HTML description ----------
+# 5. Every inspection has its HTML description.
 # Without the file the IDE shows the inspection with no explanation and reports
 # nothing, so the failure is silent. The file name must match the shortName exactly.
 descriptions = os.path.join(ROOT, "src/main/resources/inspectionDescriptions")
@@ -101,7 +101,7 @@ for short in sorted(short_names):
         errors.append(f"inspection without a description: inspectionDescriptions/{short}.html")
 print(f"[5] Inspections: {len(short_names)} declared, descriptions checked")
 
-# ---------- 6. Balanced braces in .kt files ----------
+# 6. Balanced braces in .kt files.
 for f in kt_files:
     src = open(f, encoding="utf-8").read()
     src2 = re.sub(r'"""', '@@@', src)

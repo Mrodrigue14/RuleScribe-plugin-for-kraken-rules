@@ -74,7 +74,6 @@ class KrakenSemanticHighlightingTest : BasePlatformTestCase() {
         )
     }
 
-    /** A local variable falls into the same category as a field. */
     fun testALocalVariableIsColouredAsAField() {
         assertEquals(
             listOf(KrakenSyntaxHighlighter.FIELD_REFERENCE.externalName),

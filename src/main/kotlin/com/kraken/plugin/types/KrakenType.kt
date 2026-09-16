@@ -30,10 +30,8 @@ sealed class KrakenType {
     /** Not inferred. Any check that meets it must abstain. */
     object Unknown : KrakenType()
 
-    /** A model context, by name. */
     data class Context(val name: kotlin.String) : KrakenType()
 
-    /** Collection of [element]. */
     data class Array(val element: KrakenType) : KrakenType()
 
     val isDynamic: kotlin.Boolean get() = this == Any

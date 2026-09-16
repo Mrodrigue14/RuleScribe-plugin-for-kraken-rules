@@ -43,7 +43,6 @@ class KrakenBracketColouringTest : BasePlatformTestCase() {
         )
     }
 
-    /** Past the end of the palette, colours repeat instead of running out. */
     fun testDepthWrapsAroundThePalette() {
         val depths = depthsOf(
             """

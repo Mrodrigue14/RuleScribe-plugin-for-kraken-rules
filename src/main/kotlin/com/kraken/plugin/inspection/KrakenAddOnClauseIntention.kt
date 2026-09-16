@@ -8,7 +8,6 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenRuleDecl
 
-/** Adds a missing `On Context.field` clause to a rule. */
 class KrakenAddOnClauseIntention : PsiElementBaseIntentionAction() {
 
     override fun getFamilyName(): String = "Add missing 'On' clause"

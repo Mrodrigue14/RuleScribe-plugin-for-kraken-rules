@@ -61,7 +61,6 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
         assertEquals("Limits(Coverage[] coverages) : Number[]", declaration.signature())
     }
 
-    /** Bare signature: implemented in Java, so there is no body. */
     fun testSignatureWithoutBodyIsRecognised() {
         myFixture.configureByText(
             "signature.rules",

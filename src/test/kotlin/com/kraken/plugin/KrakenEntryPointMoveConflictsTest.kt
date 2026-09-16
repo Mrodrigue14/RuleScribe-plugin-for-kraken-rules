@@ -11,7 +11,6 @@ import com.kraken.plugin.refactoring.KrakenMoveConflicts
  */
 class KrakenEntryPointMoveConflictsTest : KrakenMoveTestCase() {
 
-    /** Same namespace: nothing can break, in either direction. */
     fun testMovingWithinTheSameNamespaceIsSafe() {
         val a = file(
             "a.rules",
@@ -34,7 +33,6 @@ class KrakenEntryPointMoveConflictsTest : KrakenMoveTestCase() {
         assertTrue("expected no conflict, got $broken", broken.isEmpty)
     }
 
-    /** An `EntryPoint "Inner"` elsewhere stops seeing the moved declaration. */
     fun testIncomingReferenceThatLosesSightIsReported() {
         val a = file(
             "a.rules",
@@ -57,7 +55,6 @@ class KrakenEntryPointMoveConflictsTest : KrakenMoveTestCase() {
         assertEquals(emptyList<Any>(), broken.outgoing)
     }
 
-    /** The destination stays visible through `Include`: nothing to report. */
     fun testIncludeKeepsTheIncomingReferenceAlive() {
         val a = file(
             "a.rules",
@@ -97,7 +94,6 @@ class KrakenEntryPointMoveConflictsTest : KrakenMoveTestCase() {
         assertEquals(1, broken.outgoing.size)
     }
 
-    /** An `Import Rule` in the destination namespace rescues the item. */
     fun testImportAtTheDestinationRescuesTheOwnItem() {
         val a = file(
             "a.rules",
@@ -135,7 +131,6 @@ class KrakenEntryPointMoveConflictsTest : KrakenMoveTestCase() {
         assertEquals(1, broken.outgoing.size)
     }
 
-    /** An item that already failed to resolve is not counted. */
     fun testItemThatAlreadyFailsToResolveIsNotCounted() {
         val a = file(
             "a.rules",
@@ -150,7 +145,6 @@ class KrakenEntryPointMoveConflictsTest : KrakenMoveTestCase() {
         assertEquals(emptyList<Any>(), broken.outgoing)
     }
 
-    /** Both directions are counted separately. */
     fun testBothDirectionsAreCountedApart() {
         val a = file(
             "a.rules",

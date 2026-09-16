@@ -53,7 +53,6 @@ object KrakenPsiUtil {
         leaf.replaceWithText("$quote$content$quote")
     }
 
-    /** Range of a quoted string's content, for a string of [length] characters at [start]. */
     fun insideQuotes(start: Int, length: Int): TextRange = if (length >= 2) TextRange(start + 1, start + length - 1) else TextRange(start, start + length)
 
     /** Tokens accepted as identifiers (mirrors the BNF `id` rule). */
@@ -234,7 +233,6 @@ object KrakenPsiUtil {
         return findRuleInNamespace(from.project, import.sourceNamespace, name)
     }
 
-    /** True if [ref]'s namespace explicitly imports [name] from [declNs]. */
     private fun refImportsRule(ref: PsiElement, name: String, declNs: String?): Boolean = declNs != null &&
         ruleImportsForNamespaceOf(ref.containingFile)
             .any { it.ruleName == name && it.sourceNamespace == declNs }
@@ -254,7 +252,7 @@ object KrakenPsiUtil {
      * all of them.
      */
     fun findRulesVisible(from: PsiElement, name: String): List<KrakenRuleDecl> {
-        // 1. Fast path: the stub index, without loading ASTs.
+        // Fast path: the stub index, without loading ASTs.
         val project = from.project
         val virtualFiles = visibleFiles(from.containingFile).mapNotNull { it.virtualFile }
         val indexed = if (virtualFiles.isEmpty()) {
@@ -268,9 +266,9 @@ object KrakenPsiUtil {
                 KrakenRuleDecl::class.java,
             ).toList()
         }
-        // 2. Fallback for unindexed files (light editor, fragments, tests).
+        // Fallback for unindexed files (light editor, fragments, tests).
         val declared = indexed.ifEmpty { findRulesVisible(from).filter { it.name == name } }
-        // 3. Explicitly imported rule, independent of Include.
+        // Explicitly imported rule, independent of Include.
         return (declared + listOfNotNull(findImportedRule(from, name))).distinct()
     }
 
@@ -306,7 +304,6 @@ object KrakenPsiUtil {
             }
     }
 
-    /** True if [refElement]'s file can see [declarationFile] through namespaces. */
     private fun refSees(refElement: PsiElement, declarationFile: PsiFile?): Boolean = declarationFile != null &&
         visibleFiles(refElement.containingFile).any { it.isEquivalentTo(declarationFile) }
 
@@ -324,7 +321,6 @@ object KrakenPsiUtil {
         }
     }
 
-    /** Same for nested entry point references. */
     fun findEpRefsVisibleTo(declaration: KrakenEntryPointDecl): List<KrakenEpRef> {
         val name = declaration.name ?: return emptyList()
         val declarationFile = declaration.containingFile

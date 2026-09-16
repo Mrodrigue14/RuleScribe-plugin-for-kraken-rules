@@ -173,7 +173,6 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
         assertEquals(KrakenTypes.FIELD_DECL, target!!.node.elementType)
     }
 
-    /** The nearest filter wins, which handles nesting. */
     fun testNestedFilterUsesTheNearestBracket() {
         configureRule("Assert Count(AddressInfo[postalCode = Count(Coverage[limit > 0])]) = 1")
         assertNotNull("postalCode vient d'AddressInfo", resolve("postalCode"))

@@ -94,7 +94,6 @@ class KrakenOperatorLexingTest : BasePlatformTestCase() {
         assertEquals(emptyList<Pair<String, String>>(), operators("a >> b"))
     }
 
-    /** Generic bounds and dates are unaffected. */
     fun testAngleBracketsAndDatesAreUnaffected() {
         assertEquals(emptyList<Pair<String, String>>(), operators("a < b"))
         assertEquals(emptyList<Pair<String, String>>(), operators("2020-01-01"))

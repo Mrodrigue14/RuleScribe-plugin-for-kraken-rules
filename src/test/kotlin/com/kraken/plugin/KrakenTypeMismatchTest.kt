@@ -39,7 +39,6 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
             .filter { it.startsWith("[kvr049]") }
     }
 
-    /** The engine rejects Date against DateTime. */
     fun testDateComparedWithDateTimeIsReported() {
         assertEquals(
             listOf(
@@ -79,7 +78,6 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         assertEquals(emptyList<String>(), problems("Assert policyCd = policyCd"))
     }
 
-    /** But not two unrelated types. */
     fun testEqualityBetweenUnrelatedTypesIsReported() {
         assertEquals(
             listOf(
@@ -125,12 +123,10 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         assertEquals(emptyList<String>(), problems("Assert effectiveDate < effectiveDate"))
     }
 
-    /** A date literal compares with a Date field. */
     fun testDateLiteralComparesWithADateField() {
         assertEquals(emptyList<String>(), problems("Assert effectiveDate < 2020-01-01"))
     }
 
-    /** An untyped operand makes the check abstain. */
     fun testUnknownOperandIsNotJudged() {
         assertEquals(emptyList<String>(), problems("Assert effectiveDate < whatIsThis"))
     }
@@ -202,7 +198,6 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         assertEquals(emptyList<String>(), reported)
     }
 
-    /** DSL type names are case-insensitive. */
     fun testTypeNamesAreCaseInsensitive() {
         myFixture.configureByText(
             "casing.rules",

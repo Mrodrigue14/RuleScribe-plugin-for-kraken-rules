@@ -46,7 +46,6 @@ class KrakenTypeSyntaxTest : BasePlatformTestCase() {
         assertParses("""Function B(Coverage[] cs) : Number[] { cs.limit }""")
     }
 
-    /** `|` still works as an expression operator. */
     fun testBarStillWorksAsAnExpressionOperator() = assertParses(
         """
             Rule "R" On Policy.state {

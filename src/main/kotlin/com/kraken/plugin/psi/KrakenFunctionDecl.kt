@@ -35,7 +35,6 @@ class KrakenFunctionDecl(node: ASTNode) :
 
     override fun getTextOffset(): Int = nameIdentifier?.textOffset ?: super.getTextOffset()
 
-    /** Declared parameter count: together with the name, the function's identity. */
     val arity: Int
         get() = node.findChildByType(KrakenTypes.FUNCTION_PARAMS)
             ?.getChildren(null)
@@ -105,7 +104,6 @@ class KrakenFunctionDecl(node: ASTNode) :
             ?.findChildByType(KrakenTypes.TYPE_REF)
             ?.psi
 
-    /** False for a bare signature, whose implementation is in Java. */
     fun hasBody(): Boolean = node.findChildByType(KrakenTypes.FUNCTION_BODY) != null
 
     /** `Limits(Coverage[] coverages) : Number[]` */
@@ -114,7 +112,6 @@ class KrakenFunctionDecl(node: ASTNode) :
         return returnType?.let { "$head : $it" } ?: head
     }
 
-    /** Doc comment immediately preceding the declaration, if any. */
     fun docComment(): PsiElement? = PsiTreeUtil.skipWhitespacesBackward(this)
         ?.takeIf { it.node.elementType == KrakenTypes.DOC_COMMENT }
 

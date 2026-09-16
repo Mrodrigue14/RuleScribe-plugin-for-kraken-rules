@@ -9,7 +9,6 @@ import com.kraken.plugin.psi.KrakenEpRef
 import com.kraken.plugin.psi.KrakenRuleDecl
 import com.kraken.plugin.psi.KrakenRuleRef
 
-/** Fixtures shared by the rule and entry point move tests. */
 abstract class KrakenMoveTestCase : BasePlatformTestCase() {
 
     protected fun file(name: String, text: String): KrakenFile = myFixture.addFileToProject(name, text) as KrakenFile

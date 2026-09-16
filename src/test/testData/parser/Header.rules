@@ -4,8 +4,8 @@ Include Base
 
 Import Rule "External rule", "Other rule" From Base
 
-// commentaire de ligne
-/* commentaire de bloc */
+// line comment
+/* block comment */
 
 /**
  * Documentation.
