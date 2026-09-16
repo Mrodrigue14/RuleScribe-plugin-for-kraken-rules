@@ -1,6 +1,5 @@
 package com.kraken.plugin
 
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.inspection.KrakenTypeMismatchInspection
 
 /**
@@ -9,9 +8,9 @@ import com.kraken.plugin.inspection.KrakenTypeMismatchInspection
  * As for identifiers, most tests check that it stays silent: the plugin does not type
  * everything, and an invented diagnostic costs more than a missed one.
  */
-class KrakenTypeMismatchTest : BasePlatformTestCase() {
+class KrakenTypeMismatchTest : KrakenRuleBodyTestCase() {
 
-    private val model = """
+    override val model = """
         Root Context Policy {
             String policyCd
             Money limitAmount
@@ -22,22 +21,7 @@ class KrakenTypeMismatchTest : BasePlatformTestCase() {
         }
     """.trimIndent()
 
-    private fun problems(body: String): List<String> {
-        myFixture.configureByText(
-            "types.rules",
-            """
-            $model
-
-            Rule "Under test" On Policy.policyCd {
-                $body
-            }
-            """.trimIndent(),
-        )
-        myFixture.enableInspections(KrakenTypeMismatchInspection())
-        return myFixture.doHighlighting()
-            .mapNotNull { it.description }
-            .filter { it.startsWith("[kvr049]") }
-    }
+    private fun problems(body: String): List<String> = problemsIn(body, KrakenTypeMismatchInspection()).filter { it.startsWith("[kvr049]") }
 
     fun testDateComparedWithDateTimeIsReported() {
         assertEquals(

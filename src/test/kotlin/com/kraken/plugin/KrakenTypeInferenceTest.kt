@@ -1,7 +1,6 @@
 package com.kraken.plugin
 
 import com.intellij.psi.util.PsiTreeUtil
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenRefExpr
 import com.kraken.plugin.types.KrakenType
@@ -14,9 +13,9 @@ import com.kraken.plugin.types.KrakenTypeInference
  * cannot type and makes checks abstain. Unknown where a type is expected is a missed
  * opportunity; an invented type is a false diagnostic.
  */
-class KrakenTypeInferenceTest : BasePlatformTestCase() {
+class KrakenTypeInferenceTest : KrakenRuleBodyTestCase() {
 
-    private val model = """
+    override val model = """
         Root Context Policy {
             String policyCd
             Money limitAmount
@@ -38,21 +37,7 @@ class KrakenTypeInferenceTest : BasePlatformTestCase() {
         }
     """.trimIndent()
 
-    private fun configureRule(body: String) = myFixture.configureByText(
-        "types.rules",
-        """
-        $model
-
-        Rule "Under test" On Policy.policyCd {
-            $body
-        }
-        """.trimIndent(),
-    )
-
-    private fun typeOfRef(name: String): KrakenType = KrakenTypeInference.typeOf(
-        PsiTreeUtil.collectElementsOfType(myFixture.file, KrakenRefExpr::class.java)
-            .first { it.referenceName == name },
-    )
+    private fun typeOfRef(name: String): KrakenType = KrakenTypeInference.typeOf(refNamed(name))
 
     fun testPrimitiveFieldTypes() {
         configureRule("Assert policyCd != null")

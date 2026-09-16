@@ -24,12 +24,7 @@ abstract class KrakenMoveTestCase : BasePlatformTestCase() {
     /** The move goes through the document, so both files must still parse. */
     protected fun assertParses(vararg files: KrakenFile) {
         for (f in files) {
-            val errors = PsiTreeUtil.findChildrenOfType(f, PsiErrorElement::class.java)
-            assertEquals(
-                "${f.name} no longer parses:\n${f.text}",
-                emptyList<String>(),
-                errors.map { it.errorDescription },
-            )
+            assertEquals("${f.name} no longer parses:\n${f.text}", emptyList<String>(), parseErrors(f))
         }
     }
 }

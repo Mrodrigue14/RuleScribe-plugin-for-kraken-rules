@@ -13,11 +13,7 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
  */
 class KrakenTypeSyntaxTest : BasePlatformTestCase() {
 
-    private fun errors(source: String): List<String> {
-        myFixture.configureByText("types.rules", source)
-        return PsiTreeUtil.findChildrenOfType(myFixture.file, PsiErrorElement::class.java)
-            .map { it.errorDescription }
-    }
+    private fun errors(source: String): List<String> = parseErrors(myFixture.configureByText("types.rules", source))
 
     private fun assertParses(source: String) = assertEquals("should parse: $source", emptyList<String>(), errors(source))
 

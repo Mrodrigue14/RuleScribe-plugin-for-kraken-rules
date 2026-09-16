@@ -13,11 +13,7 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
  */
 class KrakenParseErrorMessageTest : BasePlatformTestCase() {
 
-    private fun errors(source: String): List<String> {
-        myFixture.configureByText("err.rules", source)
-        return PsiTreeUtil.findChildrenOfType(myFixture.file, PsiErrorElement::class.java)
-            .map { it.errorDescription }
-    }
+    private fun errors(source: String): List<String> = parseErrors(myFixture.configureByText("err.rules", source))
 
     private val brokenExpression = """
         Rule "R" On Policy.state {

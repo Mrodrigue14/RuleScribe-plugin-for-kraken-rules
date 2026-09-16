@@ -2,7 +2,6 @@ package com.kraken.plugin
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenPathSegment
 import com.kraken.plugin.psi.KrakenRefExpr
@@ -14,9 +13,9 @@ import com.kraken.plugin.psi.KrakenRefExpr
  * PSI references, including where they give up: a reference that does not resolve
  * simply does not navigate.
  */
-class KrakenExpressionNavigationTest : BasePlatformTestCase() {
+class KrakenExpressionNavigationTest : KrakenRuleBodyTestCase() {
 
-    private val model = """
+    override val model = """
         Root Context Policy {
             String policyCd
             Child AddressInfo
@@ -37,20 +36,6 @@ class KrakenExpressionNavigationTest : BasePlatformTestCase() {
         }
     """.trimIndent()
 
-    private fun configureRule(body: String) = myFixture.configureByText(
-        "expr.rules",
-        """
-        $model
-
-        Rule "Under test" On Policy.policyCd {
-            $body
-        }
-        """.trimIndent(),
-    )
-
-    private fun ref(name: String): KrakenRefExpr = PsiTreeUtil.collectElementsOfType(myFixture.file, KrakenRefExpr::class.java)
-        .first { it.referenceName == name }
-
     private fun segment(name: String): KrakenPathSegment = PsiTreeUtil.collectElementsOfType(myFixture.file, KrakenPathSegment::class.java)
         .first { it.segmentName == name }
 
@@ -64,12 +49,12 @@ class KrakenExpressionNavigationTest : BasePlatformTestCase() {
 
     fun testBareFieldNavigatesToItsDeclaration() {
         configureRule("Assert policyCd != null")
-        assertResolvesTo(ref("policyCd").reference?.resolve(), "String policyCd")
+        assertResolvesTo(refNamed("policyCd").reference?.resolve(), "String policyCd")
     }
 
     fun testBareContextNavigatesToItsDeclaration() {
         configureRule("Assert Coverage != null")
-        val target = ref("Coverage").reference?.resolve()
+        val target = refNamed("Coverage").reference?.resolve()
         assertNotNull(target)
         // Coverage is a Child of Policy: the local scope wins, as in the engine, so this lands
         // on the child and not on the Context.
@@ -78,12 +63,12 @@ class KrakenExpressionNavigationTest : BasePlatformTestCase() {
 
     fun testVariableNavigatesToItsDeclarationSite() {
         configureRule("Assert every item in coverages satisfies item != null")
-        assertResolvesTo(ref("item").reference?.resolve(), "item")
+        assertResolvesTo(refNamed("item").reference?.resolve(), "item")
     }
 
     fun testUnknownIdentifierDoesNotNavigate() {
         configureRule("Assert whatIsThis != null")
-        assertNull(ref("whatIsThis").reference?.resolve())
+        assertNull(refNamed("whatIsThis").reference?.resolve())
     }
 
     fun testFieldOfAChildContextResolves() {

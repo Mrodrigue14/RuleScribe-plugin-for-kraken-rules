@@ -2,7 +2,6 @@ package com.kraken.plugin
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenScopeResolver
 
@@ -17,9 +16,9 @@ import com.kraken.plugin.psi.KrakenScopeResolver
  * These tests pin that order, especially where resolution must fail: without type
  * inference, resolving wrongly is worse than not resolving at all.
  */
-class KrakenScopeResolverTest : BasePlatformTestCase() {
+class KrakenScopeResolverTest : KrakenRuleBodyTestCase() {
 
-    private val model = """
+    override val model = """
         Root Context Policy {
             String policyCd
             Money limitAmount
@@ -39,27 +38,7 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
         }
     """.trimIndent()
 
-    /** First bare identifier with this text in the rule body. */
-    private fun refTo(name: String): PsiElement {
-        val found = PsiTreeUtil.collectElements(myFixture.file) {
-            it.node?.elementType == KrakenTypes.REF_EXPR && it.text.trim() == name
-        }
-        assertTrue("No reference '$name' in the file", found.isNotEmpty())
-        return found.first()
-    }
-
-    private fun configureRule(body: String) = myFixture.configureByText(
-        "scope.rules",
-        """
-        $model
-
-        Rule "Under test" On Policy.policyCd {
-            $body
-        }
-        """.trimIndent(),
-    )
-
-    private fun resolve(name: String): PsiElement? = KrakenScopeResolver.resolve(refTo(name), name)
+    private fun resolve(name: String): PsiElement? = KrakenScopeResolver.resolve(refNamed(name), name)
 
     fun testFieldOfTargetContextResolvesWithoutPrefix() {
         configureRule("Assert limitAmount > 0")
@@ -82,7 +61,7 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
         )
         assertNotNull(
             "Is Insurable brings its fields into scope",
-            KrakenScopeResolver.resolve(refTo("inheritedCd"), "inheritedCd"),
+            KrakenScopeResolver.resolve(refNamed("inheritedCd"), "inheritedCd"),
         )
     }
 
@@ -143,7 +122,7 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
 
     fun testContextNameDenotesItselfForTheNextSegment() {
         configureRule("Assert AddressInfo.postalCode != null")
-        assertEquals("AddressInfo", KrakenScopeResolver.contextDenotedBy(refTo("AddressInfo"), "AddressInfo"))
+        assertEquals("AddressInfo", KrakenScopeResolver.contextDenotedBy(refNamed("AddressInfo"), "AddressInfo"))
     }
 
     fun testChildFieldDenotesItsContext() {
@@ -151,14 +130,14 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
         // `Child AddressInfo` in Policy: the child name is the context.
         assertEquals(
             "AddressInfo",
-            KrakenScopeResolver.contextDenotedBy(refTo("AddressInfo"), "AddressInfo"),
+            KrakenScopeResolver.contextDenotedBy(refNamed("AddressInfo"), "AddressInfo"),
         )
     }
 
     /** A scalar field denotes no context, so the chain stops. */
     fun testScalarFieldDenotesNoContext() {
         configureRule("Assert policyCd != null")
-        assertNull(KrakenScopeResolver.contextDenotedBy(refTo("policyCd"), "policyCd"))
+        assertNull(KrakenScopeResolver.contextDenotedBy(refNamed("policyCd"), "policyCd"))
     }
 
     /**
@@ -188,14 +167,14 @@ class KrakenScopeResolverTest : BasePlatformTestCase() {
     /** Unknown head: the filter scope is undetermined, not empty. */
     fun testFilterOnAnUnknownHeadHasNoContext() {
         configureRule("Assert IsEmpty(context.additional.items[whatever = 1])")
-        val ref = refTo("whatever")
+        val ref = refNamed("whatever")
         assertTrue(KrakenScopeResolver.isInUntypedFilter(ref))
         assertNull(KrakenScopeResolver.filterContext(ref))
     }
 
     fun testVisibleNamesCoverVariablesFieldsAndContexts() {
         configureRule("Assert set tmp to 1 return tmp > 0")
-        val names = KrakenScopeResolver.visibleNames(refTo("tmp"))
+        val names = KrakenScopeResolver.visibleNames(refNamed("tmp"))
         assertTrue("variable", names.contains("tmp"))
         assertTrue("field of the target context", names.contains("policyCd"))
         assertTrue("visible context", names.contains("AddressInfo"))
