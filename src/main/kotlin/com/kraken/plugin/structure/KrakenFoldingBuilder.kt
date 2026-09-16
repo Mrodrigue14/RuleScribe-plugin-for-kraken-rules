@@ -7,6 +7,7 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
+import com.intellij.psi.impl.source.tree.TreeUtil
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.lang.KrakenParserDefinition
 import com.kraken.plugin.parser.KrakenTypes
@@ -21,7 +22,7 @@ class KrakenFoldingBuilder :
             val node = element.node
             if (node != null && node.elementType in KrakenParserDefinition.BRACE_BLOCKS) {
                 val lbrace = node.findChildByType(KrakenTypes.LBRACE)
-                val rbrace = lastChildOfType(node, KrakenTypes.RBRACE)
+                val rbrace = TreeUtil.findChildBackward(node, KrakenTypes.RBRACE)
                 if (lbrace != null && rbrace != null && rbrace.startOffset > lbrace.startOffset + 1) {
                     val range = TextRange(lbrace.startOffset, rbrace.textRange.endOffset)
                     if (document.getLineNumber(range.startOffset) < document.getLineNumber(range.endOffset - 1)) {
@@ -37,16 +38,4 @@ class KrakenFoldingBuilder :
     override fun getPlaceholderText(node: ASTNode): String = "{…}"
 
     override fun isCollapsedByDefault(node: ASTNode): Boolean = false
-
-    private fun lastChildOfType(node: ASTNode, type: com.intellij.psi.tree.IElementType): ASTNode? {
-        var child = node.lastChildNode
-        while (child != null) {
-            if (child.elementType == type) return child
-            child = child.treePrev
-        }
-        return null
-    }
-
-    companion object {
-    }
 }

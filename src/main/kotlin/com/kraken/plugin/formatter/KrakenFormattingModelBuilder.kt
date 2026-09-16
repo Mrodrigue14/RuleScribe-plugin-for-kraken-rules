@@ -1,6 +1,5 @@
 package com.kraken.plugin.formatter
 
-import com.intellij.formatting.Alignment
 import com.intellij.formatting.Block
 import com.intellij.formatting.ChildAttributes
 import com.intellij.formatting.FormattingContext
@@ -9,7 +8,6 @@ import com.intellij.formatting.FormattingModelBuilder
 import com.intellij.formatting.FormattingModelProvider
 import com.intellij.formatting.Indent
 import com.intellij.formatting.Spacing
-import com.intellij.formatting.Wrap
 import com.intellij.lang.ASTNode
 import com.intellij.psi.TokenType
 import com.intellij.psi.formatter.common.AbstractBlock
@@ -19,7 +17,7 @@ import com.kraken.plugin.parser.KrakenTypes
 class KrakenFormattingModelBuilder : FormattingModelBuilder {
 
     override fun createModel(formattingContext: FormattingContext): FormattingModel {
-        val rootBlock = KrakenBlock(formattingContext.node, null, null, Indent.getNoneIndent())
+        val rootBlock = KrakenBlock(formattingContext.node, Indent.getNoneIndent())
         return FormattingModelProvider.createFormattingModelForPsiFile(
             formattingContext.containingFile,
             rootBlock,
@@ -30,10 +28,8 @@ class KrakenFormattingModelBuilder : FormattingModelBuilder {
 
 class KrakenBlock(
     node: ASTNode,
-    wrap: Wrap?,
-    alignment: Alignment?,
     private val indent: Indent,
-) : AbstractBlock(node, wrap, alignment) {
+) : AbstractBlock(node, null, null) {
 
     override fun getIndent(): Indent = indent
 
@@ -48,7 +44,7 @@ class KrakenBlock(
             if (child.elementType == KrakenTypes.LBRACE) seenLBrace = true
             if (child.elementType == KrakenTypes.RBRACE) seenLBrace = false
             if (child.elementType != TokenType.WHITE_SPACE && child.textLength > 0) {
-                blocks.add(KrakenBlock(child, null, null, childIndent(child, seenLBrace)))
+                blocks.add(KrakenBlock(child, childIndent(child, seenLBrace)))
             }
             child = child.treeNext
         }

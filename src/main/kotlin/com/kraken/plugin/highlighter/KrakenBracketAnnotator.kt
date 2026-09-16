@@ -40,8 +40,7 @@ class KrakenBracketAnnotator : Annotator {
         val unmatched = mutableListOf<PsiElement>()
         val depths = mutableListOf<Pair<PsiElement, Int>>()
 
-        for (leaf in PsiTreeUtil.findChildrenOfType(element, PsiElement::class.java)) {
-            if (leaf.firstChild != null) continue
+        for (leaf in generateSequence(PsiTreeUtil.firstChild(element)) { PsiTreeUtil.nextLeaf(it) }) {
             val type = leaf.node?.elementType ?: continue
             val opener = OPENERS[type]
             if (opener != null) {
