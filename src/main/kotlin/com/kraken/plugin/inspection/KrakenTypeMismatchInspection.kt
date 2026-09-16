@@ -95,13 +95,9 @@ class KrakenTypeMismatchInspection : LocalInspectionTool() {
      */
     private fun checkArguments(call: KrakenFunctionCall, holder: ProblemsHolder) {
         val signature = KrakenFunctionCatalog.find(call.functionName, call.argumentCount) ?: return
-        val args = call.node.findChildByType(KrakenTypes.CALL_ARGS)
-            ?.getChildren(null)
-            ?.filter { it.elementType == KrakenTypes.EXPRESSION }
-            .orEmpty()
-
+        val args = call.arguments
         for ((index, parameter) in signature.parameters.withIndex()) {
-            val argument = args.getOrNull(index)?.psi ?: continue
+            val argument = args.getOrNull(index) ?: continue
             val expected = KrakenType.fromDslName(parameter.type)
             val actual = KrakenTypeInference.typeOf(argument)
             if (!actual.isKnown || expected.isDynamic) continue

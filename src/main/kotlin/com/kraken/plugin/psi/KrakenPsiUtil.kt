@@ -4,6 +4,7 @@ import com.intellij.lang.ASTNode
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
@@ -71,16 +72,6 @@ object KrakenPsiUtil {
         KrakenTypes.NAMESPACE_KW, KrakenTypes.ERROR_KW, KrakenTypes.WARN_KW,
         KrakenTypes.INFO_KW,
     )
-
-    fun unquote(text: String): String {
-        if (text.length >= 2) {
-            val first = text.first()
-            if ((first == '"' || first == '\'') && text.last() == first) {
-                return text.substring(1, text.length - 1)
-            }
-        }
-        return text
-    }
 
     fun krakenFiles(project: Project): List<KrakenFile> = FileTypeIndex.getFiles(KrakenFileType, GlobalSearchScope.projectScope(project))
         .mapNotNull { PsiManager.getInstance(project).findFile(it) as? KrakenFile }
@@ -185,7 +176,7 @@ object KrakenPsiUtil {
         var child = namesNode.firstChildNode
         while (child != null) {
             if (child.elementType == KrakenTypes.STRING) {
-                result.add(RuleImport(unquote(child.text), ns, child.psi, nsNode.psi))
+                result.add(RuleImport(StringUtil.unquoteString(child.text), ns, child.psi, nsNode.psi))
             }
             child = child.treeNext
         }

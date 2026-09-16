@@ -2,6 +2,7 @@ package com.kraken.plugin.types
 
 import com.intellij.psi.PsiElement
 import com.kraken.plugin.functions.KrakenFunctionCatalog
+import com.kraken.plugin.parser.KrakenLexer
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenFunctionDecl
@@ -45,13 +46,10 @@ object KrakenTypeInference {
     }
 
     private fun literalType(text: String): KrakenType = when {
-        DATETIME_LITERAL.matches(text) -> KrakenType.DateTime
-        DATE_LITERAL.matches(text) -> KrakenType.Date
+        KrakenLexer.DATE_TIME_LITERAL.matches(text) -> KrakenType.DateTime
+        KrakenLexer.DATE_LITERAL.matches(text) -> KrakenType.Date
         else -> KrakenType.Number
     }
-
-    private val DATE_LITERAL = Regex("""\d{4}-\d{2}-\d{2}""")
-    private val DATETIME_LITERAL = Regex("""\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z?""")
 
     /**
      * A chain of values only has a safe type when it contains no operator; otherwise each

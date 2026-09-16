@@ -4,6 +4,7 @@ import com.intellij.extapi.psi.ASTWrapperPsiElement
 import com.intellij.lang.ASTNode
 import com.intellij.navigation.ItemPresentation
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.AbstractElementManipulator
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
@@ -14,7 +15,7 @@ import com.kraken.plugin.parser.KrakenTypes
 class KrakenEpRef(node: ASTNode) : ASTWrapperPsiElement(node) {
 
     val entryPointName: String?
-        get() = node.findChildByType(KrakenTypes.STRING)?.text?.let(KrakenPsiUtil::unquote)
+        get() = node.findChildByType(KrakenTypes.STRING)?.text?.let(StringUtil::unquoteString)
 
     override fun getReference(): PsiReference? {
         val range = stringRangeInside(this) ?: return null

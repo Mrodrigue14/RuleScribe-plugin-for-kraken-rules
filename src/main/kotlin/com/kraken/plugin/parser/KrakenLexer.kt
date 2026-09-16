@@ -119,7 +119,7 @@ class KrakenLexer : LexerBase() {
 
     private fun scanNumber() {
         // KEL date and datetime literals: 2020-01-01 or 2020-01-01T10:00:00Z
-        val dateMatch = DATE_TIME_REGEX.matchAt(buffer, tokenStart)
+        val dateMatch = DATE_TIME_LITERAL.matchAt(buffer, tokenStart) ?: DATE_LITERAL.matchAt(buffer, tokenStart)
         if (dateMatch != null) {
             tokenEnd = dateMatch.range.last + 1
             currentToken = KrakenTypes.NUMBER_LIT
@@ -170,8 +170,8 @@ class KrakenLexer : LexerBase() {
         )
         private const val SINGLE_CHAR_OPERATORS = "+-=!?%"
 
-        private val DATE_TIME_REGEX =
-            Regex("""\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z?)?""")
+        val DATE_LITERAL = Regex("""\d{4}-\d{2}-\d{2}""")
+        val DATE_TIME_LITERAL = Regex("""\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z?""")
 
         private val SINGLE_CHAR_TOKENS: Map<Char, IElementType> = mapOf(
             '{' to KrakenTypes.LBRACE,

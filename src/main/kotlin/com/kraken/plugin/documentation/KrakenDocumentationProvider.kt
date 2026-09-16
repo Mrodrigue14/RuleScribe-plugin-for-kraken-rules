@@ -62,7 +62,7 @@ class KrakenDocumentationProvider : AbstractDocumentationProvider() {
             body.findChildrenRecursively(KrakenTypes.DESCRIPTION_CLAUSE).firstOrNull()?.let { desc ->
                 desc.findChildByType(KrakenTypes.STRING)?.let {
                     sb.append("<br/><b>Description:</b> ")
-                        .append(StringUtil.escapeXmlEntities(KrakenPsiUtil.unquote(it.text)))
+                        .append(StringUtil.escapeXmlEntities(StringUtil.unquoteString(it.text)))
                 }
             }
             for (clauseType in listOf(

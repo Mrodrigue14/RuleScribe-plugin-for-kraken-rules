@@ -23,13 +23,16 @@ class KrakenFunctionCall(node: ASTNode) : ASTWrapperPsiElement(node) {
     val functionName: String
         get() = headRange()?.substring(text)?.trim().orEmpty()
 
+    val arguments: List<PsiElement>
+        get() = node.findChildByType(KrakenTypes.CALL_ARGS)
+            ?.getChildren(null)
+            ?.filter { it.elementType == KrakenTypes.EXPRESSION }
+            ?.map { it.psi }
+            .orEmpty()
+
     /** The engine identifies a function by (name, arity), so this, not the types, selects the overload. */
     val argumentCount: Int
-        get() {
-            val args = node.findChildByType(KrakenTypes.CALL_ARGS) ?: return 0
-            return args.getChildren(null)
-                .count { it.elementType == KrakenTypes.EXPRESSION }
-        }
+        get() = arguments.size
 
     override fun getReference(): PsiReference? {
         val range = headRange()?.takeIf { !it.isEmpty } ?: return null

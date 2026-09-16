@@ -14,9 +14,7 @@ import com.kraken.plugin.psi.KrakenPsiUtil
  * checks (`ResourceKrakenProjectBuilder.validateRuleImports`): unknown source
  * namespace, rule missing from it, clash with a local rule, ambiguous import.
  */
-private abstract class KrakenRuleImportVisitorBase(
-    private val holder: ProblemsHolder,
-) : PsiElementVisitor() {
+private abstract class KrakenRuleImportVisitorBase : PsiElementVisitor() {
 
     final override fun visitElement(element: PsiElement) {
         if (element.node?.elementType != KrakenTypes.RULE_IMPORT_DECL) return
@@ -38,7 +36,7 @@ private fun targetNamespaceOf(decl: PsiElement): String = (decl.containingFile a
 
 /** The namespace named after `From` does not exist in any project file. */
 class KrakenImportUnknownNamespaceInspection : LocalInspectionTool() {
-    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenRuleImportVisitorBase(holder) {
+    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenRuleImportVisitorBase() {
         override fun checkImportDecl(
             decl: PsiElement,
             imports: List<KrakenPsiUtil.RuleImport>,
@@ -61,7 +59,7 @@ class KrakenImportUnknownNamespaceInspection : LocalInspectionTool() {
 
 /** The imported rule does not exist in the source namespace. */
 class KrakenImportUnknownRuleInspection : LocalInspectionTool() {
-    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenRuleImportVisitorBase(holder) {
+    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenRuleImportVisitorBase() {
         override fun checkImportDecl(
             decl: PsiElement,
             imports: List<KrakenPsiUtil.RuleImport>,
@@ -93,7 +91,7 @@ class KrakenImportUnknownRuleInspection : LocalInspectionTool() {
 
 /** The imported name clashes with a locally declared rule. */
 class KrakenImportNameClashInspection : LocalInspectionTool() {
-    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenRuleImportVisitorBase(holder) {
+    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenRuleImportVisitorBase() {
         override fun checkImportDecl(
             decl: PsiElement,
             imports: List<KrakenPsiUtil.RuleImport>,
@@ -124,14 +122,15 @@ class KrakenImportNameClashInspection : LocalInspectionTool() {
 
 /** The same rule name is imported more than once, from the same or different namespaces. */
 class KrakenImportAmbiguousInspection : LocalInspectionTool() {
-    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenRuleImportVisitorBase(holder) {
+    override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenRuleImportVisitorBase() {
+        // The engine groups a namespace's imports by rule name and rejects any name imported
+        // more than once.
+        private val allImports by lazy { KrakenPsiUtil.ruleImportsForNamespaceOf(holder.file) }
+
         override fun checkImportDecl(
             decl: PsiElement,
             imports: List<KrakenPsiUtil.RuleImport>,
         ) {
-            // The engine groups a namespace's imports by rule name and rejects any name imported
-            // more than once.
-            val allImports = KrakenPsiUtil.ruleImportsForNamespaceOf(decl.containingFile)
             for (import in imports) {
                 val sameName = allImports.filter { it.ruleName == import.ruleName }
                 if (sameName.size > 1) {
