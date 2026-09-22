@@ -91,17 +91,49 @@ def unescape(text: str) -> str:
     return joined.replace('\\"', '"').replace("\\n", "\n").replace("\\\\", "\\")
 
 
-def parse_annotation_args(text: str) -> str:
-    """Content between an annotation's parentheses, with balanced parentheses."""
+def closing_index(text: str, opening: str, closing: str) -> int:
+    """Index of the bracket that closes the one at `text[0]`, or -1."""
     depth = 0
     for index, char in enumerate(text):
-        if char == "(":
+        if char == opening:
             depth += 1
-        elif char == ")":
+        elif char == closing:
             depth -= 1
             if depth == 0:
-                return text[1:index]
-    return ""
+                return index
+    return -1
+
+
+def parse_annotation_args(text: str) -> str:
+    """Content between an annotation's parentheses, with balanced parentheses."""
+    end = closing_index(text, "(", ")")
+    return text[1:end] if end != -1 else ""
+
+
+def split_top_level(text: str) -> list:
+    """Splits on commas outside `<>` and `()`: generics contain commas too."""
+    parts, depth, current = [], 0, ""
+    for char in text:
+        if char in "<(":
+            depth += 1
+        elif char in ">)":
+            depth -= 1
+        if char == "," and depth == 0:
+            parts.append(current)
+            current = ""
+        else:
+            current += char
+    parts.append(current)
+    return parts
+
+
+def java_return_type(signature: str) -> str:
+    """`public static <T> Collection<T> join(…)` → `Collection<T>`."""
+    declaration = signature.strip().split("static", 1)[-1].strip()
+    # The type parameter list precedes the return type.
+    if declaration.startswith("<"):
+        declaration = declaration[closing_index(declaration, "<", ">") + 1:].strip()
+    return declaration.split("(")[0].rsplit(" ", 1)[0].strip()
 
 
 def parse_examples(block: str) -> list:
@@ -126,22 +158,8 @@ def parse_parameters(signature: str, generics: set) -> list:
     if not inner.strip():
         return []
 
-    # Split on top-level commas only: generics contain commas too.
-    parts, depth, current = [], 0, ""
-    for char in inner:
-        if char in "<(":
-            depth += 1
-        elif char in ">)":
-            depth -= 1
-        if char == "," and depth == 0:
-            parts.append(current)
-            current = ""
-        else:
-            current += char
-    parts.append(current)
-
     parameters = []
-    for part in parts:
+    for part in split_top_level(inner):
         part = part.strip()
         if not part:
             continue
@@ -194,24 +212,12 @@ def parse_library(path: Path) -> dict:
         )
         since = re.search(r'since\s*=\s*"([^"]*)"', block)
         returns = re.search(r'@ReturnType\s*\(\s*"([^"]*)"', block + signature)
-        java_return = signature.strip().split("static", 1)[-1].strip()
-        # `public static <T> Collection<T> join(…)`: the type parameter list precedes
-        # the return type and must be removed before reading it.
-        if java_return.startswith("<"):
-            depth = 0
-            for index, char in enumerate(java_return):
-                depth += (char == "<") - (char == ">")
-                if depth == 0:
-                    java_return = java_return[index + 1:].strip()
-                    break
-        java_return = java_return.split("(")[0].rsplit(" ", 1)[0].strip()
-
         functions.append({
             "name": name,
             "library": library["name"],
             "parameters": parse_parameters(signature, generics),
             "returnType": returns.group(1) if returns
-            else kel_type(java_return, generics),
+            else kel_type(java_return_type(signature), generics),
             "description": unescape(description.group(1)) if description else None,
             "since": since.group(1) if since else None,
             "examples": parse_examples(block),

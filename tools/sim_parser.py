@@ -1,30 +1,18 @@
 #!/usr/bin/env python3
 """Python simulation of KrakenLexer and the Kraken.bnf grammar (PEG semantics)."""
-import sys, re
+import glob
+import os
+import re
+import sys
 
-KEYWORDS = {
- 'namespace':'NAMESPACE_KW','include':'INCLUDE_KW','import':'IMPORT_KW','from':'FROM_KW',
- 'rule':'RULE_KW','rules':'RULES_KW','on':'ON_KW','context':'CONTEXT_KW','contexts':'CONTEXTS_KW',
- 'system':'SYSTEM_KW','root':'ROOT_KW','external':'EXTERNAL_KW','externalcontext':'EXTERNAL_CONTEXT_KW',
- 'externalentity':'EXTERNAL_ENTITY_KW','child':'CHILD_KW','is':'IS_KW','entrypoint':'ENTRYPOINT_KW',
- 'entrypoints':'ENTRYPOINTS_KW','when':'WHEN_KW','assert':'ASSERT_KW','set':'SET_KW','default':'DEFAULT_KW',
- 'reset':'RESET_KW','to':'TO_KW','mandatory':'MANDATORY_KW','empty':'EMPTY_KW','disabled':'DISABLED_KW',
- 'hidden':'HIDDEN_KW','matches':'MATCHES_KW','size':'SIZE_KW','min':'MIN_KW','max':'MAX_KW',
- 'length':'LENGTH_KW','number':'NUMBER_KW','step':'STEP_KW','in':'IN_KW','overridable':'OVERRIDABLE_KW',
- 'error':'ERROR_KW','warn':'WARN_KW','info':'INFO_KW','dimension':'DIMENSION_KW','function':'FUNCTION_KW',
- 'priority':'PRIORITY_KW','description':'DESCRIPTION_KW','notstrict':'NOT_STRICT_KW',
- 'forbidtarget':'FORBID_TARGET_KW','forbidreference':'FORBID_REFERENCE_KW','serversideonly':'SERVER_SIDE_ONLY_KW',
- 'true':'TRUE_KW','false':'FALSE_KW','null':'NULL_KW',
-}
-KEYWORDS.update({'and':'AND_KW','or':'OR_KW','not':'NOT_KW','if':'IF_KW','then':'THEN_KW',
- 'else':'ELSE_KW','for':'FOR_KW','every':'EVERY_KW','some':'SOME_KW','return':'RETURN_KW',
- 'this':'THIS_KW','instanceof':'INSTANCEOF_KW','typeof':'TYPEOF_KW','satisfies':'SATISFIES_KW'})
-SINGLE = {'{':'LBRACE','}':'RBRACE','(':'LPAREN',')':'RPAREN','[':'LBRACKET',']':'RBRACKET',
-          ',':'COMMA','.':'DOT',':':'COLON','@':'AT','*':'STAR','<':'LT','>':'GT','/':'OP',
-          '|':'PIPE'}
-TWO_CHAR_OPS = {'!=','==','&&'}
-SINGLE_CHAR_OPS = set('+-=!?%')
+from kraken_sources import ROOT, lexer_tables
+
+KEYWORDS, TWO_CHAR, SINGLE, SINGLE_CHAR_OPS = lexer_tables()
 DATE_RE = re.compile(r'\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z?)?')
+
+# Examples that are invalid on purpose, to show error highlighting.
+INTENTIONALLY_BROKEN = {'brackets-broken.rules'}
+
 
 def lex(s):
     toks=[]; i=0; n=len(s)
@@ -61,20 +49,11 @@ def lex(s):
             while j<n and (s[j].isalnum() or s[j]=='_'): j+=1
             w=s[i:j]
             toks.append((KEYWORDS.get(w.lower(),'IDENTIFIER'),w)); i=j; continue
-        if c=='*' and i+1<n and s[i+1]=='*':
-            toks.append(('OP','**')); i+=2; continue
-        if c in ('>','<') and i+1<n and s[i+1]=='=':
-            toks.append(('OP',s[i:i+2])); i+=2; continue
-        if c=='|' and i+1<n and s[i+1]=='|':
-            toks.append(('OP','||')); i+=2; continue
+        # Same order as KrakenLexer.scanSymbol.
+        if s[i:i+2] in TWO_CHAR:
+            toks.append((TWO_CHAR[s[i:i+2]],s[i:i+2])); i+=2; continue
         if c in SINGLE:
             toks.append((SINGLE[c],c)); i+=1; continue
-        if c=='?' and i+1<n and s[i+1]=='.':
-            toks.append(('QDOT','?.')); i+=2; continue
-        if c=='?' and i+1<n and s[i+1]=='[':
-            toks.append(('QLBRACKET','?[')); i+=2; continue
-        if s[i:i+2] in TWO_CHAR_OPS:
-            toks.append(('OP',s[i:i+2])); i+=2; continue
         if c in SINGLE_CHAR_OPS:
             toks.append(('OP',c)); i+=1; continue
         toks.append(('BAD',c)); i+=1
@@ -195,8 +174,6 @@ define('expression', alt(
  seq(many1(R('set_var')),opt(seq(tk('RETURN_KW'),R('value_chain')))),
  seq(tk('RETURN_KW'),R('value_chain')),
  R('value_chain')))
-# compat: nav_value now uses collection_lit (alias brace_expr)
-define('brace_expr', R('collection_lit'))
 
 define('qualified_name', seq(R('id'),many(seq(tk('DOT'),R('id')))))
 define('namespace_decl', seqp(1, 'namespace_decl', tk('NAMESPACE_KW'),R('qualified_name')))
@@ -213,7 +190,7 @@ define('annotation_body', alt(R('dimension_annotation'),tk('NOT_STRICT_KW'),tk('
 define('annotation', seqp(1, 'annotation', tk('AT'),R('annotation_body')))
 
 define('path_expr', seq(R('id'),many(seq(tk('DOT'),R('id')))))
-define('nav_value', alt(R('brace_expr'),R('path_expr')))
+define('nav_value', alt(R('collection_lit'),R('path_expr')))
 define('inherited_contexts', seqp(1, 'inherited_contexts', tk('IS_KW'),R('id'),many(seq(tk('COMMA'),R('id')))))
 define('child_decl', seqp(2, 'child_decl', many(R('annotation')),tk('CHILD_KW'),opt(tk('STAR')),R('id'),opt(seq(tk('COLON'),R('nav_value')))))
 define('field_decl', seq(many(R('annotation')),opt(tk('EXTERNAL_KW')),R('id'),opt(tk('STAR')),R('id'),opt(seq(tk('COLON'),R('nav_value')))))
@@ -307,9 +284,7 @@ def parse_file(path):
     ERRORS.clear()
     s=S(toks)
     ok=RULES['kraken_file'](s)
-    full = ok and s.p==len(toks)
-    if ERRORS:
-        full=False
+    full = ok and s.p==len(toks) and not ERRORS
     status='OK' if (full and not bad) else 'FAILED'
     print(f"{status}  {path}  ({len(toks)} tokens)")
     if bad: print("   invalid tokens:",bad[:5])
@@ -320,12 +295,13 @@ def parse_file(path):
         print(f"   stuck at token #{i}: ...{ctx}...")
     return full and not bad
 
+def default_corpus():
+    """Every example and parser test file, except the ones broken on purpose."""
+    files = glob.glob(os.path.join(ROOT, 'examples/**/*.rules'), recursive=True)
+    files += glob.glob(os.path.join(ROOT, 'src/test/testData/**/*.rules'), recursive=True)
+    return sorted(f for f in files if os.path.basename(f) not in INTENTIONALLY_BROKEN)
+
 if __name__=='__main__':
-    import os
-    root=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    files=sys.argv[1:] or [root+'/src/test/testData/parser/Full.rules',
-           root+'/src/test/testData/parser/Contexts.rules',
-           root+'/src/test/testData/parser/Header.rules',
-           root+'/examples/demo.rules']
+    files=sys.argv[1:] or default_corpus()
     results=[parse_file(f) for f in files]
     sys.exit(0 if all(results) else 1)
