@@ -112,7 +112,6 @@ class KrakenImportNameClashInspection : LocalInspectionTool() {
                             import.sourceNamespace,
                             localNs,
                         ),
-                        ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
                     )
                 }
             }
@@ -143,7 +142,6 @@ class KrakenImportAmbiguousInspection : LocalInspectionTool() {
                             targetNamespaceOf(decl),
                             sources,
                         ),
-                        ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
                     )
                 }
             }

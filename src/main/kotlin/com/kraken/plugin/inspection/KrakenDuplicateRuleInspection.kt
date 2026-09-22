@@ -1,7 +1,6 @@
 package com.kraken.plugin.inspection
 
 import com.intellij.codeInspection.LocalInspectionTool
-import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
@@ -25,7 +24,6 @@ class KrakenDuplicateRuleInspection : LocalInspectionTool() {
                 holder.registerProblem(
                     element.nameIdentifier ?: element,
                     KrakenDiagnostic.DUPLICATE_RULE_VERSION.format(),
-                    ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
                     KrakenAddDimensionAnnotationFix(),
                 )
             }

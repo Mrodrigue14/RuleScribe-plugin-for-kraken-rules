@@ -33,6 +33,15 @@ class KrakenTypeMismatchTest : KrakenRuleBodyTestCase() {
         )
     }
 
+    /** The chain is flat: `premium` alone is not the left side of `=`. */
+    fun testOperandExtendedByArithmeticIsNotJudgedAlone() {
+        assertEquals(emptyList<String>(), problems("Assert \"ID\" + premium = policyCd"))
+    }
+
+    fun testComparisonNextToALogicalOperatorIsStillChecked() {
+        assertEquals(1, problems("Assert effectiveDate < createdOn and active").size)
+    }
+
     fun testStringComparedWithNumberIsReported() {
         assertEquals(
             listOf(

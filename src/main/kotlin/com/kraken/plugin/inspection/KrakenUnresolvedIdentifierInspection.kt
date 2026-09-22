@@ -1,7 +1,6 @@
 package com.kraken.plugin.inspection
 
 import com.intellij.codeInspection.LocalInspectionTool
-import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
@@ -55,7 +54,6 @@ class KrakenUnresolvedIdentifierInspection : LocalInspectionTool() {
             holder.registerProblem(
                 element,
                 KrakenDiagnostic.REFERENCE_NOT_FOUND.format(name),
-                ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
             )
         }
     }

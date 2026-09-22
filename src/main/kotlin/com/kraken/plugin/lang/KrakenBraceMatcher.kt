@@ -15,7 +15,7 @@ class KrakenBraceMatcher : PairedBraceMatcher {
     override fun getCodeConstructStart(file: PsiFile?, openingBraceOffset: Int): Int = openingBraceOffset
 
     companion object {
-        private val PAIRS = arrayOf(
+        internal val PAIRS = arrayOf(
             BracePair(KrakenTypes.LBRACE, KrakenTypes.RBRACE, true),
             BracePair(KrakenTypes.LPAREN, KrakenTypes.RPAREN, false),
             BracePair(KrakenTypes.LBRACKET, KrakenTypes.RBRACKET, false),

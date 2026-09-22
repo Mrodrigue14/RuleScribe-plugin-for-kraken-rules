@@ -20,12 +20,12 @@ import com.kraken.plugin.lang.KrakenFile
  */
 object KrakenDeclarationMover {
 
-    fun move(project: Project, declaration: PsiElement, target: KrakenFile): Boolean {
-        val source = declaration.containingFile as? KrakenFile ?: return false
-        if (source == target) return false
+    fun move(project: Project, declaration: PsiElement, target: KrakenFile) {
+        val source = declaration.containingFile as? KrakenFile ?: return
+        if (source == target) return
         val manager = PsiDocumentManager.getInstance(project)
-        val sourceDoc = manager.getDocument(source) ?: return false
-        val targetDoc = manager.getDocument(target) ?: return false
+        val sourceDoc = manager.getDocument(source) ?: return
+        val targetDoc = manager.getDocument(target) ?: return
 
         val range = declaration.textRange
         val text = sourceDoc.getText(range).trim()
@@ -34,6 +34,5 @@ object KrakenDeclarationMover {
         manager.commitDocument(targetDoc)
         sourceDoc.deleteString(range.startOffset, range.endOffset)
         manager.commitDocument(sourceDoc)
-        return true
     }
 }

@@ -2,6 +2,9 @@ package com.kraken.plugin.psi
 
 import com.intellij.lang.ASTNode
 import com.intellij.openapi.util.TextRange
+import com.intellij.psi.PsiComment
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.impl.source.tree.LeafElement
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
@@ -24,6 +27,11 @@ object KrakenPsiUtil {
     fun firstIdAfter(node: ASTNode, keywords: TokenSet): ASTNode? = firstIdFrom(node.findChildByType(keywords)?.treeNext)
 
     private fun firstIdFrom(start: ASTNode?): ASTNode? = generateSequence(start) { it.treeNext }.firstOrNull { it.elementType in ID_TOKENS }
+
+    /** AST children of [element], leaves included, without whitespace and comments. */
+    fun significantChildren(element: PsiElement): List<PsiElement> = element.node.getChildren(null)
+        .map { it.psi }
+        .filter { it !is PsiWhiteSpace && it !is PsiComment }
 
     /** Replaces a string's content, keeping its original quote character. */
     fun replaceQuoted(leaf: ASTNode?, content: String) {

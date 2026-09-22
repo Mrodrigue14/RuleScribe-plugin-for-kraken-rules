@@ -9,6 +9,7 @@ import com.kraken.plugin.psi.KrakenFieldDecl
 import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenFunctionParam
 import com.kraken.plugin.psi.KrakenPathSegment
+import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRefExpr
 
 /**
@@ -64,12 +65,9 @@ object KrakenTypeInference {
         return parts.singleOrNull()?.let { typeOf(it) } ?: KrakenType.Unknown
     }
 
-    /** Meaningful AST children: neither whitespace nor comments. */
-    fun significantChildren(element: PsiElement): List<PsiElement> = element.node.getChildren(null)
-        .filter { it.psi !is com.intellij.psi.PsiWhiteSpace && it.psi !is com.intellij.psi.PsiComment }
-        .map { it.psi }
+    private fun significantChildren(element: PsiElement): List<PsiElement> = KrakenPsiUtil.significantChildren(element)
 
-    fun isOperator(element: PsiElement): Boolean = when (element.node?.elementType) {
+    private fun isOperator(element: PsiElement): Boolean = when (element.node?.elementType) {
         KrakenTypes.OP, KrakenTypes.PIPE, KrakenTypes.LT, KrakenTypes.GT, KrakenTypes.STAR, KrakenTypes.COLON,
         KrakenTypes.IN_KW, KrakenTypes.IS_KW, KrakenTypes.AND_KW, KrakenTypes.OR_KW,
         KrakenTypes.INSTANCEOF_KW, KrakenTypes.TYPEOF_KW, KrakenTypes.SATISFIES_KW,

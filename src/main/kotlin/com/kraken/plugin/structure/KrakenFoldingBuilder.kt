@@ -16,23 +16,17 @@ class KrakenFoldingBuilder :
     FoldingBuilderEx(),
     DumbAware {
 
-    override fun buildFoldRegions(root: PsiElement, document: Document, quick: Boolean): Array<FoldingDescriptor> {
-        val descriptors = mutableListOf<FoldingDescriptor>()
-        PsiTreeUtil.processElements(root) { element ->
-            val node = element.node
-            if (node != null && node.elementType in KrakenParserDefinition.BRACE_BLOCKS) {
-                val lbrace = node.findChildByType(KrakenTypes.LBRACE)
-                val rbrace = TreeUtil.findChildBackward(node, KrakenTypes.RBRACE)
-                if (lbrace != null && rbrace != null && rbrace.startOffset > lbrace.startOffset + 1) {
-                    val range = TextRange(lbrace.startOffset, rbrace.textRange.endOffset)
-                    if (document.getLineNumber(range.startOffset) < document.getLineNumber(range.endOffset - 1)) {
-                        descriptors.add(FoldingDescriptor(node, range))
-                    }
-                }
-            }
-            true
-        }
-        return descriptors.toTypedArray()
+    override fun buildFoldRegions(root: PsiElement, document: Document, quick: Boolean): Array<FoldingDescriptor> = PsiTreeUtil.collectElements(root) { it.node?.elementType in KrakenParserDefinition.BRACE_BLOCKS }
+        .mapNotNull { block -> braceRange(block.node, document)?.let { FoldingDescriptor(block.node, it) } }
+        .toTypedArray()
+
+    /** From `{` to `}`, when the block is not empty and spans several lines. */
+    private fun braceRange(block: ASTNode, document: Document): TextRange? {
+        val lbrace = block.findChildByType(KrakenTypes.LBRACE) ?: return null
+        val rbrace = TreeUtil.findChildBackward(block, KrakenTypes.RBRACE) ?: return null
+        if (rbrace.startOffset <= lbrace.startOffset + 1) return null
+        val range = TextRange(lbrace.startOffset, rbrace.textRange.endOffset)
+        return range.takeIf { document.getLineNumber(it.startOffset) < document.getLineNumber(it.endOffset - 1) }
     }
 
     override fun getPlaceholderText(node: ASTNode): String = "{…}"

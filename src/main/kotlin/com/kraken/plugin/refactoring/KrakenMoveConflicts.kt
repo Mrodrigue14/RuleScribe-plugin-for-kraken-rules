@@ -49,7 +49,6 @@ object KrakenMoveConflicts {
         val outgoing: List<PsiElement>,
     ) {
         val isEmpty: Boolean get() = incoming.isEmpty() && outgoing.isEmpty()
-        val total: Int get() = incoming.size + outgoing.size
     }
 
     fun brokenBy(declaration: KrakenEntryPointDecl, target: KrakenFile): EntryPointMove {

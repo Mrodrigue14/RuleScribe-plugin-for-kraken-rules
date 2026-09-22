@@ -20,9 +20,7 @@ import com.kraken.plugin.psi.KrakenContexts
 import com.kraken.plugin.psi.KrakenDeclaration
 import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenEntryPointDecl
-import com.kraken.plugin.psi.KrakenEpRef
-import com.kraken.plugin.psi.KrakenPresentations
-import com.kraken.plugin.psi.KrakenRuleRef
+import com.kraken.plugin.psi.KrakenQuotedNameElement
 
 class KrakenCompletionContributor : CompletionContributor() {
 
@@ -113,15 +111,8 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
     ) {
         val currentDecl = PsiTreeUtil.getParentOfType(position, KrakenEntryPointDecl::class.java, false)
         val currentName = currentDecl?.name
-        val alreadyListed: Set<String> = if (currentDecl != null) {
-            val rules = PsiTreeUtil.findChildrenOfType(currentDecl, KrakenRuleRef::class.java)
-                .map { it.ruleName }
-            val entryPoints = PsiTreeUtil.findChildrenOfType(currentDecl, KrakenEpRef::class.java)
-                .mapNotNull { it.entryPointName }
-            (rules + entryPoints).toSet()
-        } else {
-            emptySet()
-        }
+        val alreadyListed = PsiTreeUtil.findChildrenOfType(currentDecl, KrakenQuotedNameElement::class.java)
+            .mapNotNullTo(HashSet()) { it.referencedName }
 
         for (rule in KrakenDeclarations.findRulesVisible(file)) {
             val name = rule.name ?: continue
@@ -152,25 +143,21 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
      */
     private fun addFunctionCompletions(position: PsiElement, result: CompletionResultSet) {
         for (function in KrakenFunctionCatalog.functions) {
-            result.addElement(
-                LookupElementBuilder.create(function.name)
-                    .withIcon(KrakenDeclaration.Kind.FUNCTION.icon)
-                    .withTailText("(${function.parameters.joinToString(", ") { it.presentation() }})", true)
-                    .withTypeText(function.returnType, true)
-                    .withInsertHandler(ParenthesesInsertHandler.getInstance(function.parameters.isNotEmpty())),
-            )
+            val parameters = function.parameters.joinToString(", ") { it.presentation() }
+            result.addElement(functionLookup(function.name, parameters, function.returnType, function.parameters.isNotEmpty()))
         }
         for (declaration in KrakenDeclarations.findFunctionsVisible(position)) {
             val name = declaration.name ?: continue
-            result.addElement(
-                LookupElementBuilder.create(name)
-                    .withIcon(KrakenDeclaration.Kind.FUNCTION.icon)
-                    .withTailText("(${declaration.parameterText()})", true)
-                    .withTypeText(declaration.returnType ?: declaration.containingFile.name, true)
-                    .withInsertHandler(ParenthesesInsertHandler.getInstance(declaration.arity > 0)),
-            )
+            val type = declaration.returnType ?: declaration.containingFile.name
+            result.addElement(functionLookup(name, declaration.parameterText(), type, declaration.arity > 0))
         }
     }
+
+    private fun functionLookup(name: String, parameters: String, type: String, hasParameters: Boolean): LookupElementBuilder = LookupElementBuilder.create(name)
+        .withIcon(KrakenDeclaration.Kind.FUNCTION.icon)
+        .withTailText("($parameters)", true)
+        .withTypeText(type, true)
+        .withInsertHandler(ParenthesesInsertHandler.getInstance(hasParameters))
 
     private fun addKeywords(result: CompletionResultSet, keywords: List<String>) {
         for (keyword in keywords) {

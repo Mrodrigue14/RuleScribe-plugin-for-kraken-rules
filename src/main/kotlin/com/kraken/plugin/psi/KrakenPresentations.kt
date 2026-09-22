@@ -2,6 +2,7 @@ package com.kraken.plugin.psi
 
 import com.intellij.navigation.ItemPresentation
 import com.intellij.psi.PsiElement
+import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.lang.KrakenFile
 import com.kraken.plugin.parser.KrakenTypes
@@ -20,7 +21,7 @@ import javax.swing.Icon
 internal object KrakenPresentations {
 
     /** `policy.rules · Base`; the namespace only appears when declared. */
-    fun location(element: PsiElement): String? {
+    private fun location(element: PsiElement): String? {
         val file = element.containingFile as? KrakenFile ?: return null
         val namespace = file.namespace?.takeIf { it.isNotBlank() }
         return if (namespace == null) file.name else "${file.name} · $namespace"
@@ -44,11 +45,12 @@ internal object KrakenPresentations {
      */
     fun declarationText(declaration: PsiElement, name: String?, fallback: String): String {
         val base = name?.let { "\"$it\"" } ?: fallback
-        val annotations = declaration.node.getChildren(null)
-            .filter { it.elementType == KrakenTypes.ANNOTATION }
-            .joinToString(" ") { compact(it.text) }
-        return if (annotations.isEmpty()) base else "$base $annotations"
+        val annotations = annotationsOf(declaration)
+        return if (annotations.isEmpty()) base else "$base ${annotations.joinToString(" ")}"
     }
+
+    /** `@Dimension("state", "CA")`, each on one line. */
+    fun annotationsOf(declaration: PsiElement): List<String> = declaration.node.getChildren(ANNOTATIONS).map { compact(it.text) }
 
     fun of(element: PsiElement, text: String, icon: Icon?): ItemPresentation = object : ItemPresentation {
         override fun getPresentableText(): String = text
@@ -60,4 +62,6 @@ internal object KrakenPresentations {
     fun compact(text: String): String = text.replace(WHITESPACE, " ").trim()
 
     private val WHITESPACE = Regex("""\s+""")
+
+    private val ANNOTATIONS = TokenSet.create(KrakenTypes.ANNOTATION)
 }

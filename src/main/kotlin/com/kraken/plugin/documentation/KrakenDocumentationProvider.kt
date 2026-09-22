@@ -6,7 +6,6 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.tree.IElementType
-import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenFunctionCall
@@ -47,31 +46,30 @@ class KrakenDocumentationProvider : AbstractDocumentationProvider() {
 
     private fun renderRule(rule: KrakenRuleDecl): String? {
         val name = rule.name ?: return null
-        val sb = StringBuilder()
-        sb.append("<b>Rule</b> \"").append(escape(name)).append("\"")
+        return buildString {
+            append("<b>Rule</b> \"").append(escape(name)).append("\"")
 
-        rule.node.findChildByType(KrakenTypes.RULE_TARGET)?.let { target ->
-            val path = target.text.drop(target.findChildByType(KrakenTypes.ON_KW)?.textLength ?: 0)
-            sb.append("<br/><b>On</b> ").append(escape(KrakenPresentations.compact(path)))
-        }
+            rule.node.findChildByType(KrakenTypes.RULE_TARGET)?.let { target ->
+                val path = target.text.drop(target.findChildByType(KrakenTypes.ON_KW)?.textLength ?: 0)
+                append("<br/><b>On</b> ").append(escape(KrakenPresentations.compact(path)))
+            }
 
-        val annotations = rule.node.getChildren(TokenSet.create(KrakenTypes.ANNOTATION))
-        if (annotations.isNotEmpty()) {
-            sb.append("<br/><b>Annotations:</b> ")
-            sb.append(annotations.joinToString(" ") { escape(KrakenPresentations.compact(it.text)) })
-        }
+            val annotations = KrakenPresentations.annotationsOf(rule)
+            if (annotations.isNotEmpty()) {
+                append("<br/><b>Annotations:</b> ").append(annotations.joinToString(" ") { escape(it) })
+            }
 
-        val body = rule.node.findChildByType(KrakenTypes.RULE_BODY)?.psi ?: return sb.toString()
-        descendantsOf(body, KrakenTypes.DESCRIPTION_CLAUSE).firstOrNull()
-            ?.node?.findChildByType(KrakenTypes.STRING)
-            ?.let { sb.append("<br/><b>Description:</b> ").append(escape(StringUtil.unquoteString(it.text))) }
-        for (clauseType in SUMMARISED_CLAUSES) {
-            for (clause in descendantsOf(body, clauseType)) {
-                val summary = StringUtil.shortenTextWithEllipsis(KrakenPresentations.compact(clause.text), MAX_CLAUSE_LENGTH, 0)
-                sb.append("<br/><code>").append(escape(summary)).append("</code>")
+            val body = rule.node.findChildByType(KrakenTypes.RULE_BODY)?.psi ?: return@buildString
+            descendantsOf(body, KrakenTypes.DESCRIPTION_CLAUSE).firstOrNull()
+                ?.node?.findChildByType(KrakenTypes.STRING)
+                ?.let { append("<br/><b>Description:</b> ").append(escape(StringUtil.unquoteString(it.text))) }
+            for (clauseType in SUMMARISED_CLAUSES) {
+                for (clause in descendantsOf(body, clauseType)) {
+                    val summary = StringUtil.shortenTextWithEllipsis(KrakenPresentations.compact(clause.text), MAX_CLAUSE_LENGTH, 0)
+                    append("<br/><code>").append(escape(summary)).append("</code>")
+                }
             }
         }
-        return sb.toString()
     }
 
     private fun descendantsOf(root: PsiElement, type: IElementType): List<PsiElement> = PsiTreeUtil.collectElements(root) { it.node?.elementType == type }.toList()

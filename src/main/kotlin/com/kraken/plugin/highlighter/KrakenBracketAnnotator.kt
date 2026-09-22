@@ -7,10 +7,11 @@ import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.psi.PsiElement
+import com.intellij.psi.tree.IElementType
 import com.intellij.psi.util.PsiTreeUtil
+import com.kraken.plugin.lang.KrakenBraceMatcher
 import com.kraken.plugin.lang.KrakenFile
 import com.kraken.plugin.lang.KrakenLanguage
-import com.kraken.plugin.parser.KrakenTypes
 
 /**
  * Colours braces, parentheses and brackets by nesting depth, and marks the ones
@@ -36,19 +37,20 @@ class KrakenBracketAnnotator : Annotator {
         val scheme = EditorColorsManager.getInstance().globalScheme
         val depthEnabled = RainbowHighlighter.isRainbowEnabled(scheme, KrakenLanguage) ?: true
 
-        val stack = ArrayDeque<Pair<Kind, PsiElement>>()
+        // Each open brace with the closer it expects.
+        val stack = ArrayDeque<Pair<IElementType, PsiElement>>()
         val unmatched = mutableListOf<PsiElement>()
         val depths = mutableListOf<Pair<PsiElement, Int>>()
 
         for (leaf in generateSequence(PsiTreeUtil.firstChild(element)) { PsiTreeUtil.nextLeaf(it) }) {
             val type = leaf.node?.elementType ?: continue
-            val opener = OPENERS[type]
-            if (opener != null) {
-                stack.addLast(opener to leaf)
+            val expectedCloser = CLOSER_OF[type]
+            if (expectedCloser != null) {
+                stack.addLast(expectedCloser to leaf)
                 continue
             }
-            val closer = CLOSERS[type] ?: continue
-            if (stack.lastOrNull()?.first == closer) {
+            if (type !in CLOSERS) continue
+            if (stack.lastOrNull()?.first == type) {
                 val (_, open) = stack.removeLast()
                 depths += open to stack.size
                 depths += leaf to stack.size
@@ -79,22 +81,11 @@ class KrakenBracketAnnotator : Annotator {
             .create()
     }
 
-    private enum class Kind { BRACE, PAREN, BRACKET }
-
     private companion object {
         val DEPTH_COUNT = KrakenSyntaxHighlighter.BRACKET_DEPTH.size
 
-        val OPENERS = mapOf(
-            KrakenTypes.LBRACE to Kind.BRACE,
-            KrakenTypes.LPAREN to Kind.PAREN,
-            KrakenTypes.LBRACKET to Kind.BRACKET,
-            KrakenTypes.QLBRACKET to Kind.BRACKET,
-        )
+        val CLOSER_OF: Map<IElementType, IElementType> = KrakenBraceMatcher.PAIRS.associate { it.leftBraceType to it.rightBraceType }
 
-        val CLOSERS = mapOf(
-            KrakenTypes.RBRACE to Kind.BRACE,
-            KrakenTypes.RPAREN to Kind.PAREN,
-            KrakenTypes.RBRACKET to Kind.BRACKET,
-        )
+        val CLOSERS: Set<IElementType> = CLOSER_OF.values.toSet()
     }
 }

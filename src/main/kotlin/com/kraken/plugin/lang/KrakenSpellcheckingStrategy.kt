@@ -1,12 +1,12 @@
 package com.kraken.plugin.lang
 
-import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.spellchecker.inspections.PlainTextSplitter
 import com.intellij.spellchecker.tokenizer.SpellcheckingStrategy
 import com.intellij.spellchecker.tokenizer.TokenConsumer
 import com.intellij.spellchecker.tokenizer.Tokenizer
 import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.psi.KrakenPsiUtil
 
 /**
  * Spellchecks comments and only the strings meant to be read by people.
@@ -49,7 +49,7 @@ class KrakenSpellcheckingStrategy : SpellcheckingStrategy() {
                     text,
                     false,
                     0,
-                    TextRange(1, text.length - 1),
+                    KrakenPsiUtil.insideQuotes(0, text.length),
                     PlainTextSplitter.getInstance(),
                 )
             }

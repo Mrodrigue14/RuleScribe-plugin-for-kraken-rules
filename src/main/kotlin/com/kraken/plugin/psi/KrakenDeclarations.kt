@@ -18,7 +18,7 @@ object KrakenDeclarations {
             .flatMap { it.declarations<KrakenRuleDecl>() }
         val imported = KrakenNamespaces.ruleImportsForNamespaceOf(from.containingFile)
             .mapNotNull { findRuleInNamespace(from.project, it.sourceNamespace, it.ruleName) }
-        return if (imported.isEmpty()) direct else (direct + imported).distinct()
+        return (direct + imported).distinct()
     }
 
     /**

@@ -42,30 +42,20 @@ class KrakenLexer : LexerBase() {
         }
         val c = buffer[tokenStart]
         when {
-            c.isWhitespace() -> {
-                tokenEnd = scanWhile(tokenStart + 1) { it.isWhitespace() }
-                currentToken = TokenType.WHITE_SPACE
-            }
-
-            c == '/' && peek(1) == '/' -> {
-                tokenEnd = scanWhile(tokenStart + 2) { it != '\n' && it != '\r' }
-                currentToken = KrakenTypes.LINE_COMMENT
-            }
-
+            c.isWhitespace() -> tokenUntil(TokenType.WHITE_SPACE, scanWhile(tokenStart + 1) { it.isWhitespace() })
+            c == '/' && peek(1) == '/' -> tokenUntil(KrakenTypes.LINE_COMMENT, scanWhile(tokenStart + 2) { it != '\n' && it != '\r' })
             c == '/' && peek(1) == '*' -> scanBlockComment()
-
             c == '"' || c == '\'' -> scanString(c)
-
             c.isDigit() -> scanNumber()
-
             c.isLetter() || c == '_' -> scanWord()
-
             else -> scanSymbol(c)
         }
     }
 
-    private fun token(type: IElementType, length: Int) {
-        tokenEnd = tokenStart + length
+    private fun token(type: IElementType, length: Int) = tokenUntil(type, tokenStart + length)
+
+    private fun tokenUntil(type: IElementType, end: Int) {
+        tokenEnd = end
         currentToken = type
     }
 
@@ -93,8 +83,7 @@ class KrakenLexer : LexerBase() {
             }
             i++
         }
-        tokenEnd = if (closed) i else bufferEnd
-        currentToken = if (isDoc) KrakenTypes.DOC_COMMENT else KrakenTypes.BLOCK_COMMENT
+        tokenUntil(if (isDoc) KrakenTypes.DOC_COMMENT else KrakenTypes.BLOCK_COMMENT, if (closed) i else bufferEnd)
     }
 
     private fun scanString(quote: Char) {
@@ -113,31 +102,27 @@ class KrakenLexer : LexerBase() {
             // messages with '${...}').
             i++
         }
-        tokenEnd = i
-        currentToken = KrakenTypes.STRING
+        tokenUntil(KrakenTypes.STRING, i)
     }
 
     private fun scanNumber() {
         // KEL date and datetime literals: 2020-01-01 or 2020-01-01T10:00:00Z
         val dateMatch = DATE_TIME_LITERAL.matchAt(buffer, tokenStart) ?: DATE_LITERAL.matchAt(buffer, tokenStart)
         if (dateMatch != null) {
-            tokenEnd = dateMatch.range.last + 1
-            currentToken = KrakenTypes.NUMBER_LIT
+            tokenUntil(KrakenTypes.NUMBER_LIT, dateMatch.range.last + 1)
             return
         }
         var i = scanWhile(tokenStart + 1) { it.isDigit() }
         if (i < bufferEnd && buffer[i] == '.' && i + 1 < bufferEnd && buffer[i + 1].isDigit()) {
             i = scanWhile(i + 1) { it.isDigit() }
         }
-        tokenEnd = i
-        currentToken = KrakenTypes.NUMBER_LIT
+        tokenUntil(KrakenTypes.NUMBER_LIT, i)
     }
 
     private fun scanWord() {
         val end = scanWhile(tokenStart + 1) { it.isLetterOrDigit() || it == '_' }
-        tokenEnd = end
         val word = buffer.subSequence(tokenStart, end).toString().lowercase()
-        currentToken = KEYWORDS[word] ?: KrakenTypes.IDENTIFIER
+        tokenUntil(KEYWORDS[word] ?: KrakenTypes.IDENTIFIER, end)
     }
 
     /**
