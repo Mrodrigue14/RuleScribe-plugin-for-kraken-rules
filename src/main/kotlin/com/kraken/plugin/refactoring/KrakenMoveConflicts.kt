@@ -30,9 +30,8 @@ object KrakenMoveConflicts {
      */
     fun brokenBy(declaration: KrakenRuleDecl, target: KrakenFile): List<KrakenRuleRef> {
         val name = declaration.name ?: return emptyList()
-        val targetNamespace = KrakenNamespaces.namespaceOf(target)
         return KrakenDeclarations.findRuleRefsVisibleTo(declaration)
-            .filterNot { KrakenNamespaces.seesRule(it.containingFile, name, target, targetNamespace) }
+            .filterNot { KrakenNamespaces.seesRule(it.containingFile, name, target) }
     }
 
     /**
@@ -72,8 +71,7 @@ object KrakenMoveConflicts {
     /** A rule item resolves from [target] if the destination sees its declaration: the question of [brokenBy], asked the other way round. */
     private fun ruleItemSurvives(item: KrakenRuleRef, target: KrakenFile): Boolean {
         val declaration = item.reference.resolve() as? KrakenRuleDecl ?: return true
-        val declarationFile = declaration.containingFile as? KrakenFile ?: return true
-        return KrakenNamespaces.seesRule(target, item.ruleName, declarationFile, KrakenNamespaces.namespaceOf(declarationFile))
+        return KrakenNamespaces.seesRule(target, item.ruleName, declaration.containingFile)
     }
 
     /** A nested entry point item only has the visibility axis. */

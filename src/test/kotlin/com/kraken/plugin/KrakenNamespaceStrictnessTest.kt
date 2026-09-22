@@ -1,8 +1,10 @@
 package com.kraken.plugin
 
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.inspection.KrakenUnusedRuleInspection
 import com.kraken.plugin.navigation.KrakenGotoDeclarationHandler
+import com.kraken.plugin.psi.KrakenNamespaces
 
 /**
  * Strict namespace semantics: a reference in a namespace that cannot see the
@@ -65,6 +67,36 @@ class KrakenNamespaceStrictnessTest : BasePlatformTestCase() {
         val targets = KrakenGotoDeclarationHandler()
             .getGotoDeclarationTargets(leaf, myFixture.caretOffset, myFixture.editor)
         assertNull("No navigation targets expected across blind namespaces", targets)
+    }
+
+    /** The cached namespace model follows edits of an already opened file. */
+    fun testAddingAnIncludeMakesTheOtherNamespaceVisible() {
+        val declarations = myFixture.addFileToProject(
+            "base.rules",
+            """
+            Namespace Base
+
+            Rule "Shared" On Widget.name {
+                Set Hidden
+            }
+            """.trimIndent(),
+        )
+        myFixture.configureByText(
+            "policy.rules",
+            """
+            Namespace Policy
+            <caret>
+            EntryPoint "Uses shared" {
+                "Shared"
+            }
+            """.trimIndent(),
+        )
+        assertFalse(KrakenNamespaces.sees(myFixture.file, declarations))
+
+        myFixture.type("Include Base")
+        PsiDocumentManager.getInstance(project).commitAllDocuments()
+
+        assertTrue(KrakenNamespaces.sees(myFixture.file, declarations))
     }
 
     fun testVisibleReferenceStillCounts() {

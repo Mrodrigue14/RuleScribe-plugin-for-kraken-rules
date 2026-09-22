@@ -5,10 +5,10 @@ import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
-import com.kraken.plugin.lang.KrakenFile
-import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenNamespaces
+import com.kraken.plugin.psi.KrakenRuleImportDecl
+import com.kraken.plugin.psi.RuleImport
 
 /**
  * Base of the `Import Rule "X" From Ns` inspections, which mirror the engine's four
@@ -18,14 +18,14 @@ import com.kraken.plugin.psi.KrakenNamespaces
 private abstract class KrakenRuleImportVisitorBase : PsiElementVisitor() {
 
     final override fun visitElement(element: PsiElement) {
-        if (element.node?.elementType != KrakenTypes.RULE_IMPORT_DECL) return
-        val imports = KrakenNamespaces.ruleImportsIn(element)
+        if (element !is KrakenRuleImportDecl) return
+        val imports = element.imports
         if (imports.isNotEmpty()) checkImportDecl(element, imports)
     }
 
     abstract fun checkImportDecl(
         decl: PsiElement,
-        imports: List<KrakenNamespaces.RuleImport>,
+        imports: List<RuleImport>,
     )
 }
 
@@ -33,14 +33,14 @@ private abstract class KrakenRuleImportVisitorBase : PsiElementVisitor() {
  * Namespace of the current file: engine messages always name the import's target
  * namespace ("… to ''{2}''").
  */
-private fun targetNamespaceOf(decl: PsiElement): String = (decl.containingFile as? KrakenFile)?.let { KrakenNamespaces.namespaceOf(it) }.orEmpty()
+private fun targetNamespaceOf(decl: PsiElement): String = KrakenNamespaces.namespaceOf(decl.containingFile).orEmpty()
 
 /** The namespace named after `From` does not exist in any project file. */
 class KrakenImportUnknownNamespaceInspection : LocalInspectionTool() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenRuleImportVisitorBase() {
         override fun checkImportDecl(
             decl: PsiElement,
-            imports: List<KrakenNamespaces.RuleImport>,
+            imports: List<RuleImport>,
         ) {
             val first = imports.first()
             if (!KrakenNamespaces.namespaceExists(decl.project, first.sourceNamespace)) {
@@ -63,7 +63,7 @@ class KrakenImportUnknownRuleInspection : LocalInspectionTool() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenRuleImportVisitorBase() {
         override fun checkImportDecl(
             decl: PsiElement,
-            imports: List<KrakenNamespaces.RuleImport>,
+            imports: List<RuleImport>,
         ) {
             // Like the engine, only check the rule when the source namespace exists; otherwise the
             // unknown namespace inspection covers it.
@@ -95,10 +95,9 @@ class KrakenImportNameClashInspection : LocalInspectionTool() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenRuleImportVisitorBase() {
         override fun checkImportDecl(
             decl: PsiElement,
-            imports: List<KrakenNamespaces.RuleImport>,
+            imports: List<RuleImport>,
         ) {
-            val file = decl.containingFile as? KrakenFile ?: return
-            val localNs = KrakenNamespaces.namespaceOf(file)
+            val localNs = KrakenNamespaces.namespaceOf(decl.containingFile)
             for (import in imports) {
                 val local = KrakenDeclarations.findRuleInNamespace(
                     decl.project,
@@ -130,7 +129,7 @@ class KrakenImportAmbiguousInspection : LocalInspectionTool() {
 
         override fun checkImportDecl(
             decl: PsiElement,
-            imports: List<KrakenNamespaces.RuleImport>,
+            imports: List<RuleImport>,
         ) {
             for (import in imports) {
                 val sameName = allImports.filter { it.ruleName == import.ruleName }

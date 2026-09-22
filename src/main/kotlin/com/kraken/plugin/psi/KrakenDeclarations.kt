@@ -106,10 +106,8 @@ object KrakenDeclarations {
      */
     fun findRuleRefsVisibleTo(declaration: KrakenRuleDecl): List<KrakenRuleRef> {
         val name = declaration.name ?: return emptyList()
-        val declarationFile = declaration.containingFile
-        val declNs = (declarationFile as? KrakenFile)?.let { KrakenNamespaces.namespaceOf(it) }
         return findRuleRefs(declaration.project, name).filter {
-            KrakenNamespaces.seesRule(it.containingFile, name, declarationFile, declNs)
+            KrakenNamespaces.seesRule(it.containingFile, name, declaration.containingFile)
         }
     }
 

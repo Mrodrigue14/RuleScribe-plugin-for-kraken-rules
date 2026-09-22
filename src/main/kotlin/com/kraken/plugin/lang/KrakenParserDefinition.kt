@@ -29,6 +29,7 @@ import com.kraken.plugin.psi.KrakenFunctionParam
 import com.kraken.plugin.psi.KrakenPathSegment
 import com.kraken.plugin.psi.KrakenRefExpr
 import com.kraken.plugin.psi.KrakenRuleDecl
+import com.kraken.plugin.psi.KrakenRuleImportDecl
 import com.kraken.plugin.psi.KrakenRuleRef
 
 class KrakenParserDefinition : ParserDefinition {
@@ -56,6 +57,7 @@ class KrakenParserDefinition : ParserDefinition {
         KrakenTypes.CONTEXT_DECL -> KrakenContextDecl(node)
         KrakenTypes.FIELD_DECL -> KrakenFieldDecl(node)
         KrakenTypes.CHILD_DECL -> KrakenChildDecl(node)
+        KrakenTypes.RULE_IMPORT_DECL -> KrakenRuleImportDecl(node)
         KrakenTypes.FUNCTION_CALL -> KrakenFunctionCall(node)
         KrakenTypes.REF_EXPR -> KrakenRefExpr(node)
         KrakenTypes.PATH_SEGMENT -> KrakenPathSegment(node)

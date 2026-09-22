@@ -16,7 +16,7 @@ import com.kraken.plugin.psi.KrakenDeclarations
 class KrakenUndeclaredDimensionInspection : LocalInspectionTool() {
 
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : PsiElementVisitor() {
-        private val declared by lazy { KrakenDeclarations.findDimensionNamesVisible(holder.file) }
+        private val declared by lazy { KrakenDeclarations.findDimensionNamesVisible(holder.file).toSet() }
 
         override fun visitElement(element: PsiElement) {
             if (element.node?.elementType != KrakenTypes.DIMENSION_ANNOTATION) return

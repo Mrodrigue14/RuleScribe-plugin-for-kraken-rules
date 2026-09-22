@@ -23,7 +23,7 @@ internal object KrakenPresentations {
     /** `policy.rules · Base`; the namespace only appears when declared. */
     fun location(element: PsiElement): String? {
         val file = element.containingFile as? KrakenFile ?: return null
-        val namespace = KrakenNamespaces.namespaceOf(file)?.takeIf { it.isNotBlank() }
+        val namespace = file.namespace?.takeIf { it.isNotBlank() }
         return if (namespace == null) file.name else "${file.name} · $namespace"
     }
 
