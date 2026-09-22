@@ -21,7 +21,7 @@ class KrakenRuleRef(node: ASTNode) : KrakenQuotedNameElement(node) {
     override fun getPresentation(): ItemPresentation = KrakenPresentations.of(
         this,
         KrakenPresentations.containerText(this, "\"$ruleName\""),
-        KrakenPresentations.RULE_ICON,
+        KrakenDeclaration.Kind.RULE.icon,
     )
 }
 

@@ -23,7 +23,12 @@ import com.kraken.plugin.parser.KrakenTypes
  */
 class KrakenFunctionDecl(node: ASTNode) :
     ASTWrapperPsiElement(node),
-    PsiNameIdentifierOwner {
+    PsiNameIdentifierOwner,
+    KrakenReferencedDeclaration {
+
+    override val kind: KrakenDeclaration.Kind get() = KrakenDeclaration.Kind.FUNCTION
+
+    override fun visibleUsages(): List<KrakenFunctionCall> = KrakenDeclarations.findFunctionCallsVisibleTo(this)
 
     override fun getNameIdentifier(): PsiElement? = nameLeaf()?.psi
 
@@ -99,7 +104,7 @@ class KrakenFunctionDecl(node: ASTNode) :
     override fun getPresentation(): ItemPresentation = KrakenPresentations.of(
         this,
         signature(),
-        KrakenPresentations.FUNCTION_ICON,
+        kind.icon,
     )
 
     /**

@@ -5,9 +5,8 @@ import com.intellij.psi.PsiReference
 import com.intellij.psi.search.PsiSearchScopeUtil
 import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.util.Processor
-import com.kraken.plugin.psi.KrakenDeclarations
-import com.kraken.plugin.psi.KrakenEntryPointDecl
-import com.kraken.plugin.psi.KrakenRuleDecl
+import com.kraken.plugin.psi.KrakenFunctionDecl
+import com.kraken.plugin.psi.KrakenReferencedDeclaration
 
 /**
  * Dedicated reference search: IntelliJ's default search goes through the word index and
@@ -20,23 +19,13 @@ class KrakenReferencesSearcher : QueryExecutorBase<PsiReference, ReferencesSearc
         queryParameters: ReferencesSearch.SearchParameters,
         consumer: Processor<in PsiReference>,
     ) {
-        val target = queryParameters.elementToSearch
+        val target = queryParameters.elementToSearch as? KrakenReferencedDeclaration ?: return
+        // A function name is a single identifier, which the default word-index search finds.
+        if (target is KrakenFunctionDecl) return
         val scope = queryParameters.effectiveSearchScope
-        when (target) {
-            is KrakenRuleDecl -> {
-                for (ref in KrakenDeclarations.findRuleRefsVisibleTo(target)) {
-                    if (!PsiSearchScopeUtil.isInScope(scope, ref)) continue
-                    consumer.process(ref.reference)
-                }
-            }
-
-            is KrakenEntryPointDecl -> {
-                for (ref in KrakenDeclarations.findEpRefsVisibleTo(target)) {
-                    if (!PsiSearchScopeUtil.isInScope(scope, ref)) continue
-                    val reference = ref.reference ?: continue
-                    consumer.process(reference)
-                }
-            }
+        for (usage in target.visibleUsages()) {
+            if (!PsiSearchScopeUtil.isInScope(scope, usage)) continue
+            usage.reference?.let { consumer.process(it) }
         }
     }
 }

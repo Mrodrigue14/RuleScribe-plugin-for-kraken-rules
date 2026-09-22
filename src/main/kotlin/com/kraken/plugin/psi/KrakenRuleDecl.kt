@@ -23,13 +23,18 @@ import com.kraken.plugin.psi.stubs.KrakenRuleStub
 class KrakenRuleDecl :
     StubBasedPsiElementBase<KrakenRuleStub>,
     StubBasedPsiElement<KrakenRuleStub>,
-    PsiNameIdentifierOwner {
+    PsiNameIdentifierOwner,
+    KrakenReferencedDeclaration {
 
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: KrakenRuleStub, nodeType: IStubElementType<*, *>) : super(stub, nodeType)
 
     override fun toString(): String = "KrakenRuleDecl"
+
+    override val kind: KrakenDeclaration.Kind get() = KrakenDeclaration.Kind.RULE
+
+    override fun visibleUsages(): List<KrakenRuleRef> = KrakenDeclarations.findRuleRefsVisibleTo(this)
 
     override fun getNameIdentifier(): PsiElement? = nameLeaf()?.psi
 
@@ -53,7 +58,7 @@ class KrakenRuleDecl :
     override fun getPresentation(): ItemPresentation = KrakenPresentations.of(
         this,
         KrakenPresentations.declarationText(this, name, "Rule"),
-        KrakenPresentations.RULE_ICON,
+        kind.icon,
     )
 
     fun hasTarget(): Boolean = node.findChildByType(KrakenTypes.RULE_TARGET) != null

@@ -1,6 +1,5 @@
 package com.kraken.plugin.psi
 
-import com.intellij.icons.AllIcons
 import com.intellij.navigation.ItemPresentation
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
@@ -61,8 +60,4 @@ internal object KrakenPresentations {
     fun compact(text: String): String = text.replace(WHITESPACE, " ").trim()
 
     private val WHITESPACE = Regex("""\s+""")
-
-    val RULE_ICON: Icon = AllIcons.Nodes.Method
-    val ENTRY_POINT_ICON: Icon = AllIcons.Nodes.Plugin
-    val FUNCTION_ICON: Icon = AllIcons.Nodes.Function
 }

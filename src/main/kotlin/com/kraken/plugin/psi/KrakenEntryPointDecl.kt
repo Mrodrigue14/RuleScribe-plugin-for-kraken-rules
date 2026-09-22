@@ -11,7 +11,12 @@ import com.kraken.plugin.parser.KrakenTypes
 /** `EntryPoint "name" { ... }` declaration. */
 class KrakenEntryPointDecl(node: ASTNode) :
     ASTWrapperPsiElement(node),
-    PsiNameIdentifierOwner {
+    PsiNameIdentifierOwner,
+    KrakenReferencedDeclaration {
+
+    override val kind: KrakenDeclaration.Kind get() = KrakenDeclaration.Kind.ENTRY_POINT
+
+    override fun visibleUsages(): List<KrakenEpRef> = KrakenDeclarations.findEpRefsVisibleTo(this)
 
     override fun getNameIdentifier(): PsiElement? = nameLeaf()?.psi
 
@@ -20,7 +25,7 @@ class KrakenEntryPointDecl(node: ASTNode) :
     override fun getPresentation(): ItemPresentation = KrakenPresentations.of(
         this,
         KrakenPresentations.declarationText(this, name, "EntryPoint"),
-        KrakenPresentations.ENTRY_POINT_ICON,
+        kind.icon,
     )
 
     override fun setName(name: String): PsiElement {

@@ -6,7 +6,11 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.parser.KrakenTypes
 
 /** `Context Policy Is Base { String policyCd  Child Vehicle }` declaration. */
-class KrakenContextDecl(node: ASTNode) : ASTWrapperPsiElement(node) {
+class KrakenContextDecl(node: ASTNode) :
+    ASTWrapperPsiElement(node),
+    KrakenDeclaration {
+
+    override val kind: KrakenDeclaration.Kind get() = KrakenDeclaration.Kind.CONTEXT
 
     override fun getName(): String? = KrakenPsiUtil.firstIdAfter(node, KrakenTypes.CONTEXT_KW)?.text
 

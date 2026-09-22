@@ -19,7 +19,7 @@ class KrakenEpRef(node: ASTNode) : KrakenQuotedNameElement(node) {
     override fun getPresentation(): ItemPresentation = KrakenPresentations.of(
         this,
         KrakenPresentations.containerText(this, entryPointName?.let { "\"$it\"" }),
-        KrakenPresentations.ENTRY_POINT_ICON,
+        KrakenDeclaration.Kind.ENTRY_POINT.icon,
     )
 }
 
