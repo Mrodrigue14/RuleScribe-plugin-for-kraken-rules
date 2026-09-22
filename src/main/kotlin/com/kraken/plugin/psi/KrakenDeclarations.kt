@@ -74,9 +74,12 @@ object KrakenDeclarations {
 
     /**
      * The engine indexes a function by `(name, parameter count)`, not by types
-     * (`FunctionHeader`): two `Function`s with the same name and arity conflict.
+     * (`FunctionHeader`). A bodiless signature overrides a `Function` with a body
+     * (`ScopeBuilder.resolveFunctionSymbols`), so it wins here too.
      */
-    fun findFunctionVisible(from: PsiElement, name: String, arity: Int): KrakenFunctionDecl? = findFunctionsVisible(from).firstOrNull { it.name == name && it.arity == arity }
+    fun findFunctionVisible(from: PsiElement, name: String, arity: Int): KrakenFunctionDecl? = findFunctionsVisible(from)
+        .filter { it.name == name && it.arity == arity }
+        .minByOrNull { it.hasBody() }
 
     fun findDimensionNamesVisible(from: PsiFile?): List<String> = KrakenNamespaces.visibleFiles(from)
         .flatMap { it.declarations<KrakenDimensionDecl>() }

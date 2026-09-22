@@ -5,9 +5,8 @@ import com.intellij.lang.annotation.Annotator
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
-import com.kraken.plugin.functions.KrakenFunctionCatalog
-import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenFunctionCall
+import com.kraken.plugin.psi.KrakenFunctionTarget
 
 /**
  * Colours the called name in a KEL expression.
@@ -26,17 +25,14 @@ class KrakenFunctionAnnotator : Annotator {
         val name = element.functionName
         if (name.isEmpty()) return
 
-        val arity = element.argumentCount
-        val attribute = when {
-            KrakenFunctionCatalog.find(name, arity) != null ->
-                KrakenSyntaxHighlighter.NATIVE_FUNCTION
+        val attribute = when (element.target()) {
+            is KrakenFunctionTarget.Native -> KrakenSyntaxHighlighter.NATIVE_FUNCTION
 
-            KrakenDeclarations.findFunctionVisible(element, name, arity) != null ->
-                KrakenSyntaxHighlighter.DECLARED_FUNCTION
+            is KrakenFunctionTarget.Declared -> KrakenSyntaxHighlighter.DECLARED_FUNCTION
 
             // Unresolved call: left uncoloured, since colouring an unknown name as a function
             // would be wrong.
-            else -> return
+            null -> return
         }
 
         val start = element.textRange.startOffset

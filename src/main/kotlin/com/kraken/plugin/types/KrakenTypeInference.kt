@@ -1,14 +1,12 @@
 package com.kraken.plugin.types
 
 import com.intellij.psi.PsiElement
-import com.kraken.plugin.functions.KrakenFunctionCatalog
 import com.kraken.plugin.parser.KrakenLexer
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenChildDecl
 import com.kraken.plugin.psi.KrakenContextMember
 import com.kraken.plugin.psi.KrakenFieldDecl
 import com.kraken.plugin.psi.KrakenFunctionCall
-import com.kraken.plugin.psi.KrakenFunctionDecl
 import com.kraken.plugin.psi.KrakenFunctionParam
 import com.kraken.plugin.psi.KrakenPathSegment
 import com.kraken.plugin.psi.KrakenRefExpr
@@ -125,14 +123,7 @@ object KrakenTypeInference {
             significantChildren(access).filterIsInstance<KrakenPathSegment>().firstOrNull()
         }
 
-    private fun typeOfCall(call: KrakenFunctionCall?): KrakenType {
-        if (call == null) return KrakenType.Unknown
-        KrakenFunctionCatalog.find(call.functionName, call.argumentCount)?.let {
-            return KrakenType.fromDslName(it.returnType)
-        }
-        val declared = call.reference?.resolve() as? KrakenFunctionDecl ?: return KrakenType.Unknown
-        return declared.returnType?.let { KrakenType.fromDslName(it) } ?: KrakenType.Unknown
-    }
+    private fun typeOfCall(call: KrakenFunctionCall?): KrakenType = call?.target()?.returnType?.let { KrakenType.fromDslName(it) } ?: KrakenType.Unknown
 
     /**
      * Type of a declaration targeted by a reference: context field, child, or function

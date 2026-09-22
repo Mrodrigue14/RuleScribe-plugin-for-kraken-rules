@@ -8,11 +8,10 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiTreeUtil
-import com.kraken.plugin.functions.KrakenFunctionCatalog
 import com.kraken.plugin.parser.KrakenTypes
-import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenFunctionDecl
+import com.kraken.plugin.psi.KrakenFunctionTarget
 import com.kraken.plugin.psi.KrakenPresentations
 import com.kraken.plugin.psi.KrakenRuleDecl
 
@@ -40,10 +39,10 @@ class KrakenDocumentationProvider : AbstractDocumentationProvider() {
         else -> null
     }
 
-    private fun renderCall(call: KrakenFunctionCall): String? {
-        KrakenDeclarations.findFunctionVisible(call, call.functionName, call.argumentCount)
-            ?.let { return KrakenFunctionDoc.render(it) }
-        return KrakenFunctionCatalog.find(call.functionName, call.argumentCount)?.let { KrakenFunctionDoc.render(it) }
+    private fun renderCall(call: KrakenFunctionCall): String? = when (val target = call.target()) {
+        is KrakenFunctionTarget.Declared -> KrakenFunctionDoc.render(target.declaration)
+        is KrakenFunctionTarget.Native -> KrakenFunctionDoc.render(target.function)
+        null -> null
     }
 
     private fun renderRule(rule: KrakenRuleDecl): String? {

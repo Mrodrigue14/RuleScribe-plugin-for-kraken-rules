@@ -5,6 +5,7 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.functions.KrakenFunctionCatalog
 import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenFunctionDecl
+import com.kraken.plugin.psi.KrakenFunctionTarget
 
 /**
  * Function recognition in rule bodies.
@@ -102,7 +103,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
         assertEquals(setOf("Round", "Sum"), calls.keys)
         assertEquals(2, calls["Round"]!!.argumentCount)
         assertEquals(1, calls["Sum"]!!.argumentCount)
-        assertTrue("Round and Sum are natives", calls.values.all { it.isResolvable() })
+        assertTrue("Round and Sum are natives", calls.values.all { it.target() is KrakenFunctionTarget.Native })
     }
 
     fun testCallWithoutArgumentsHasZeroArity() {
@@ -118,7 +119,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
         val call = allOf<KrakenFunctionCall>().single()
         assertEquals("Today", call.functionName)
         assertEquals(0, call.argumentCount)
-        assertTrue(call.isResolvable())
+        assertNotNull(call.target())
     }
 
     fun testCallResolvesToDeclaredFunction() {
@@ -139,6 +140,45 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
         assertSame(allOf<KrakenFunctionDecl>().single(), target)
     }
 
+    /** The engine overrides natives with declared functions of the same name and arity. */
+    fun testDeclaredSignatureShadowsANative() {
+        myFixture.configureByText(
+            "shadow.rules",
+            """
+            Function Round(Number n) : String
+
+            Rule "Rounds" On Policy.state {
+                Assert Round(1) != null
+            }
+            """.trimIndent(),
+        )
+
+        val target = allOf<KrakenFunctionCall>().single().target()
+        assertEquals(KrakenFunctionTarget.Declared(allOf<KrakenFunctionDecl>().single()), target)
+        assertEquals("String", target!!.returnType)
+    }
+
+    /** A bodiless signature overrides a `Function` with a body, as in the engine. */
+    fun testSignatureWinsOverAFunctionWithABody() {
+        myFixture.configureByText(
+            "both.rules",
+            """
+            Function Plan(PackageDetails details) : String {
+                details.planCd
+            }
+
+            Function Plan(PackageDetails details) : Number
+
+            Rule "Uses plan" On Policy.state {
+                Assert Plan(packageDetails) != null
+            }
+            """.trimIndent(),
+        )
+
+        val target = allOf<KrakenFunctionCall>().single().reference?.resolve() as KrakenFunctionDecl
+        assertFalse(target.hasBody())
+    }
+
     /** Arity is part of the identity: a call with the wrong arity does not resolve. */
     fun testCallWithWrongArityDoesNotResolve() {
         myFixture.configureByText(
@@ -156,7 +196,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
 
         val call = allOf<KrakenFunctionCall>().single()
         assertNull(call.reference?.resolve())
-        assertFalse("Neither native nor declared with this arity", call.isResolvable())
+        assertNull("Neither native nor declared with this arity", call.target())
     }
 
     fun testDeclaredFunctionIsNotVisibleFromAnotherNamespace() {
@@ -183,7 +223,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
 
         val call = allOf<KrakenFunctionCall>().single()
         assertNull("Consumer does not include Library", call.reference?.resolve())
-        assertFalse(call.isResolvable())
+        assertNull(call.target())
     }
 
     /**

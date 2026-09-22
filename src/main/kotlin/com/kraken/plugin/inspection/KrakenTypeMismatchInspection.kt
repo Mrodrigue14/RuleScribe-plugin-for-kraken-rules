@@ -5,9 +5,9 @@ import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
-import com.kraken.plugin.functions.KrakenFunctionCatalog
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenFunctionCall
+import com.kraken.plugin.psi.KrakenFunctionTarget
 import com.kraken.plugin.types.KrakenType
 import com.kraken.plugin.types.KrakenTypeInference
 
@@ -94,7 +94,7 @@ class KrakenTypeMismatchInspection : LocalInspectionTool() {
      * cover yet, so checking them would mostly produce noise.
      */
     private fun checkArguments(call: KrakenFunctionCall, holder: ProblemsHolder) {
-        val signature = KrakenFunctionCatalog.find(call.functionName, call.argumentCount) ?: return
+        val signature = (call.target() as? KrakenFunctionTarget.Native)?.function ?: return
         val args = call.arguments
         for ((index, parameter) in signature.parameters.withIndex()) {
             val argument = args.getOrNull(index) ?: continue
