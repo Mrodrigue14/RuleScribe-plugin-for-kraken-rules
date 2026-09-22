@@ -2,9 +2,9 @@ package com.kraken.plugin
 
 import com.intellij.navigation.NavigationItem
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiPolyVariantReference
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import com.kraken.plugin.navigation.KrakenGotoDeclarationHandler
 import com.kraken.plugin.navigation.KrakenReferencesCodeVisionProvider
 import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.psi.KrakenEpRef
@@ -22,13 +22,8 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
 
     /** Targets Ctrl+B would produce on the name carried by [element]. */
     private fun targetsFor(element: PsiElement): List<PsiElement> {
-        val offset = element.textOffset
-        val leaf = element.containingFile.findElementAt(offset)
-        assertNotNull("Expected a leaf at offset $offset", leaf)
-        return KrakenGotoDeclarationHandler()
-            .getGotoDeclarationTargets(leaf, offset, myFixture.editor)
-            .orEmpty()
-            .toList()
+        val reference = element.reference as PsiPolyVariantReference
+        return reference.multiResolve(false).mapNotNull { it.element }
     }
 
     private fun labelsOf(targets: List<PsiElement>): List<String> = targets.map { (it as NavigationItem).presentation }

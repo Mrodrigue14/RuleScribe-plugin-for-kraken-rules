@@ -1,10 +1,12 @@
 package com.kraken.plugin
 
 import com.intellij.psi.PsiDocumentManager
+import com.intellij.psi.search.searches.ReferencesSearch
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.inspection.KrakenUnusedRuleInspection
-import com.kraken.plugin.navigation.KrakenGotoDeclarationHandler
 import com.kraken.plugin.psi.KrakenNamespaces
+import com.kraken.plugin.psi.KrakenRuleDecl
 
 /**
  * Strict namespace semantics: a reference in a namespace that cannot see the
@@ -63,10 +65,8 @@ class KrakenNamespaceStrictnessTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        val leaf = myFixture.file.findElementAt(myFixture.caretOffset)
-        val targets = KrakenGotoDeclarationHandler()
-            .getGotoDeclarationTargets(leaf, myFixture.caretOffset, myFixture.editor)
-        assertNull("No navigation targets expected across blind namespaces", targets)
+        val declaration = PsiTreeUtil.getParentOfType(myFixture.file.findElementAt(myFixture.caretOffset), KrakenRuleDecl::class.java)!!
+        assertEmpty("No usages expected across blind namespaces", ReferencesSearch.search(declaration).findAll())
     }
 
     /** The cached namespace model follows edits of an already opened file. */

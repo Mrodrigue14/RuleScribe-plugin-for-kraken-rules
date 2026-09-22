@@ -6,7 +6,6 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.AbstractElementManipulator
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
-import com.intellij.psi.PsiReferenceBase
 import com.intellij.psi.impl.source.tree.LeafElement
 import com.kraken.plugin.functions.KelFunction
 import com.kraken.plugin.functions.KrakenFunctionCatalog
@@ -71,9 +70,9 @@ sealed interface KrakenFunctionTarget {
  * Soft reference: a native function has no declaration to open, so resolving to null
  * is normal. [KrakenFunctionCall.target] also covers natives.
  */
-class KrakenFunctionReference(element: KrakenFunctionCall, range: TextRange) : PsiReferenceBase<KrakenFunctionCall>(element, range, true) {
+class KrakenFunctionReference(element: KrakenFunctionCall, range: TextRange) : KrakenCachedReference<KrakenFunctionCall>(element, range, true) {
 
-    override fun resolve(): PsiElement? = KrakenDeclarations.findFunctionVisible(element, element.functionName, element.argumentCount)
+    override fun resolveTarget(): PsiElement? = KrakenDeclarations.findFunctionVisible(element, element.functionName, element.argumentCount)
 
     override fun getVariants(): Array<Any> = KrakenDeclarations.findFunctionsVisible(element)
         .mapNotNull { it.name }
