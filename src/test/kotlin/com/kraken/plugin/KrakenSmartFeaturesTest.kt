@@ -103,6 +103,48 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
         assertEquals("Only the two Same rules should be flagged: $duplicates", 2, duplicates.size)
     }
 
+    fun testDuplicateRuleComparesDimensionValues() {
+        myFixture.enableInspections(KrakenDuplicateRuleInspection())
+        myFixture.configureByText(
+            "test.rules",
+            """
+            @Dimension("state", "CA")
+            Rule "Same state" On Policy.a {
+                Assert true
+            }
+
+            @Dimension("state", "CA")
+            Rule "Same state" On Policy.b {
+                Assert false
+            }
+
+            @ServerSideOnly
+            Rule "Not a dimension" On Policy.c {
+                Assert true
+            }
+
+            Rule "Not a dimension" On Policy.d {
+                Assert false
+            }
+
+            @Dimension("state", "NY")
+            Rules {
+                Rule "From the block" On Policy.e {
+                    Assert true
+                }
+            }
+
+            Rule "From the block" On Policy.f {
+                Assert false
+            }
+            """.trimIndent(),
+        )
+        val flagged = myFixture.doHighlighting()
+            .filter { it.description?.startsWith("[kvr053]") == true }
+            .map { myFixture.file.findElementAt(it.startOffset)!!.text }
+        assertEquals(listOf("\"Same state\"", "\"Same state\"", "\"Not a dimension\"", "\"Not a dimension\""), flagged)
+    }
+
     fun testUnusedRuleInspection() {
         myFixture.enableInspections(KrakenUnusedRuleInspection())
         myFixture.configureByText(
