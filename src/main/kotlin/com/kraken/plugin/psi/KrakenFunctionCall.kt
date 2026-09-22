@@ -6,8 +6,8 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.AbstractElementManipulator
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
-import com.intellij.psi.PsiReferenceBase
 import com.intellij.psi.impl.source.tree.LeafElement
+import com.kraken.plugin.functions.KelFunction
 import com.kraken.plugin.functions.KrakenFunctionCatalog
 import com.kraken.plugin.parser.KrakenTypes
 
@@ -39,8 +39,13 @@ class KrakenFunctionCall(node: ASTNode) : ASTWrapperPsiElement(node) {
         return KrakenFunctionReference(this, range)
     }
 
-    fun isResolvable(): Boolean = KrakenFunctionCatalog.find(functionName, argumentCount) != null ||
-        KrakenDeclarations.findFunctionVisible(this, functionName, argumentCount) != null
+    /**
+     * What this call invokes. A visible `Function` shadows a native with the same name and
+     * arity, as in the engine (`ScopeBuilder.resolveFunctionSymbols` puts natives first,
+     * then overrides them with declared functions).
+     */
+    fun target(): KrakenFunctionTarget? = KrakenDeclarations.findFunctionVisible(this, functionName, argumentCount)?.let { KrakenFunctionTarget.Declared(it) }
+        ?: KrakenFunctionCatalog.find(functionName, argumentCount)?.let { KrakenFunctionTarget.Native(it) }
 
     private fun headRange(): TextRange? {
         val args = node.findChildByType(KrakenTypes.CALL_ARGS) ?: return null
@@ -48,13 +53,26 @@ class KrakenFunctionCall(node: ASTNode) : ASTWrapperPsiElement(node) {
     }
 }
 
+/** A declared `Function` or a native from the bundled catalogue. */
+sealed interface KrakenFunctionTarget {
+    val returnType: String?
+
+    data class Declared(val declaration: KrakenFunctionDecl) : KrakenFunctionTarget {
+        override val returnType: String? get() = declaration.returnType
+    }
+
+    data class Native(val function: KelFunction) : KrakenFunctionTarget {
+        override val returnType: String get() = function.returnType
+    }
+}
+
 /**
  * Soft reference: a native function has no declaration to open, so resolving to null
- * is normal. [KrakenFunctionCall.isResolvable] applies the same logic.
+ * is normal. [KrakenFunctionCall.target] also covers natives.
  */
-class KrakenFunctionReference(element: KrakenFunctionCall, range: TextRange) : PsiReferenceBase<KrakenFunctionCall>(element, range, true) {
+class KrakenFunctionReference(element: KrakenFunctionCall, range: TextRange) : KrakenCachedReference<KrakenFunctionCall>(element, range, true) {
 
-    override fun resolve(): PsiElement? = KrakenDeclarations.findFunctionVisible(element, element.functionName, element.argumentCount)
+    override fun resolveTarget(): PsiElement? = KrakenDeclarations.findFunctionVisible(element, element.functionName, element.argumentCount)
 
     override fun getVariants(): Array<Any> = KrakenDeclarations.findFunctionsVisible(element)
         .mapNotNull { it.name }

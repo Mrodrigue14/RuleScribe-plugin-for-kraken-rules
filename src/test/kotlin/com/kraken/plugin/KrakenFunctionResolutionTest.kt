@@ -1,10 +1,11 @@
 package com.kraken.plugin
 
-import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.functions.KrakenFunctionCatalog
+import com.kraken.plugin.navigation.KrakenReferencesCodeVisionProvider
 import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenFunctionDecl
+import com.kraken.plugin.psi.KrakenFunctionTarget
 
 /**
  * Function recognition in rule bodies.
@@ -14,8 +15,6 @@ import com.kraken.plugin.psi.KrakenFunctionDecl
  * origins: native Java, `Function` with a KEL body, bodiless `Function` signature.
  */
 class KrakenFunctionResolutionTest : BasePlatformTestCase() {
-
-    private inline fun <reified T : com.intellij.psi.PsiElement> allOf(): List<T> = PsiTreeUtil.findChildrenOfType(myFixture.file, T::class.java).toList()
 
     fun testCatalogueIsLoadedFromResources() {
         assertEquals("55 native functions generated from the engine", 55, KrakenFunctionCatalog.functions.size)
@@ -53,7 +52,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             """.trimIndent(),
         )
 
-        val declaration = allOf<KrakenFunctionDecl>().single()
+        val declaration = allOf<KrakenFunctionDecl>(myFixture.file).single()
         assertEquals("Limits", declaration.name)
         assertEquals(1, declaration.arity)
         assertEquals("Number[]", declaration.returnType)
@@ -69,7 +68,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             """.trimIndent(),
         )
 
-        val declaration = allOf<KrakenFunctionDecl>().single()
+        val declaration = allOf<KrakenFunctionDecl>(myFixture.file).single()
         assertEquals("GetPolicyCd", declaration.name)
         assertEquals(1, declaration.arity)
         assertFalse("A signature has no body", declaration.hasBody())
@@ -85,7 +84,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             """.trimIndent(),
         )
 
-        assertEquals("First", allOf<KrakenFunctionDecl>().single().name)
+        assertEquals("First", allOf<KrakenFunctionDecl>(myFixture.file).single().name)
     }
 
     fun testCallExposesNameAndArgumentCount() {
@@ -98,11 +97,11 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             """.trimIndent(),
         )
 
-        val calls = allOf<KrakenFunctionCall>().associateBy { it.functionName }
+        val calls = allOf<KrakenFunctionCall>(myFixture.file).associateBy { it.functionName }
         assertEquals(setOf("Round", "Sum"), calls.keys)
         assertEquals(2, calls["Round"]!!.argumentCount)
         assertEquals(1, calls["Sum"]!!.argumentCount)
-        assertTrue("Round and Sum are natives", calls.values.all { it.isResolvable() })
+        assertTrue("Round and Sum are natives", calls.values.all { it.target() is KrakenFunctionTarget.Native })
     }
 
     fun testCallWithoutArgumentsHasZeroArity() {
@@ -115,10 +114,10 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             """.trimIndent(),
         )
 
-        val call = allOf<KrakenFunctionCall>().single()
+        val call = allOf<KrakenFunctionCall>(myFixture.file).single()
         assertEquals("Today", call.functionName)
         assertEquals(0, call.argumentCount)
-        assertTrue(call.isResolvable())
+        assertNotNull(call.target())
     }
 
     fun testCallResolvesToDeclaredFunction() {
@@ -135,8 +134,47 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             """.trimIndent(),
         )
 
-        val target = allOf<KrakenFunctionCall>().single().reference?.resolve()
-        assertSame(allOf<KrakenFunctionDecl>().single(), target)
+        val target = allOf<KrakenFunctionCall>(myFixture.file).single().reference?.resolve()
+        assertSame(allOf<KrakenFunctionDecl>(myFixture.file).single(), target)
+    }
+
+    /** The engine overrides natives with declared functions of the same name and arity. */
+    fun testDeclaredSignatureShadowsANative() {
+        myFixture.configureByText(
+            "shadow.rules",
+            """
+            Function Round(Number n) : String
+
+            Rule "Rounds" On Policy.state {
+                Assert Round(1) != null
+            }
+            """.trimIndent(),
+        )
+
+        val target = allOf<KrakenFunctionCall>(myFixture.file).single().target()
+        assertEquals(KrakenFunctionTarget.Declared(allOf<KrakenFunctionDecl>(myFixture.file).single()), target)
+        assertEquals("String", target!!.returnType)
+    }
+
+    /** A bodiless signature overrides a `Function` with a body, as in the engine. */
+    fun testSignatureWinsOverAFunctionWithABody() {
+        myFixture.configureByText(
+            "both.rules",
+            """
+            Function Plan(PackageDetails details) : String {
+                details.planCd
+            }
+
+            Function Plan(PackageDetails details) : Number
+
+            Rule "Uses plan" On Policy.state {
+                Assert Plan(packageDetails) != null
+            }
+            """.trimIndent(),
+        )
+
+        val target = allOf<KrakenFunctionCall>(myFixture.file).single().reference?.resolve() as KrakenFunctionDecl
+        assertFalse(target.hasBody())
     }
 
     /** Arity is part of the identity: a call with the wrong arity does not resolve. */
@@ -154,9 +192,9 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             """.trimIndent(),
         )
 
-        val call = allOf<KrakenFunctionCall>().single()
+        val call = allOf<KrakenFunctionCall>(myFixture.file).single()
         assertNull(call.reference?.resolve())
-        assertFalse("Neither native nor declared with this arity", call.isResolvable())
+        assertNull("Neither native nor declared with this arity", call.target())
     }
 
     fun testDeclaredFunctionIsNotVisibleFromAnotherNamespace() {
@@ -181,9 +219,9 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             """.trimIndent(),
         )
 
-        val call = allOf<KrakenFunctionCall>().single()
+        val call = allOf<KrakenFunctionCall>(myFixture.file).single()
         assertNull("Consumer does not include Library", call.reference?.resolve())
-        assertFalse(call.isResolvable())
+        assertNull(call.target())
     }
 
     /**
@@ -225,13 +263,13 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             """.trimIndent(),
         )
 
-        val declaration = allOf<KrakenFunctionDecl>().single()
+        val declaration = allOf<KrakenFunctionDecl>(myFixture.file).single()
         val usages = myFixture.findUsages(declaration)
         assertEquals("The call from namespace Elsewhere does not count", 2, usages.size)
         assertTrue(usages.all { it.file?.name == "local.rules" })
         assertEquals(
             "2 usages",
-            com.kraken.plugin.navigation.KrakenReferencesCodeVisionProvider()
+            KrakenReferencesCodeVisionProvider()
                 .getHint(declaration, file),
         )
     }
@@ -260,7 +298,7 @@ class KrakenFunctionResolutionTest : BasePlatformTestCase() {
             """.trimIndent(),
         )
 
-        val target = allOf<KrakenFunctionCall>().single().reference?.resolve()
+        val target = allOf<KrakenFunctionCall>(myFixture.file).single().reference?.resolve()
         assertNotNull(target)
         assertEquals("library.rules", target!!.containingFile.name)
     }

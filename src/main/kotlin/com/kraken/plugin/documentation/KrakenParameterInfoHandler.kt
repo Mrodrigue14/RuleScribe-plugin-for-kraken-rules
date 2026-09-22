@@ -4,6 +4,7 @@ import com.intellij.lang.parameterInfo.CreateParameterInfoContext
 import com.intellij.lang.parameterInfo.ParameterInfoHandler
 import com.intellij.lang.parameterInfo.ParameterInfoUIContext
 import com.intellij.lang.parameterInfo.UpdateParameterInfoContext
+import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.functions.KrakenFunctionCatalog
 import com.kraken.plugin.psi.KrakenDeclarations
@@ -49,7 +50,7 @@ class KrakenParameterInfoHandler : ParameterInfoHandler<KrakenFunctionCall, Stri
         context.setupUIComponentPresentation(p, 0, 0, false, false, false, context.defaultParameterColor)
     }
 
-    private fun callAt(file: com.intellij.psi.PsiFile, offset: Int): KrakenFunctionCall? = PsiTreeUtil.getParentOfType(file.findElementAt(offset), KrakenFunctionCall::class.java, false)
+    private fun callAt(file: PsiFile, offset: Int): KrakenFunctionCall? = PsiTreeUtil.getParentOfType(file.findElementAt(offset), KrakenFunctionCall::class.java, false)
 
     /** Known signatures for this name: natives first, then project functions. */
     private fun signaturesFor(call: KrakenFunctionCall): List<String> {

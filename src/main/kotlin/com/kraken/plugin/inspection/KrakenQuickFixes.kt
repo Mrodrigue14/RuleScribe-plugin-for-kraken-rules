@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.util.DocumentUtil
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenRuleDecl
 
@@ -81,14 +82,9 @@ internal class KrakenAddDimensionAnnotationFix : LocalQuickFix {
         val document = manager.getDocument(file) ?: return
 
         val offset = rule.textRange.startOffset
-        val indent = indentAt(document.text, offset)
+        // The annotation must align with the rule, which may be nested in `Rules { }`.
+        val indent = DocumentUtil.getIndent(document, offset)
         document.insertString(offset, "@Dimension(\"dimensionName\", \"value\")\n$indent")
         manager.commitDocument(document)
-    }
-
-    /** The annotation must align with the rule, which may be nested in `Rules { }`. */
-    private fun indentAt(text: String, offset: Int): String {
-        val lineStart = text.lastIndexOf('\n', offset - 1) + 1
-        return text.substring(lineStart, offset).takeWhile { it == ' ' || it == '\t' }
     }
 }

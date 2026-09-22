@@ -5,11 +5,7 @@ import com.intellij.codeInsight.hints.codeVision.ReferencesCodeVisionProvider
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.kraken.plugin.lang.KrakenFile
-import com.kraken.plugin.psi.KrakenDeclarations
-import com.kraken.plugin.psi.KrakenEntryPointDecl
-import com.kraken.plugin.psi.KrakenFunctionDecl
-import com.kraken.plugin.psi.KrakenPsiUtil
-import com.kraken.plugin.psi.KrakenRuleDecl
+import com.kraken.plugin.psi.KrakenReferencedDeclaration
 
 /**
  * Clickable "N usages" inlay above declarations.
@@ -17,23 +13,18 @@ import com.kraken.plugin.psi.KrakenRuleDecl
  * [ReferencesCodeVisionProvider] already provides the click (the standard usages
  * popup), the label and the settings group, so only the count is left.
  *
- * The count goes through [KrakenPsiUtil] and its cached visibility model: a reference
- * whose namespace cannot see the declaration is not a usage, exactly as in Find Usages
- * and the unused rule inspection.
+ * The count is [KrakenReferencedDeclaration.visibleUsages]: a reference whose namespace
+ * cannot see the declaration is not a usage, exactly as in Find Usages and the unused
+ * rule inspection.
  */
 class KrakenReferencesCodeVisionProvider : ReferencesCodeVisionProvider() {
 
     override fun acceptsFile(file: PsiFile): Boolean = file is KrakenFile
 
-    override fun acceptsElement(element: PsiElement): Boolean = element is KrakenRuleDecl || element is KrakenEntryPointDecl || element is KrakenFunctionDecl
+    override fun acceptsElement(element: PsiElement): Boolean = element is KrakenReferencedDeclaration
 
     override fun getHint(element: PsiElement, file: PsiFile): String? {
-        val usages = when (element) {
-            is KrakenRuleDecl -> KrakenDeclarations.findRuleRefsVisibleTo(element).size
-            is KrakenEntryPointDecl -> KrakenDeclarations.findEpRefsVisibleTo(element).size
-            is KrakenFunctionDecl -> KrakenDeclarations.findFunctionCallsVisibleTo(element).size
-            else -> return null
-        }
+        val usages = (element as? KrakenReferencedDeclaration)?.visibleUsages()?.size ?: return null
         return when (usages) {
             0 -> "no usages"
             1 -> "1 usage"

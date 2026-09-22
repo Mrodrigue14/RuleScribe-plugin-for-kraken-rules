@@ -8,6 +8,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.StubBasedPsiElement
 import com.intellij.psi.stubs.IStubElementType
+import com.intellij.psi.tree.TokenSet
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.stubs.KrakenRuleStub
 
@@ -22,13 +23,18 @@ import com.kraken.plugin.psi.stubs.KrakenRuleStub
 class KrakenRuleDecl :
     StubBasedPsiElementBase<KrakenRuleStub>,
     StubBasedPsiElement<KrakenRuleStub>,
-    PsiNameIdentifierOwner {
+    PsiNameIdentifierOwner,
+    KrakenReferencedDeclaration {
 
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: KrakenRuleStub, nodeType: IStubElementType<*, *>) : super(stub, nodeType)
 
     override fun toString(): String = "KrakenRuleDecl"
+
+    override val kind: KrakenDeclaration.Kind get() = KrakenDeclaration.Kind.RULE
+
+    override fun visibleUsages(): List<KrakenRuleRef> = KrakenDeclarations.findRuleRefsVisibleTo(this)
 
     override fun getNameIdentifier(): PsiElement? = nameLeaf()?.psi
 
@@ -52,7 +58,7 @@ class KrakenRuleDecl :
     override fun getPresentation(): ItemPresentation = KrakenPresentations.of(
         this,
         KrakenPresentations.declarationText(this, name, "Rule"),
-        KrakenPresentations.RULE_ICON,
+        kind.icon,
     )
 
     fun hasTarget(): Boolean = node.findChildByType(KrakenTypes.RULE_TARGET) != null
@@ -64,5 +70,29 @@ class KrakenRuleDecl :
 
     fun ruleKeyword(): PsiElement? = node.findChildByType(KrakenTypes.RULE_KW)?.psi
 
+    /**
+     * `@Dimension` values of this rule merged over those of its enclosing `Rules` blocks,
+     * the innermost winning, as the engine merges rule metadata
+     * (`KrakenDSLModelMetadataConverter.merge`). Keys and values are compared as written.
+     */
+    fun dimensions(): Map<String, String> = generateSequence(node) { it.treeParent }
+        .takeWhile { it.elementType == KrakenTypes.RULE_DECL || it.elementType == KrakenTypes.RULES_BLOCK }
+        .toList()
+        .asReversed()
+        .flatMap { dimensionsDeclaredOn(it) }
+        .toMap()
+
+    private fun dimensionsDeclaredOn(declaration: ASTNode): List<Pair<String, String>> = declaration.getChildren(ANNOTATIONS)
+        .mapNotNull { it.findChildByType(KrakenTypes.DIMENSION_ANNOTATION) }
+        .mapNotNull { dimension ->
+            val (key, value) = dimension.getChildren(ANNOTATION_ARGS).map { it.text.trim() }.takeIf { it.size == 2 } ?: return@mapNotNull null
+            key to value
+        }
+
     private fun nameLeaf(): ASTNode? = node.findChildByType(KrakenTypes.RULE_NAME)?.findChildByType(KrakenTypes.STRING)
+
+    private companion object {
+        val ANNOTATIONS = TokenSet.create(KrakenTypes.ANNOTATION)
+        val ANNOTATION_ARGS = TokenSet.create(KrakenTypes.ANNOTATION_ARG)
+    }
 }

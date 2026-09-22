@@ -9,9 +9,7 @@ import com.intellij.psi.tree.TokenSet
 import com.kraken.plugin.lang.KrakenParserDefinition
 import com.kraken.plugin.parser.KrakenLexer
 import com.kraken.plugin.parser.KrakenTypes
-import com.kraken.plugin.psi.KrakenEntryPointDecl
-import com.kraken.plugin.psi.KrakenFunctionDecl
-import com.kraken.plugin.psi.KrakenRuleDecl
+import com.kraken.plugin.psi.KrakenDeclaration
 
 class KrakenFindUsagesProvider : FindUsagesProvider {
 
@@ -26,12 +24,7 @@ class KrakenFindUsagesProvider : FindUsagesProvider {
 
     override fun getHelpId(psiElement: PsiElement): String? = null
 
-    override fun getType(element: PsiElement): String = when (element) {
-        is KrakenRuleDecl -> "Kraken rule"
-        is KrakenEntryPointDecl -> "Kraken entry point"
-        is KrakenFunctionDecl -> "Kraken function"
-        else -> "Kraken element"
-    }
+    override fun getType(element: PsiElement): String = "Kraken " + ((element as? KrakenDeclaration)?.kind?.typeText ?: "element")
 
     override fun getDescriptiveName(element: PsiElement): String = (element as? PsiNamedElement)?.name ?: element.text
 

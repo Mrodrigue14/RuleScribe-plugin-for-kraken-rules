@@ -1,8 +1,13 @@
 package com.kraken.plugin
 
+import com.intellij.psi.PsiDocumentManager
+import com.intellij.psi.search.searches.ReferencesSearch
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.inspection.KrakenUnusedRuleInspection
-import com.kraken.plugin.navigation.KrakenGotoDeclarationHandler
+import com.kraken.plugin.psi.KrakenNamespaces
+import com.kraken.plugin.psi.KrakenRuleDecl
+import com.kraken.plugin.psi.KrakenRuleRef
 
 /**
  * Strict namespace semantics: a reference in a namespace that cannot see the
@@ -32,12 +37,7 @@ class KrakenNamespaceStrictnessTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        val highlights = myFixture.doHighlighting()
-        assertTrue(
-            "Rule referenced only from a blind namespace must be unused, got: " +
-                highlights.map { it.description },
-            highlights.any { it.description?.startsWith("Rule 'Hidden elsewhere' is not referenced") == true },
-        )
+        myFixture.assertReported("Rule 'Hidden elsewhere' is not referenced")
     }
 
     fun testNoDeclarationToUsageNavigationAcrossBlindNamespace() {
@@ -61,10 +61,69 @@ class KrakenNamespaceStrictnessTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        val leaf = myFixture.file.findElementAt(myFixture.caretOffset)
-        val targets = KrakenGotoDeclarationHandler()
-            .getGotoDeclarationTargets(leaf, myFixture.caretOffset, myFixture.editor)
-        assertNull("No navigation targets expected across blind namespaces", targets)
+        val declaration = PsiTreeUtil.getParentOfType(myFixture.file.findElementAt(myFixture.caretOffset), KrakenRuleDecl::class.java)!!
+        assertEmpty("No usages expected across blind namespaces", ReferencesSearch.search(declaration).findAll())
+    }
+
+    /** The cached namespace model follows edits of an already opened file. */
+    fun testAddingAnIncludeMakesTheOtherNamespaceVisible() {
+        val declarations = myFixture.addFileToProject(
+            "base.rules",
+            """
+            Namespace Base
+
+            Rule "Shared" On Widget.name {
+                Set Hidden
+            }
+            """.trimIndent(),
+        )
+        myFixture.configureByText(
+            "policy.rules",
+            """
+            Namespace Policy
+            <caret>
+            EntryPoint "Uses shared" {
+                "Shared"
+            }
+            """.trimIndent(),
+        )
+        assertFalse(KrakenNamespaces.sees(myFixture.file, declarations))
+
+        myFixture.type("Include Base")
+        PsiDocumentManager.getInstance(project).commitAllDocuments()
+
+        assertTrue(KrakenNamespaces.sees(myFixture.file, declarations))
+    }
+
+    /** The cached namespace model sees a file added after it was built. */
+    fun testFileAddedLaterBecomesVisible() {
+        myFixture.configureByText(
+            "policy.rules",
+            """
+            Namespace Policy
+            Include Base
+
+            EntryPoint "Uses shared" {
+                "Shared"
+            }
+            """.trimIndent(),
+        )
+        val item = allOf<KrakenRuleRef>(myFixture.file).single()
+        assertNull(item.reference.resolve())
+
+        myFixture.addFileToProject(
+            "base.rules",
+            """
+            Namespace Base
+
+            Rule "Shared" On Widget.name {
+                Set Hidden
+            }
+            """.trimIndent(),
+        )
+        PsiDocumentManager.getInstance(project).commitAllDocuments()
+
+        assertNotNull(item.reference.resolve())
     }
 
     fun testVisibleReferenceStillCounts() {
@@ -91,10 +150,6 @@ class KrakenNamespaceStrictnessTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        val highlights = myFixture.doHighlighting()
-        assertFalse(
-            "Rule referenced from an including namespace must NOT be unused",
-            highlights.any { it.description?.startsWith("Rule 'Base rule' is not referenced") == true },
-        )
+        myFixture.assertNotReported("Rule 'Base rule' is not referenced")
     }
 }

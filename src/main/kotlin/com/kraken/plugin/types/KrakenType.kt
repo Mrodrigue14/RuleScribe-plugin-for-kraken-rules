@@ -14,44 +14,38 @@ package com.kraken.plugin.types
  * The DSL names field types differently from KEL: `Integer` and `Decimal` are both
  * `Number` (`TypeBuilder.toPrimitiveType`).
  */
-sealed class KrakenType {
+sealed class KrakenType(
+    /** Name as the engine writes it in messages. */
+    val displayName: kotlin.String,
+) {
 
-    object Boolean : KrakenType()
-    object String : KrakenType()
-    object Number : KrakenType()
-    object Money : KrakenType()
-    object Date : KrakenType()
-    object DateTime : KrakenType()
-    object TypeToken : KrakenType()
+    object Boolean : KrakenType("Boolean")
+    object String : KrakenType("String")
+    object Number : KrakenType("Number")
+    object Money : KrakenType("Money")
+    object Date : KrakenType("Date")
+    object DateTime : KrakenType("DateTime")
+    object TypeToken : KrakenType("Type")
 
     /** Dynamic type: accepts and compares with anything. */
-    object Any : KrakenType()
+    object Any : KrakenType("Any")
 
     /** Not inferred. Any check that meets it must abstain. */
-    object Unknown : KrakenType()
+    object Unknown : KrakenType("Unknown")
 
-    data class Context(val name: kotlin.String) : KrakenType()
+    data class Context(val name: kotlin.String) : KrakenType(name)
 
-    data class Array(val element: KrakenType) : KrakenType()
+    data class Array(val element: KrakenType) : KrakenType(element.displayName + "[]")
 
     val isDynamic: kotlin.Boolean get() = this == Any
     val isKnown: kotlin.Boolean get() = this != Unknown
-
-    /** Display name, as the engine writes it in messages. */
-    fun displayName(): kotlin.String = when (this) {
-        is Array -> element.displayName() + "[]"
-        is Context -> name
-        TypeToken -> "Type"
-        else -> this::class.simpleName ?: "Unknown"
-    }
 
     /**
      * `Type.isAssignableFrom`: Money narrows to Number, never the reverse. Anything
      * involving [Any] or [Unknown] passes.
      */
     fun isAssignableFrom(other: KrakenType): kotlin.Boolean = when {
-        isDynamic || other.isDynamic -> true
-        !isKnown || !other.isKnown -> true
+        isUndecidedWith(other) -> true
         this == Number && other == Money -> true
         this is Array && other is Array -> element.isAssignableFrom(other.element)
         else -> this == other
@@ -65,13 +59,15 @@ sealed class KrakenType {
      * `String`s. Equality accepts any mutually assignable types; see [isAssignableFrom].
      */
     fun isComparableWith(other: KrakenType): kotlin.Boolean = when {
-        isDynamic || other.isDynamic -> true
-        !isKnown || !other.isKnown -> true
+        isUndecidedWith(other) -> true
         areNumeric(this, other) -> true
         this == Date && other == Date -> true
         this == DateTime && other == DateTime -> true
         else -> false
     }
+
+    /** Either side is dynamic or not inferred: no check can conclude. */
+    private fun isUndecidedWith(other: KrakenType): kotlin.Boolean = isDynamic || other.isDynamic || !isKnown || !other.isKnown
 
     companion object {
         private fun areNumeric(a: KrakenType, b: KrakenType): kotlin.Boolean = (a == Number || a == Money) && (b == Number || b == Money)

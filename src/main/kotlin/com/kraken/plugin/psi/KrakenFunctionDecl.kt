@@ -8,7 +8,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.impl.source.tree.LeafElement
-import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.parser.KrakenTypes
 
@@ -24,7 +23,12 @@ import com.kraken.plugin.parser.KrakenTypes
  */
 class KrakenFunctionDecl(node: ASTNode) :
     ASTWrapperPsiElement(node),
-    PsiNameIdentifierOwner {
+    PsiNameIdentifierOwner,
+    KrakenReferencedDeclaration {
+
+    override val kind: KrakenDeclaration.Kind get() = KrakenDeclaration.Kind.FUNCTION
+
+    override fun visibleUsages(): List<KrakenFunctionCall> = KrakenDeclarations.findFunctionCallsVisibleTo(this)
 
     override fun getNameIdentifier(): PsiElement? = nameLeaf()?.psi
 
@@ -38,11 +42,11 @@ class KrakenFunctionDecl(node: ASTNode) :
 
     override fun getTextOffset(): Int = nameIdentifier?.textOffset ?: super.getTextOffset()
 
-    val arity: Int
-        get() = parameterNodes().size
+    val parameters: List<KrakenFunctionParam>
+        get() = PsiTreeUtil.getChildrenOfTypeAsList(parameterListElement, KrakenFunctionParam::class.java)
 
-    val parameters: List<String>
-        get() = parameterNodes().map { it.text.trim() }
+    val arity: Int
+        get() = parameters.size
 
     val returnType: String?
         get() = returnTypeElement?.text?.trim()
@@ -53,14 +57,6 @@ class KrakenFunctionDecl(node: ASTNode) :
         val bound: String?,
         val nameElement: PsiElement,
         val boundElement: PsiElement?,
-    )
-
-    /** A `Coverage[] coverages` parameter; the name is optional when parsing. */
-    data class Parameter(
-        val type: String?,
-        val name: String?,
-        val typeElement: PsiElement?,
-        val nameElement: PsiElement?,
     )
 
     /**
@@ -80,22 +76,10 @@ class KrakenFunctionDecl(node: ASTNode) :
             }
             .orEmpty()
 
-    val parameterList: List<Parameter>
-        get() = parameterNodes().map { toParameter(it) }
+    fun parameterNamed(name: String): KrakenFunctionParam? = parameters.firstOrNull { it.name == name }
 
-    /** The `FUNCTION_PARAM` declaring [name], which references to the parameter resolve to. */
-    fun parameterNamed(name: String): PsiElement? = parameterNodes().firstOrNull { toParameter(it).name == name }?.psi
-
-    private fun parameterNodes(): List<ASTNode> = node.findChildByType(KrakenTypes.FUNCTION_PARAMS)
-        ?.getChildren(PARAMETER)
-        ?.toList()
-        .orEmpty()
-
-    private fun toParameter(param: ASTNode): Parameter {
-        val type = param.findChildByType(KrakenTypes.TYPE_REF)
-        val name = type?.let { firstMeaningfulChild(param, after = it) }
-        return Parameter(type?.text?.trim(), name?.text?.trim(), type?.psi, name?.psi)
-    }
+    private val parameterListElement: PsiElement?
+        get() = node.findChildByType(KrakenTypes.FUNCTION_PARAMS)?.psi
 
     /** The `TYPE_REF` of the `: Type` clause, to anchor diagnostics on. */
     val returnTypeElement: PsiElement?
@@ -105,9 +89,12 @@ class KrakenFunctionDecl(node: ASTNode) :
 
     fun hasBody(): Boolean = node.findChildByType(KrakenTypes.FUNCTION_BODY) != null
 
+    /** `Coverage[] coverages, Number n` */
+    fun parameterText(): String = parameters.joinToString(", ") { it.text.trim() }
+
     /** `Limits(Coverage[] coverages) : Number[]` */
     fun signature(): String {
-        val head = "${name.orEmpty()}(${parameters.joinToString(", ")})"
+        val head = "${name.orEmpty()}(${parameterText()})"
         return returnType?.let { "$head : $it" } ?: head
     }
 
@@ -117,7 +104,7 @@ class KrakenFunctionDecl(node: ASTNode) :
     override fun getPresentation(): ItemPresentation = KrakenPresentations.of(
         this,
         signature(),
-        KrakenPresentations.FUNCTION_ICON,
+        kind.icon,
     )
 
     /**
@@ -133,28 +120,28 @@ class KrakenFunctionDecl(node: ASTNode) :
         }
         return candidate?.takeIf { it.elementType != KrakenTypes.GENERIC_BOUNDS }
     }
-
-    /**
-     * First meaningful child of [parent], optionally after [after].
-     *
-     * Type sub-rules are private in the BNF, so `id` produces no node and the name is a
-     * sibling token of `TYPE_REF` rather than a subtree.
-     */
-    private fun firstMeaningfulChild(parent: ASTNode, after: ASTNode? = null): ASTNode? {
-        var child = after?.treeNext ?: parent.firstChildNode
-        while (child != null) {
-            if (child.psi !is PsiWhiteSpace &&
-                child.psi !is PsiComment &&
-                child.textLength > 0
-            ) {
-                return child
-            }
-            child = child.treeNext
-        }
-        return null
-    }
-
-    private companion object {
-        val PARAMETER = TokenSet.create(KrakenTypes.FUNCTION_PARAM)
-    }
 }
+
+/** A `Coverage[] coverages` parameter; the name is optional when parsing. */
+class KrakenFunctionParam(node: ASTNode) : ASTWrapperPsiElement(node) {
+
+    val typeElement: PsiElement?
+        get() = node.findChildByType(KrakenTypes.TYPE_REF)?.psi
+
+    val typeName: String?
+        get() = typeElement?.text?.trim()
+
+    /** The name is a sibling token of `TYPE_REF`: `id` is private in the BNF. */
+    val nameElement: PsiElement?
+        get() = typeElement?.let { firstMeaningfulChild(node, after = it.node) }?.psi
+
+    override fun getName(): String? = nameElement?.text?.trim()
+}
+
+/**
+ * First child of [parent] that is neither whitespace, a comment nor empty, optionally
+ * after [after]. Type sub-rules and `id` are private in the BNF, so names are sibling
+ * tokens rather than subtrees.
+ */
+private fun firstMeaningfulChild(parent: ASTNode, after: ASTNode? = null): ASTNode? = generateSequence(after?.treeNext ?: parent.firstChildNode) { it.treeNext }
+    .firstOrNull { it.psi !is PsiWhiteSpace && it.psi !is PsiComment && it.textLength > 0 }

@@ -6,8 +6,11 @@ import com.intellij.openapi.util.text.StringUtil
 import com.kraken.plugin.parser.KrakenTypes
 
 /** `Dimension "name" : Type` declaration. */
-class KrakenDimensionDecl(node: ASTNode) : ASTWrapperPsiElement(node) {
+class KrakenDimensionDecl(node: ASTNode) :
+    ASTWrapperPsiElement(node),
+    KrakenDeclaration {
 
-    val dimensionName: String?
-        get() = node.findChildByType(KrakenTypes.STRING)?.text?.let(StringUtil::unquoteString)
+    override val kind: KrakenDeclaration.Kind get() = KrakenDeclaration.Kind.DIMENSION
+
+    override fun getName(): String? = node.findChildByType(KrakenTypes.STRING)?.text?.let(StringUtil::unquoteString)
 }

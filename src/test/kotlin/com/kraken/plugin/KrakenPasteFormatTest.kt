@@ -1,7 +1,9 @@
 package com.kraken.plugin
 
 import com.intellij.codeInsight.CodeInsightSettings
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.IdeActions
+import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import java.awt.datatransfer.StringSelection
@@ -20,7 +22,7 @@ class KrakenPasteFormatTest : BasePlatformTestCase() {
         val settings = CodeInsightSettings.getInstance()
         val old = settings.REFORMAT_ON_PASTE
         settings.REFORMAT_ON_PASTE = reformat
-        disposeOnTearDown(com.intellij.openapi.Disposable { settings.REFORMAT_ON_PASTE = old })
+        disposeOnTearDown(Disposable { settings.REFORMAT_ON_PASTE = old })
         myFixture.configureByText(
             "test.rules",
             """
@@ -56,7 +58,7 @@ class KrakenPasteFormatTest : BasePlatformTestCase() {
         val settings = CodeInsightSettings.getInstance()
         val old = settings.REFORMAT_ON_PASTE
         settings.REFORMAT_ON_PASTE = CodeInsightSettings.INDENT_BLOCK
-        disposeOnTearDown(com.intellij.openapi.Disposable { settings.REFORMAT_ON_PASTE = old })
+        disposeOnTearDown(Disposable { settings.REFORMAT_ON_PASTE = old })
         myFixture.configureByText(
             "test.rules",
             """
@@ -104,7 +106,7 @@ class KrakenPasteFormatTest : BasePlatformTestCase() {
             }
         """.trimIndent()
         myFixture.configureByText("test.rules", wellFormatted)
-        com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction(project) {
+        WriteCommandAction.runWriteCommandAction(project) {
             com.intellij.psi.codeStyle.CodeStyleManager.getInstance(project)
                 .reformat(myFixture.file)
         }
@@ -123,7 +125,7 @@ class KrakenPasteFormatTest : BasePlatformTestCase() {
             }
         """.trimIndent()
         myFixture.configureByText("test.rules", wellFormatted)
-        com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction(project) {
+        WriteCommandAction.runWriteCommandAction(project) {
             com.intellij.psi.codeStyle.CodeStyleManager.getInstance(project)
                 .reformat(myFixture.file)
         }

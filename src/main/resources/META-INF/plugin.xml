@@ -462,9 +462,6 @@
                 language="Kraken"
                 implementationClass="com.kraken.plugin.navigation.KrakenFindUsagesProvider"/>
 
-        <gotoDeclarationHandler
-                implementation="com.kraken.plugin.navigation.KrakenGotoDeclarationHandler"/>
-
         <!-- "N usages" inlay above declarations. Clicking it opens the standard
              usages popup, which Ctrl+B also shows on a declaration. -->
         <codeInsight.daemonBoundCodeVisionProvider
@@ -481,12 +478,8 @@
                 implementation="com.kraken.plugin.navigation.KrakenReferencesSearcher"/>
 
         <lang.elementManipulator
-                forClass="com.kraken.plugin.psi.KrakenRuleRef"
-                implementationClass="com.kraken.plugin.psi.KrakenRuleRefManipulator"/>
-
-        <lang.elementManipulator
-                forClass="com.kraken.plugin.psi.KrakenEpRef"
-                implementationClass="com.kraken.plugin.psi.KrakenEpRefManipulator"/>
+                forClass="com.kraken.plugin.psi.KrakenQuotedNameElement"
+                implementationClass="com.kraken.plugin.psi.KrakenQuotedNameManipulator"/>
 
         <lang.elementManipulator
                 forClass="com.kraken.plugin.psi.KrakenFunctionCall"

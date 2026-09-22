@@ -2,6 +2,8 @@ package com.kraken.plugin.psi
 
 import com.intellij.lang.ASTNode
 import com.intellij.openapi.util.TextRange
+import com.intellij.psi.PsiComment
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.impl.source.tree.LeafElement
 import com.intellij.psi.tree.IElementType
@@ -11,33 +13,25 @@ import com.kraken.plugin.parser.KrakenTypes
 /** Reading and editing the tokens of a declaration, where the grammar leaves no dedicated PSI. */
 object KrakenPsiUtil {
 
-    /** Identifiers of a declaration, stopping before the `: …` navigation. */
-    fun identifiersOf(node: ASTNode): List<String> {
-        val names = mutableListOf<String>()
-        var child = node.firstChildNode
-        while (child != null) {
-            when {
-                child.elementType == KrakenTypes.COLON -> return names
-                child.elementType == KrakenTypes.ANNOTATION -> Unit
-                child.psi is PsiWhiteSpace -> Unit
-                child.elementType == KrakenTypes.STAR -> Unit
-                child.elementType == KrakenTypes.LBRACKET -> Unit
-                child.elementType == KrakenTypes.RBRACKET -> Unit
-                child.elementType == KrakenTypes.CHILD_KW -> Unit
-                child.elementType == KrakenTypes.EXTERNAL_KW -> Unit
-                else -> child.text.trim().takeIf { it.isNotEmpty() }?.let { names += it }
-            }
-            child = child.treeNext
-        }
-        return names
-    }
+    /** Identifier tokens among [node]'s children, up to [stop] excluded. */
+    fun identifiersBefore(node: ASTNode, stop: IElementType): List<String> = generateSequence(node.firstChildNode) { it.treeNext }
+        .takeWhile { it.elementType != stop }
+        .filter { it.elementType in ID_TOKENS }
+        .map { it.text }
+        .toList()
 
     /** First identifier token among [node]'s children after [keyword]. */
-    fun firstIdAfter(node: ASTNode, keyword: IElementType): ASTNode? {
-        var child = node.findChildByType(keyword)?.treeNext
-        while (child != null && child.elementType !in ID_TOKENS) child = child.treeNext
-        return child
-    }
+    fun firstIdAfter(node: ASTNode, keyword: IElementType): ASTNode? = firstIdFrom(node.findChildByType(keyword)?.treeNext)
+
+    /** First identifier token among [node]'s children after the first of [keywords]. */
+    fun firstIdAfter(node: ASTNode, keywords: TokenSet): ASTNode? = firstIdFrom(node.findChildByType(keywords)?.treeNext)
+
+    private fun firstIdFrom(start: ASTNode?): ASTNode? = generateSequence(start) { it.treeNext }.firstOrNull { it.elementType in ID_TOKENS }
+
+    /** AST children of [element], leaves included, without whitespace and comments. */
+    fun significantChildren(element: PsiElement): List<PsiElement> = element.node.getChildren(null)
+        .map { it.psi }
+        .filter { it !is PsiWhiteSpace && it !is PsiComment }
 
     /** Replaces a string's content, keeping its original quote character. */
     fun replaceQuoted(leaf: ASTNode?, content: String) {

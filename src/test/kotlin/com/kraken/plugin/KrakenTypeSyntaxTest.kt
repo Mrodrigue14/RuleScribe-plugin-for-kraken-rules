@@ -11,9 +11,7 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
  */
 class KrakenTypeSyntaxTest : BasePlatformTestCase() {
 
-    private fun errors(source: String): List<String> = parseErrors(myFixture.configureByText("types.rules", source))
-
-    private fun assertParses(source: String) = assertEquals("should parse: $source", emptyList<String>(), errors(source))
+    private fun assertParses(source: String) = assertEquals("should parse: $source", emptyList<String>(), myFixture.parseErrorsOf(source))
 
     fun testUnionParameter() = assertParses("""Function GetDay(Date | DateTime d) : Number { 1 }""")
 

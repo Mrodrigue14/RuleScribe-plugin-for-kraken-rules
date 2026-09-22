@@ -7,6 +7,7 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.stubs.StubIndex
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.lang.KrakenFile
+import com.kraken.plugin.lang.declarations
 import com.kraken.plugin.psi.stubs.KrakenRuleNameIndex
 
 /** Finds rules, entry points, functions and dimensions, and the references to them, as namespaces allow. */
@@ -14,10 +15,10 @@ object KrakenDeclarations {
 
     fun findRulesVisible(from: PsiElement): List<KrakenRuleDecl> {
         val direct = KrakenNamespaces.visibleFiles(from.containingFile)
-            .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenRuleDecl::class.java) }
+            .flatMap { it.declarations<KrakenRuleDecl>() }
         val imported = KrakenNamespaces.ruleImportsForNamespaceOf(from.containingFile)
             .mapNotNull { findRuleInNamespace(from.project, it.sourceNamespace, it.ruleName) }
-        return if (imported.isEmpty()) direct else (direct + imported).distinct()
+        return (direct + imported).distinct()
     }
 
     /**
@@ -41,7 +42,7 @@ object KrakenDeclarations {
         val files = KrakenNamespaces.filesOfNamespace(project, ns)
         indexedRules(project, files, name).firstOrNull()?.let { return it }
         return files
-            .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenRuleDecl::class.java) }
+            .flatMap { it.declarations<KrakenRuleDecl>() }
             .firstOrNull { it.name == name }
     }
 
@@ -61,7 +62,7 @@ object KrakenDeclarations {
     }
 
     fun findEntryPointsVisible(from: PsiElement): List<KrakenEntryPointDecl> = KrakenNamespaces.visibleFiles(from.containingFile)
-        .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenEntryPointDecl::class.java) }
+        .flatMap { it.declarations<KrakenEntryPointDecl>() }
 
     /** Same as for rules: an EntryPoint can have `@Dimension` variants too. */
     fun findEntryPointsVisible(from: PsiElement, name: String): List<KrakenEntryPointDecl> = findEntryPointsVisible(from).filter { it.name == name }
@@ -69,17 +70,20 @@ object KrakenDeclarations {
     fun findEntryPointVisible(from: PsiElement, name: String): KrakenEntryPointDecl? = findEntryPointsVisible(from, name).firstOrNull()
 
     fun findFunctionsVisible(from: PsiElement): List<KrakenFunctionDecl> = KrakenNamespaces.visibleFiles(from.containingFile)
-        .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenFunctionDecl::class.java) }
+        .flatMap { it.declarations<KrakenFunctionDecl>() }
 
     /**
      * The engine indexes a function by `(name, parameter count)`, not by types
-     * (`FunctionHeader`): two `Function`s with the same name and arity conflict.
+     * (`FunctionHeader`). A bodiless signature overrides a `Function` with a body
+     * (`ScopeBuilder.resolveFunctionSymbols`), so it wins here too.
      */
-    fun findFunctionVisible(from: PsiElement, name: String, arity: Int): KrakenFunctionDecl? = findFunctionsVisible(from).firstOrNull { it.name == name && it.arity == arity }
+    fun findFunctionVisible(from: PsiElement, name: String, arity: Int): KrakenFunctionDecl? = findFunctionsVisible(from)
+        .filter { it.name == name && it.arity == arity }
+        .minByOrNull { it.hasBody() }
 
     fun findDimensionNamesVisible(from: PsiFile?): List<String> = KrakenNamespaces.visibleFiles(from)
-        .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenDimensionDecl::class.java) }
-        .mapNotNull { it.dimensionName }
+        .flatMap { it.declarations<KrakenDimensionDecl>() }
+        .mapNotNull { it.name }
         .distinct()
 
     /** Visible calls with this name and arity, for Find Usages. */
@@ -102,10 +106,8 @@ object KrakenDeclarations {
      */
     fun findRuleRefsVisibleTo(declaration: KrakenRuleDecl): List<KrakenRuleRef> {
         val name = declaration.name ?: return emptyList()
-        val declarationFile = declaration.containingFile
-        val declNs = (declarationFile as? KrakenFile)?.let { KrakenNamespaces.namespaceOf(it) }
         return findRuleRefs(declaration.project, name).filter {
-            KrakenNamespaces.seesRule(it.containingFile, name, declarationFile, declNs)
+            KrakenNamespaces.seesRule(it.containingFile, name, declaration.containingFile)
         }
     }
 

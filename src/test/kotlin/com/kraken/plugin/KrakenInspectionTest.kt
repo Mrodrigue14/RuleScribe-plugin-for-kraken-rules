@@ -16,11 +16,7 @@ class KrakenInspectionTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        val highlights = myFixture.doHighlighting()
-        assertTrue(
-            "Expected 'Rule has no name' problem, got: ${highlights.map { it.description }}",
-            highlights.any { it.description == "[kvr001] Rule name is not defined." },
-        )
+        assertContainsElements(myFixture.problemDescriptions(), "[kvr001] Rule name is not defined.")
     }
 
     fun testNamedRuleIsNotReported() {
@@ -33,8 +29,7 @@ class KrakenInspectionTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        val highlights = myFixture.doHighlighting()
-        assertFalse(highlights.any { it.description == "[kvr001] Rule name is not defined." })
+        assertDoesntContain(myFixture.problemDescriptions(), "[kvr001] Rule name is not defined.")
     }
 
     fun testUnresolvedRuleReferenceIsReported() {
@@ -51,11 +46,7 @@ class KrakenInspectionTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        val highlights = myFixture.doHighlighting()
-        assertTrue(
-            "Expected 'Unknown rule' problem, got: ${highlights.map { it.description }}",
-            highlights.any { it.description == "[kve005] Rule is included in entry point, but such rule does not exist: Missing." },
-        )
+        assertContainsElements(myFixture.problemDescriptions(), "[kve005] Rule is included in entry point, but such rule does not exist: Missing.")
     }
 
     fun testResolvedRuleReferenceIsNotReported() {
@@ -72,7 +63,9 @@ class KrakenInspectionTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        val highlights = myFixture.doHighlighting()
-        assertFalse(highlights.any { it.description?.startsWith("Unknown rule") == true })
+        assertDoesntContain(
+            myFixture.problemDescriptions(),
+            "[kve005] Rule is included in entry point, but such rule does not exist: Existing.",
+        )
     }
 }

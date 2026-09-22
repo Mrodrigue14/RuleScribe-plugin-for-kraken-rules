@@ -64,6 +64,41 @@ class KrakenScopeResolverTest : KrakenRuleBodyTestCase() {
         )
     }
 
+    fun testFieldResolvesThroughALongIsChain() {
+        myFixture.configureByText(
+            "chain.rules",
+            """
+            Context Level0 Is Level1 { String own }
+            Context Level1 Is Level2 { }
+            Context Level2 Is Level3 { }
+            Context Level3 Is Level4 { }
+            Context Level4 Is Level5 { }
+            Context Level5 Is Level6 { }
+            Context Level6 { String deepCd }
+
+            Rule "Deep" On Level0.own {
+                Assert deepCd != null
+            }
+            """.trimIndent(),
+        )
+        assertNotNull(KrakenScopeResolver.resolve(refNamed("deepCd"), "deepCd"))
+    }
+
+    fun testIsCycleEndsTheWalk() {
+        myFixture.configureByText(
+            "cycle.rules",
+            """
+            Context A Is B { String aCd }
+            Context B Is A { String bCd }
+
+            Rule "Cycle" On A.aCd {
+                Assert missingCd != null
+            }
+            """.trimIndent(),
+        )
+        assertNull(KrakenScopeResolver.resolve(refNamed("missingCd"), "missingCd"))
+    }
+
     fun testUnknownNameResolvesToNothing() {
         configureRule("Assert notAField > 0")
         assertNull(resolve("notAField"))
@@ -149,6 +184,11 @@ class KrakenScopeResolverTest : KrakenRuleBodyTestCase() {
         val target = resolve("limit")
         assertNotNull("The predicate sees the filtered element's fields", target)
         assertEquals(KrakenTypes.FIELD_DECL, target!!.node.elementType)
+    }
+
+    fun testCompletionInAFilterOffersTheItemFields() {
+        configureRule("Assert Count(Coverage[limit > 0]) = 1")
+        assertTrue(KrakenScopeResolver.visibleNames(refNamed("limit")).contains("inheritedCd"))
     }
 
     fun testNestedFilterUsesTheNearestBracket() {

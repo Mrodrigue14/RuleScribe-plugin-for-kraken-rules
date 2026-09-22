@@ -1,7 +1,6 @@
 package com.kraken.plugin.inspection
 
 import com.intellij.codeInspection.LocalInspectionTool
-import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
@@ -62,7 +61,6 @@ class KrakenFunctionGenericBoundInspection : LocalInspectionTool() {
                 holder.registerProblem(
                     duplicate.nameElement,
                     GENERIC_BOUND_DUPLICATE.of(function).format(duplicate.generic),
-                    ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
                 )
             }
 
@@ -75,7 +73,6 @@ class KrakenFunctionGenericBoundInspection : LocalInspectionTool() {
                 holder.registerProblem(
                     element,
                     GENERIC_BOUND_IS_ITSELF_GENERIC.of(function).format(text, bound.generic),
-                    ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
                 )
             }
         }
@@ -95,11 +92,11 @@ class KrakenFunctionTypeUnionGenericMixInspection : LocalInspectionTool() {
                 function.returnType,
                 RETURN_TYPE_UNION_GENERIC_MIX.of(function),
             )
-            for (parameter in function.parameterList) {
+            for (parameter in function.parameters) {
                 report(
                     holder,
                     parameter.typeElement,
-                    parameter.type,
+                    parameter.typeName,
                     PARAMETER_TYPE_UNION_GENERIC_MIX.of(function),
                 )
             }
@@ -117,7 +114,6 @@ class KrakenFunctionTypeUnionGenericMixInspection : LocalInspectionTool() {
                 holder.registerProblem(
                     element,
                     diagnostic.format(text),
-                    ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
                 )
             }
         }
@@ -134,12 +130,11 @@ class KrakenFunctionParameterDuplicateInspection : LocalInspectionTool() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor() {
         override fun check(function: KrakenFunctionDecl) {
             if (!function.hasBody()) return
-            for (duplicate in function.parameterList.afterFirstOccurrenceOf { it.name }) {
+            for (duplicate in function.parameters.afterFirstOccurrenceOf { it.name }) {
                 val element = duplicate.nameElement ?: continue
                 holder.registerProblem(
                     element,
                     KrakenDiagnostic.FUNCTION_PARAMETER_DUPLICATE.format(duplicate.name),
-                    ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
                 )
             }
         }
@@ -165,7 +160,6 @@ class KrakenFunctionNativeDuplicateInspection : LocalInspectionTool() {
             holder.registerProblem(
                 anchor,
                 KrakenDiagnostic.FUNCTION_NATIVE_DUPLICATE.format(name),
-                ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
             )
         }
     }

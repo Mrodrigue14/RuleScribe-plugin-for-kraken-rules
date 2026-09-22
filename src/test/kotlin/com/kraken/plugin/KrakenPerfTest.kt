@@ -1,6 +1,5 @@
 package com.kraken.plugin
 
-import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.psi.KrakenRuleRef
 
@@ -42,7 +41,7 @@ class KrakenPerfTest : BasePlatformTestCase() {
             """.trimIndent(),
         )
 
-        val ref = PsiTreeUtil.findChildrenOfType(myFixture.file, KrakenRuleRef::class.java)
+        val ref = allOf<KrakenRuleRef>(myFixture.file)
             .firstOrNull { it.ruleName == "Rule 0_0" }
         assertNotNull("The 'Rule 0_0' reference must exist in the PSI", ref)
 

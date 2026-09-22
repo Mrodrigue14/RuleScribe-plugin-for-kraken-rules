@@ -4,6 +4,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.navigation.KrakenVcsCodeVisionContext
 import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.psi.KrakenRuleDecl
 
 /**
  * Which elements get the "author, date" inlay, and how far their block extends.
@@ -83,7 +84,7 @@ class KrakenVcsCodeVisionTest : BasePlatformTestCase() {
      */
     fun testEffectiveRangeCoversTheWholeDeclaration() {
         val file = configure()
-        val rule = PsiTreeUtil.findChildrenOfType(file, com.kraken.plugin.psi.KrakenRuleDecl::class.java).single()
+        val rule = PsiTreeUtil.findChildrenOfType(file, KrakenRuleDecl::class.java).single()
 
         val range = context.computeEffectiveRange(rule)
         // The base starts at `textOffset`, which KrakenRuleDecl points at the name, so the inlay

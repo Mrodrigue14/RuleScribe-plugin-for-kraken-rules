@@ -5,7 +5,6 @@ import com.intellij.lang.ASTNode
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
-import com.intellij.psi.PsiReferenceBase
 import com.kraken.plugin.parser.KrakenTypes
 
 /**
@@ -52,21 +51,21 @@ class KrakenPathSegment(node: ASTNode) : ASTWrapperPsiElement(node) {
     }
 }
 
-class KrakenIdentifierReference(element: KrakenRefExpr) : PsiReferenceBase<KrakenRefExpr>(element, TextRange(0, element.textLength), true) {
+class KrakenIdentifierReference(element: KrakenRefExpr) : KrakenCachedReference<KrakenRefExpr>(element, TextRange(0, element.textLength), true) {
 
-    override fun resolve(): PsiElement? = KrakenScopeResolver.resolve(element, element.referenceName)
+    override fun resolveTarget(): PsiElement? = KrakenScopeResolver.resolve(element, element.referenceName)
 
     override fun getVariants(): Array<Any> = KrakenScopeResolver.visibleNames(element).toTypedArray()
 }
 
 class KrakenPathSegmentReference(element: KrakenPathSegment) :
-    PsiReferenceBase<KrakenPathSegment>(
+    KrakenCachedReference<KrakenPathSegment>(
         element,
         TextRange(0, element.segmentName.length),
         true,
     ) {
 
-    override fun resolve(): PsiElement? {
+    override fun resolveTarget(): PsiElement? {
         val context = element.owningContext() ?: return null
         return KrakenScopeResolver.findField(element, context, element.segmentName)
     }

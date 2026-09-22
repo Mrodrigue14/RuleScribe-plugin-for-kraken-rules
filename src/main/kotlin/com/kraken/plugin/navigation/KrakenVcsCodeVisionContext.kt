@@ -4,9 +4,8 @@ import com.intellij.codeInsight.hints.VcsCodeVisionCurlyBracketLanguageContext
 import com.intellij.openapi.editor.Editor
 import com.intellij.psi.PsiElement
 import com.kraken.plugin.parser.KrakenTypes
-import com.kraken.plugin.psi.KrakenEntryPointDecl
-import com.kraken.plugin.psi.KrakenFunctionDecl
-import com.kraken.plugin.psi.KrakenRuleDecl
+import com.kraken.plugin.psi.KrakenDeclaration
+import com.kraken.plugin.psi.KrakenDimensionDecl
 import java.awt.event.MouseEvent
 
 /**
@@ -27,14 +26,11 @@ import java.awt.event.MouseEvent
 class KrakenVcsCodeVisionContext : VcsCodeVisionCurlyBracketLanguageContext() {
 
     /**
-     * Top-level declarations of a `.rules` file: the same set as
-     * [KrakenReferencesCodeVisionProvider] plus contexts, which have no usages to count but
-     * whose last author matters as much as a rule's.
+     * Declarations with a block: the same set as [KrakenReferencesCodeVisionProvider] plus
+     * contexts, which have no usages to count but whose last author matters as much as a
+     * rule's. A one-line `Dimension` has no block.
      */
-    override fun isAccepted(element: PsiElement): Boolean = element is KrakenRuleDecl ||
-        element is KrakenEntryPointDecl ||
-        element is KrakenFunctionDecl ||
-        element.node?.elementType == KrakenTypes.CONTEXT_DECL
+    override fun isAccepted(element: PsiElement): Boolean = element is KrakenDeclaration && element !is KrakenDimensionDecl
 
     override fun isRBrace(element: PsiElement): Boolean = element.node?.elementType == KrakenTypes.RBRACE
 

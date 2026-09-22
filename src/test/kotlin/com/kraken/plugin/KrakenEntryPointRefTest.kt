@@ -4,6 +4,7 @@ import com.intellij.codeInsight.completion.CompletionType
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.inspection.KrakenUnresolvedRuleRefInspection
 import com.kraken.plugin.psi.KrakenEntryPointDecl
+import com.kraken.plugin.psi.KrakenRuleDecl
 
 class KrakenEntryPointRefTest : BasePlatformTestCase() {
 
@@ -41,11 +42,7 @@ class KrakenEntryPointRefTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        val highlights = myFixture.doHighlighting()
-        assertTrue(
-            "Expected 'Unknown entry point' problem, got: ${highlights.map { it.description }}",
-            highlights.any { it.description == "[kve002] Included entry point 'Missing' does not exist." },
-        )
+        assertContainsElements(myFixture.problemDescriptions(), "[kve002] Included entry point 'Missing' does not exist.")
     }
 
     fun testCompletionSuggestsOtherEntryPointsAndExcludesListed() {
@@ -99,7 +96,7 @@ class KrakenEntryPointRefTest : BasePlatformTestCase() {
     }
 }
 
-class KrakenDeclarationToUsagesTest : com.intellij.testFramework.fixtures.BasePlatformTestCase() {
+class KrakenDeclarationToUsagesTest : BasePlatformTestCase() {
 
     /**
      * Ctrl+B on a declaration is left to the platform's "Go To Declaration or Usages": the
@@ -123,15 +120,7 @@ class KrakenDeclarationToUsagesTest : com.intellij.testFramework.fixtures.BasePl
             """.trimIndent(),
         )
 
-        val leaf = myFixture.file.findElementAt(myFixture.caretOffset)
-        val targets = com.kraken.plugin.navigation.KrakenGotoDeclarationHandler()
-            .getGotoDeclarationTargets(leaf, myFixture.caretOffset, myFixture.editor)
-        assertNull("The handler must not shadow the platform's usages popup", targets)
-
-        val declaration = com.intellij.psi.util.PsiTreeUtil.findChildrenOfType(
-            myFixture.file,
-            com.kraken.plugin.psi.KrakenRuleDecl::class.java,
-        ).first()
+        val declaration = allOf<KrakenRuleDecl>(myFixture.file).first()
         val usages = myFixture.findUsages(declaration)
         assertEquals(1, usages.size)
         assertEquals("eps.rules", usages.first().file?.name)
@@ -154,10 +143,7 @@ class KrakenDeclarationToUsagesTest : com.intellij.testFramework.fixtures.BasePl
             }
             """.trimIndent(),
         )
-        val declaration = com.intellij.psi.util.PsiTreeUtil.findChildrenOfType(
-            myFixture.file,
-            com.kraken.plugin.psi.KrakenRuleDecl::class.java,
-        ).first()
+        val declaration = allOf<KrakenRuleDecl>(myFixture.file).first()
         val usages = myFixture.findUsages(declaration)
         assertEquals("Expected exactly one usage, got $usages", 1, usages.size)
     }

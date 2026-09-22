@@ -1,13 +1,13 @@
 package com.kraken.plugin.inspection
 
 import com.intellij.codeInspection.LocalInspectionTool
-import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
-import com.kraken.plugin.functions.KrakenFunctionCatalog
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenFunctionCall
+import com.kraken.plugin.psi.KrakenFunctionTarget
+import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.types.KrakenType
 import com.kraken.plugin.types.KrakenTypeInference
 
@@ -44,36 +44,43 @@ class KrakenTypeMismatchInspection : LocalInspectionTool() {
     /** `effectiveDate < createdOn`: Date against DateTime, rejected by the engine. */
     private fun checkComparison(chain: PsiElement, holder: ProblemsHolder) {
         // AST nodes: PSI `children` excludes leaves, so the operator would be missing.
-        val children = KrakenTypeInference.significantChildren(chain)
-        for ((index, child) in children.withIndex()) {
-            val operator = operatorName(child) ?: continue
-            val left = children.getOrNull(index - 1) ?: continue
-            val right = children.getOrNull(index + 1) ?: continue
-            val leftType = KrakenTypeInference.typeOf(left)
-            val rightType = KrakenTypeInference.typeOf(right)
-            if (!leftType.isKnown || !rightType.isKnown) continue
-            // Whether an expression is a collection depends on KEL projection and flattening,
-            // which is only partly modelled, so skip when either side is one.
-            if (leftType is KrakenType.Array || rightType is KrakenType.Array) continue
+        val parts = KrakenPsiUtil.significantChildren(chain)
+        val message = parts.indices.firstNotNullOfOrNull { mismatchAt(parts, it) } ?: return
+        holder.registerProblem(chain, message)
+    }
 
-            val message = if (operator in EQUALITY_NAMES) {
-                // Assignable either way, like the engine's `areVersusAssignable`.
-                if (leftType.isAssignableFrom(rightType) || rightType.isAssignableFrom(leftType)) continue
-                KrakenDiagnostic.NOT_SAME_TYPE.format(
-                    operator,
-                    leftType.displayName(),
-                    rightType.displayName(),
-                )
-            } else {
-                if (leftType.isComparableWith(rightType)) continue
-                KrakenDiagnostic.NOT_COMPARABLE.format(
-                    operator,
-                    leftType.displayName(),
-                    rightType.displayName(),
-                )
-            }
-            holder.registerProblem(chain, message, ProblemHighlightType.GENERIC_ERROR_OR_WARNING)
-            return
+    /**
+     * What the comparison at [index] of [parts] violates, or null.
+     *
+     * A value chain is flat, without precedence, so a neighbour is only taken as a whole
+     * operand when the operator beyond it is a logical one: in `"ID" + num = code`, the
+     * left side of `=` is `"ID" + num`, not `num`.
+     */
+    private fun mismatchAt(parts: List<PsiElement>, index: Int): String? {
+        val operator = operatorName(parts[index]) ?: return null
+        if (!isWholeOperand(parts, index - 1, outward = -1) || !isWholeOperand(parts, index + 1, outward = 1)) return null
+        val left = KrakenTypeInference.typeOf(parts[index - 1])
+        val right = KrakenTypeInference.typeOf(parts[index + 1])
+        if (!left.isKnown || !right.isKnown) return null
+        // Whether an expression is a collection depends on KEL projection and flattening,
+        // which is only partly modelled, so skip when either side is one.
+        if (left is KrakenType.Array || right is KrakenType.Array) return null
+        return if (operator in EQUALITY_NAMES) {
+            // Assignable either way, like the engine's `areVersusAssignable`.
+            val compatible = left.isAssignableFrom(right) || right.isAssignableFrom(left)
+            KrakenDiagnostic.NOT_SAME_TYPE.format(operator, left.displayName, right.displayName).takeUnless { compatible }
+        } else {
+            KrakenDiagnostic.NOT_COMPARABLE.format(operator, left.displayName, right.displayName).takeUnless { left.isComparableWith(right) }
+        }
+    }
+
+    private fun isWholeOperand(parts: List<PsiElement>, operand: Int, outward: Int): Boolean {
+        if (operand !in parts.indices) return false
+        val beyond = parts.getOrNull(operand + outward) ?: return true
+        return when (beyond.node.elementType) {
+            KrakenTypes.AND_KW, KrakenTypes.OR_KW -> true
+            KrakenTypes.OP -> beyond.text in LOGICAL_OPERATORS
+            else -> false
         }
     }
 
@@ -94,7 +101,7 @@ class KrakenTypeMismatchInspection : LocalInspectionTool() {
      * cover yet, so checking them would mostly produce noise.
      */
     private fun checkArguments(call: KrakenFunctionCall, holder: ProblemsHolder) {
-        val signature = KrakenFunctionCatalog.find(call.functionName, call.argumentCount) ?: return
+        val signature = (call.target() as? KrakenFunctionTarget.Native)?.function ?: return
         val args = call.arguments
         for ((index, parameter) in signature.parameters.withIndex()) {
             val argument = args.getOrNull(index) ?: continue
@@ -107,12 +114,11 @@ class KrakenTypeMismatchInspection : LocalInspectionTool() {
             holder.registerProblem(
                 argument,
                 KrakenDiagnostic.INCOMPATIBLE_PARAMETER.format(
-                    actual.displayName(),
+                    actual.displayName,
                     index,
                     call.functionName,
-                    expected.displayName(),
+                    expected.displayName,
                 ),
-                ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
             )
         }
     }
@@ -129,5 +135,8 @@ class KrakenTypeMismatchInspection : LocalInspectionTool() {
 
         /** Operators judged by assignability rather than ordering. */
         val EQUALITY_NAMES = setOf("Equals", "NotEquals")
+
+        /** The only operators that bind looser than a comparison. */
+        val LOGICAL_OPERATORS = setOf("&&", "||")
     }
 }

@@ -1,16 +1,16 @@
 package com.kraken.plugin.psi
 
-import com.intellij.extapi.psi.ASTWrapperPsiElement
 import com.intellij.lang.ASTNode
 import com.intellij.navigation.ItemPresentation
-import com.intellij.openapi.util.text.StringUtil
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiReference
 
 /** Rule reference in `EntryPoint { "ruleName", ... }`. */
-class KrakenRuleRef(node: ASTNode) : ASTWrapperPsiElement(node) {
+class KrakenRuleRef(node: ASTNode) : KrakenQuotedNameElement(node) {
 
     val ruleName: String
-        get() = StringUtil.unquoteString(text)
+        get() = referencedName.orEmpty()
 
     override fun getReference(): PsiReference = KrakenRuleReference(this)
 
@@ -21,6 +21,13 @@ class KrakenRuleRef(node: ASTNode) : ASTWrapperPsiElement(node) {
     override fun getPresentation(): ItemPresentation = KrakenPresentations.of(
         this,
         KrakenPresentations.containerText(this, "\"$ruleName\""),
-        KrakenPresentations.RULE_ICON,
+        KrakenDeclaration.Kind.RULE.icon,
     )
+}
+
+class KrakenRuleReference(element: KrakenRuleRef) : KrakenNameReference<KrakenRuleRef>(element, KrakenPsiUtil.insideQuotes(0, element.textLength)) {
+
+    override fun declarationsNamed(name: String): List<PsiElement> = KrakenDeclarations.findRulesVisible(element, name)
+
+    override fun visibleDeclarations(): List<PsiNamedElement> = KrakenDeclarations.findRulesVisible(element)
 }

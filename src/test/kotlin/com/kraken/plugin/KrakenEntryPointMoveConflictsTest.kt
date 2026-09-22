@@ -166,6 +166,6 @@ class KrakenEntryPointMoveConflictsTest : KrakenMoveTestCase() {
         val broken = KrakenMoveConflicts.brokenBy(epIn(a, "Moving"), far)
         assertEquals(1, broken.incoming.size)
         assertEquals(1, broken.outgoing.size)
-        assertEquals(2, broken.total)
+        assertEquals(2, broken.incoming.size + broken.outgoing.size)
     }
 }
