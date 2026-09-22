@@ -2,8 +2,8 @@ package com.kraken.plugin
 
 import com.intellij.navigation.NavigationItem
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiPolyVariantReference
-import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.navigation.KrakenReferencesCodeVisionProvider
 import com.kraken.plugin.psi.KrakenEntryPointDecl
@@ -29,8 +29,6 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
     private fun labelsOf(targets: List<PsiElement>): List<String> = targets.map { (it as NavigationItem).presentation }
         .map { "${it?.presentableText} @ ${it?.locationString}" }
         .sorted()
-
-    private inline fun <reified T : PsiElement> allOf(file: PsiElement): List<T> = PsiTreeUtil.findChildrenOfType(file, T::class.java).toList()
 
     fun testEachEntryPointItemResolvesToItsOwnRule() {
         val file = myFixture.configureByText(
@@ -199,7 +197,7 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
      * Declaration → usages goes through the platform's usages popup, fed by
      * `ReferencesSearch`, and the "N usages" inlay counts the same thing.
      */
-    private fun usageCountOf(declaration: PsiElement): Int = myFixture.findUsages(declaration as com.intellij.psi.PsiNamedElement).size
+    private fun usageCountOf(declaration: PsiElement): Int = myFixture.findUsages(declaration as PsiNamedElement).size
 
     private fun codeVisionHintOf(declaration: PsiElement): String? = KrakenReferencesCodeVisionProvider().getHint(declaration, declaration.containingFile)
 

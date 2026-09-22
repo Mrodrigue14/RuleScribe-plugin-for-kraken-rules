@@ -1,7 +1,6 @@
 package com.kraken.plugin
 
 import com.intellij.codeInsight.completion.CompletionType
-import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.inspection.KrakenUnresolvedRuleRefInspection
 import com.kraken.plugin.psi.KrakenEntryPointDecl
@@ -43,11 +42,7 @@ class KrakenEntryPointRefTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        val highlights = myFixture.doHighlighting()
-        assertTrue(
-            "Expected 'Unknown entry point' problem, got: ${highlights.map { it.description }}",
-            highlights.any { it.description == "[kve002] Included entry point 'Missing' does not exist." },
-        )
+        assertContainsElements(myFixture.problemDescriptions(), "[kve002] Included entry point 'Missing' does not exist.")
     }
 
     fun testCompletionSuggestsOtherEntryPointsAndExcludesListed() {
@@ -125,7 +120,7 @@ class KrakenDeclarationToUsagesTest : BasePlatformTestCase() {
             """.trimIndent(),
         )
 
-        val declaration = PsiTreeUtil.findChildrenOfType(myFixture.file, KrakenRuleDecl::class.java).first()
+        val declaration = allOf<KrakenRuleDecl>(myFixture.file).first()
         val usages = myFixture.findUsages(declaration)
         assertEquals(1, usages.size)
         assertEquals("eps.rules", usages.first().file?.name)
@@ -148,7 +143,7 @@ class KrakenDeclarationToUsagesTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        val declaration = PsiTreeUtil.findChildrenOfType(myFixture.file, KrakenRuleDecl::class.java).first()
+        val declaration = allOf<KrakenRuleDecl>(myFixture.file).first()
         val usages = myFixture.findUsages(declaration)
         assertEquals("Expected exactly one usage, got $usages", 1, usages.size)
     }

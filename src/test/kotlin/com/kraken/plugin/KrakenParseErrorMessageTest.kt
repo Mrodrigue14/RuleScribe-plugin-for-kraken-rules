@@ -11,8 +11,6 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
  */
 class KrakenParseErrorMessageTest : BasePlatformTestCase() {
 
-    private fun errors(source: String): List<String> = parseErrors(myFixture.configureByText("err.rules", source))
-
     private val brokenExpression = """
         Rule "R" On Policy.state {
             Assert Round(limit] > 0
@@ -21,7 +19,7 @@ class KrakenParseErrorMessageTest : BasePlatformTestCase() {
 
     /** The class name has no place in an error message. */
     fun testTokenNamesCarryNoClassPrefix() {
-        val message = errors(brokenExpression).first()
+        val message = myFixture.parseErrorsOf(brokenExpression).first()
         assertFalse(
             "\"KrakenTokenType.\" must not appear: $message",
             message.contains("KrakenTokenType"),
@@ -33,7 +31,7 @@ class KrakenParseErrorMessageTest : BasePlatformTestCase() {
      * the message triples in length.
      */
     fun testBinaryOperatorsAreReportedAsOneGroup() {
-        val message = errors(brokenExpression).first()
+        val message = myFixture.parseErrorsOf(brokenExpression).first()
         assertTrue("operators must be grouped: $message", message.contains("<operator>"))
         for (operator in listOf("instanceof", "satisfies", "Matches")) {
             assertFalse(
@@ -48,13 +46,13 @@ class KrakenParseErrorMessageTest : BasePlatformTestCase() {
      * from bringing back messages over 400 characters.
      */
     fun testMessagesStayReadableInLength() {
-        for (message in errors(brokenExpression)) {
+        for (message in myFixture.parseErrorsOf(brokenExpression)) {
             assertTrue("message too long (${message.length}): $message", message.length < 150)
         }
     }
 
     /** The message still names what it found, not only what it expected. */
     fun testMessageStillNamesTheOffendingToken() {
-        assertTrue(errors(brokenExpression).first().contains("got ']'"))
+        assertTrue(myFixture.parseErrorsOf(brokenExpression).first().contains("got ']'"))
     }
 }

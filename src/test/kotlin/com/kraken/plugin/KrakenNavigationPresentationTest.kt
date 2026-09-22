@@ -1,5 +1,6 @@
 package com.kraken.plugin
 
+import com.intellij.navigation.ItemPresentation
 import com.intellij.navigation.NavigationItem
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
@@ -14,7 +15,7 @@ import com.kraken.plugin.psi.KrakenRuleDecl
  * Without a presentation the platform shows raw text: identical entries with no file.
  * These tests check that each target has distinguishing text and its location. The
  * gutter icon goes through `NavigationGutterIconBuilder.setTargets`, so it renders these
- * [com.intellij.navigation.ItemPresentation]s.
+ * [ItemPresentation]s.
  */
 class KrakenNavigationPresentationTest : BasePlatformTestCase() {
 
@@ -138,9 +139,9 @@ class KrakenNavigationPresentationTest : BasePlatformTestCase() {
             """.trimIndent(),
         )
 
-        val rule = com.intellij.psi.util.PsiTreeUtil
+        val rule = PsiTreeUtil
             .findChildOfType(file, KrakenRuleDecl::class.java)!!
-        val entryPoint = com.intellij.psi.util.PsiTreeUtil
+        val entryPoint = PsiTreeUtil
             .findChildOfType(file, KrakenEntryPointDecl::class.java)!!
 
         assertEquals("\"A rule\"", presentationOf(rule)?.presentableText)

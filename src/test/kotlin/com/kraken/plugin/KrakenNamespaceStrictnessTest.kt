@@ -36,12 +36,7 @@ class KrakenNamespaceStrictnessTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        val highlights = myFixture.doHighlighting()
-        assertTrue(
-            "Rule referenced only from a blind namespace must be unused, got: " +
-                highlights.map { it.description },
-            highlights.any { it.description?.startsWith("Rule 'Hidden elsewhere' is not referenced") == true },
-        )
+        myFixture.assertReported("Rule 'Hidden elsewhere' is not referenced")
     }
 
     fun testNoDeclarationToUsageNavigationAcrossBlindNamespace() {
@@ -123,10 +118,6 @@ class KrakenNamespaceStrictnessTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        val highlights = myFixture.doHighlighting()
-        assertFalse(
-            "Rule referenced from an including namespace must NOT be unused",
-            highlights.any { it.description?.startsWith("Rule 'Base rule' is not referenced") == true },
-        )
+        myFixture.assertNotReported("Rule 'Base rule' is not referenced")
     }
 }

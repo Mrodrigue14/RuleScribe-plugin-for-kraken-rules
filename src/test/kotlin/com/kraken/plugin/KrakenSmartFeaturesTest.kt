@@ -1,7 +1,6 @@
 package com.kraken.plugin
 
 import com.intellij.codeInsight.completion.CompletionType
-import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.documentation.KrakenDocumentationProvider
 import com.kraken.plugin.inspection.KrakenDuplicateRuleInspection
@@ -67,11 +66,7 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        val highlights = myFixture.doHighlighting()
-        assertTrue(
-            "Expected unknown context problem, got: ${highlights.map { it.description }}",
-            highlights.any { it.description == "[kvr027] Missing context definition with name 'Nowhere'." },
-        )
+        assertContainsElements(myFixture.problemDescriptions(), "[kvr027] Missing context definition with name 'Nowhere'.")
     }
 
     fun testDuplicateRuleInspection() {
@@ -163,9 +158,8 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        val highlights = myFixture.doHighlighting()
-        assertTrue(highlights.any { it.description?.startsWith("Rule 'Dead' is not referenced") == true })
-        assertFalse(highlights.any { it.description?.startsWith("Rule 'Used' is not referenced") == true })
+        val unused = myFixture.problemDescriptions().filter { it.endsWith("is not referenced by any entry point that can see its namespace") }
+        assertEquals(listOf("Rule 'Dead' is not referenced by any entry point that can see its namespace"), unused)
     }
 
     fun testQuickDocumentationForRule() {
@@ -178,7 +172,7 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
             }
             """.trimIndent(),
         )
-        val rule = PsiTreeUtil.findChildrenOfType(myFixture.file, KrakenRuleDecl::class.java).first()
+        val rule = allOf<KrakenRuleDecl>(myFixture.file).first()
         val doc = KrakenDocumentationProvider().generateDoc(rule, null)
         assertNotNull(doc)
         assertTrue("Doc should contain the name: $doc", doc!!.contains("Documented"))
@@ -188,7 +182,7 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
     /** Keywords are case-insensitive, so a lowercase `on` must not leak into the target path. */
     fun testQuickDocumentationTargetOmitsLowercaseOn() {
         myFixture.configureByText("test.rules", "Rule \"Lower\" on Policy.state { Assert true }")
-        val rule = PsiTreeUtil.findChildrenOfType(myFixture.file, KrakenRuleDecl::class.java).first()
+        val rule = allOf<KrakenRuleDecl>(myFixture.file).first()
         val doc = KrakenDocumentationProvider().generateDoc(rule, null)!!
         assertTrue("Doc should show the bare target path: $doc", doc.contains("<b>On</b> Policy.state"))
     }
