@@ -18,11 +18,12 @@ object KrakenPsiUtil {
         .toList()
 
     /** First identifier token among [node]'s children after [keyword]. */
-    fun firstIdAfter(node: ASTNode, keyword: IElementType): ASTNode? {
-        var child = node.findChildByType(keyword)?.treeNext
-        while (child != null && child.elementType !in ID_TOKENS) child = child.treeNext
-        return child
-    }
+    fun firstIdAfter(node: ASTNode, keyword: IElementType): ASTNode? = firstIdFrom(node.findChildByType(keyword)?.treeNext)
+
+    /** First identifier token among [node]'s children after the first of [keywords]. */
+    fun firstIdAfter(node: ASTNode, keywords: TokenSet): ASTNode? = firstIdFrom(node.findChildByType(keywords)?.treeNext)
+
+    private fun firstIdFrom(start: ASTNode?): ASTNode? = generateSequence(start) { it.treeNext }.firstOrNull { it.elementType in ID_TOKENS }
 
     /** Replaces a string's content, keeping its original quote character. */
     fun replaceQuoted(leaf: ASTNode?, content: String) {

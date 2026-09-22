@@ -1,8 +1,9 @@
 package com.kraken.plugin.psi
 
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiWhiteSpace
+import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.psi.util.siblings
 import com.kraken.plugin.parser.KrakenTypes
 
 /**
@@ -18,7 +19,7 @@ import com.kraken.plugin.parser.KrakenTypes
  *
  * `AstBuilder` adds the variables declared in the expression on top (`set x to …` and
  * the iteration variables of `for`, `every`, `some`). They shadow fields, hence the
- * order in [resolve].
+ * order of [declarationsInScope].
  *
  * Without type inference this stops where the engine goes on: it follows `a.b.c` while
  * each link denotes a known context and gives up as soon as an expression type is
@@ -26,23 +27,35 @@ import com.kraken.plugin.parser.KrakenTypes
  */
 object KrakenScopeResolver {
 
+    /** Declaration denoted by [name] at [reference], or null. */
+    fun resolve(reference: PsiElement, name: String): PsiElement? = declarationsInScope(reference).firstOrNull { it.name == name }?.element
+
+    /** What [resolve] would accept here, for completion. */
+    fun visibleNames(reference: PsiElement): List<String> = declarationsInScope(reference).map { it.name }.distinct().toList()
+
+    private class Named(val name: String, val element: PsiElement)
+
     /**
-     * Declaration denoted by [name] at [reference], or null.
-     *
-     * Engine order: expression variables shadow fields of the target context, which shadow
-     * context names.
+     * Every name visible at [reference], innermost scope first: expression variables, then
+     * the parameters of the enclosing function, the fields of a filtered element, those of
+     * the `On` target context, and finally context names.
      */
-    fun resolve(reference: PsiElement, name: String): PsiElement? {
-        declaredVariable(reference, name)?.let { return it }
-        functionParameter(reference, name)?.let { return it }
-        filterContext(reference)?.let { item ->
-            findField(reference, item, name)?.let { return it }
+    private fun declarationsInScope(reference: PsiElement): Sequence<Named> = sequence {
+        for (scope in variableScopes(reference)) {
+            variableLeaf(scope)?.let { yield(Named(it.text, it)) }
         }
-        targetContextName(reference)?.let { context ->
-            findField(reference, context, name)?.let { return it }
+        enclosingFunction(reference)?.parameters?.forEach { parameter ->
+            parameter.name?.let { yield(Named(it, parameter)) }
         }
-        return KrakenContexts.findContextDecl(reference.containingFile, name)
+        filterContext(reference)?.let { yieldAll(membersOf(reference, it)) }
+        targetContextName(reference)?.let { yieldAll(membersOf(reference, it)) }
+        for (context in KrakenContexts.findContextsVisible(reference.containingFile)) {
+            context.name?.let { yield(Named(it, context)) }
+        }
     }
+
+    private fun membersOf(reference: PsiElement, context: String): Sequence<Named> = KrakenContexts.contextMembers(reference.containingFile, context)
+        .mapNotNull { member -> member.name?.let { Named(it, member) } }
 
     /**
      * Context of the filtered element when [reference] is inside a `collection[…]`
@@ -63,15 +76,7 @@ object KrakenScopeResolver {
         return contextOfFilter(filter) == null
     }
 
-    private fun enclosingFilter(reference: PsiElement): PsiElement? {
-        var current: PsiElement? = reference
-        while (current != null && current !is KrakenRuleDecl && current !is KrakenFunctionDecl) {
-            val parent = current.parent
-            if (parent?.node?.elementType == KrakenTypes.BRACKET_ACCESS) return parent
-            current = parent
-        }
-        return null
-    }
+    private fun enclosingFilter(reference: PsiElement): PsiElement? = expressionAncestors(reference).firstOrNull { it.node?.elementType == KrakenTypes.BRACKET_ACCESS }
 
     private fun contextOfFilter(filter: PsiElement): String? {
         val chain = filter.parent?.takeIf { it.node.elementType == KrakenTypes.POSTFIX_EXPR } ?: return null
@@ -99,25 +104,11 @@ object KrakenScopeResolver {
     }
 
     /**
-     * Parameter of the enclosing `Function`. The engine builds a dedicated scope for a
-     * function body (`ScopeBuilder.buildFunctionScope`) whose symbols are its parameters,
-     * with no target context.
+     * The engine builds a dedicated scope for a function body
+     * (`ScopeBuilder.buildFunctionScope`) whose symbols are its parameters, with no target
+     * context.
      */
-    private fun functionParameter(reference: PsiElement, name: String): PsiElement? = enclosingFunction(reference)?.parameterNamed(name)
-
     private fun enclosingFunction(reference: PsiElement): KrakenFunctionDecl? = PsiTreeUtil.getParentOfType(reference, KrakenFunctionDecl::class.java, false)
-
-    /** What [resolve] would accept here, for completion. */
-    fun visibleNames(reference: PsiElement): List<String> {
-        val names = LinkedHashSet<String>()
-        variableScopes(reference).mapNotNullTo(names) { variableNameOf(it) }
-        enclosingFunction(reference)?.parameters?.mapNotNullTo(names) { it.name }
-        targetContextName(reference)?.let {
-            names.addAll(KrakenContexts.contextFieldNames(reference.containingFile, it))
-        }
-        names.addAll(KrakenContexts.findContextNamesVisible(reference.containingFile))
-        return names.toList()
-    }
 
     /**
      * Context denoted by the head of an access chain, to resolve the next segment. `Policy`
@@ -148,54 +139,28 @@ object KrakenScopeResolver {
         null -> null
     }
 
+    /** [reference] and its ancestors, up to the enclosing rule or function excluded. */
+    private fun expressionAncestors(reference: PsiElement): Sequence<PsiElement> = generateSequence(reference) { it.parent }
+        .takeWhile { it !is KrakenRuleDecl && it !is KrakenFunctionDecl }
+
     /**
-     * Variable declared by an enclosing `set`, `for` or quantifier. A variable is only
-     * visible inside the expression that declares it, which the tree already encodes.
+     * Enclosing `for` and quantifier expressions, and each `set x to …` declared earlier in
+     * an enclosing block, innermost first. A variable is only visible inside the expression
+     * that declares it, which the tree already encodes.
      */
-    private fun declaredVariable(reference: PsiElement, name: String): PsiElement? = variableScopes(reference).firstOrNull { variableNameOf(it) == name }?.let { scope ->
-        variableLeaf(scope)
+    private fun variableScopes(reference: PsiElement): Sequence<PsiElement> = expressionAncestors(reference).flatMap { ancestor ->
+        val type = ancestor.node?.elementType
+        val declaring = if (type == KrakenTypes.FOR_EXPR || type == KrakenTypes.QUANTIFIER_EXPR) sequenceOf(ancestor) else emptySequence()
+        declaring + ancestor.siblings(forward = false, withSelf = false).filter { it.node?.elementType == KrakenTypes.SET_VAR }
     }
 
-    private fun variableScopes(reference: PsiElement): List<PsiElement> {
-        val scopes = mutableListOf<PsiElement>()
-        var current: PsiElement? = reference
-        while (current != null && current !is KrakenRuleDecl && current !is KrakenFunctionDecl) {
-            val type = current.node?.elementType
-            if (type == KrakenTypes.FOR_EXPR || type == KrakenTypes.QUANTIFIER_EXPR) {
-                scopes += current
-            }
-            // A preceding `set x to …` in the same block stays visible afterwards.
-            var sibling = current.prevSibling
-            while (sibling != null) {
-                if (sibling.node?.elementType == KrakenTypes.SET_VAR) scopes += sibling
-                sibling = sibling.prevSibling
-            }
-            current = current.parent
-        }
-        return scopes
-    }
+    /** The variable a `set`, `for` or quantifier declares: the first identifier after its keyword. */
+    private fun variableLeaf(scope: PsiElement): PsiElement? = KrakenPsiUtil.firstIdAfter(scope.node, VARIABLE_KEYWORDS)?.psi
 
-    /** Keywords introducing an expression variable, whose name is the first identifier after them. */
-    private val VARIABLE_KEYWORDS = setOf(
+    private val VARIABLE_KEYWORDS = TokenSet.create(
         KrakenTypes.SET_KW,
         KrakenTypes.FOR_KW,
         KrakenTypes.EVERY_KW,
         KrakenTypes.SOME_KW,
     )
-
-    private fun variableLeaf(scope: PsiElement): PsiElement? {
-        var child = scope.node.firstChildNode
-        var seenKeyword = false
-        while (child != null) {
-            if (child.elementType in VARIABLE_KEYWORDS) {
-                seenKeyword = true
-            } else if (seenKeyword && child.psi !is PsiWhiteSpace) {
-                return child.psi
-            }
-            child = child.treeNext
-        }
-        return null
-    }
-
-    private fun variableNameOf(scope: PsiElement): String? = variableLeaf(scope)?.text?.trim()?.takeIf { it.isNotEmpty() }
 }

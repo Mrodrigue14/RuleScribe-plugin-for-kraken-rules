@@ -6,7 +6,6 @@ import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.psi.PsiElement
 import com.kraken.plugin.psi.KrakenContextDecl
 import com.kraken.plugin.psi.KrakenRefExpr
-import com.kraken.plugin.psi.KrakenScopeResolver
 
 /**
  * Visually separates a context name from a field or variable in a rule body.
@@ -26,7 +25,7 @@ class KrakenReferenceAnnotator : Annotator {
         val name = element.referenceName
         if (name.isEmpty()) return
 
-        val target = KrakenScopeResolver.resolve(element, name) ?: return
+        val target = element.reference?.resolve() ?: return
         val attribute = if (target is KrakenContextDecl) {
             KrakenSyntaxHighlighter.CONTEXT_REFERENCE
         } else {

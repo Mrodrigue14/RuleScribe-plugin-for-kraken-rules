@@ -6,9 +6,7 @@ import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.util.PsiTreeUtil
-import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenContexts
-import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenFunctionDecl
 import com.kraken.plugin.psi.KrakenRefExpr
 import com.kraken.plugin.psi.KrakenScopeResolver
@@ -27,8 +25,9 @@ import com.kraken.plugin.psi.KrakenScopeResolver
  *   scope (`ScopeBuilder`) and the DSL never declares;
  * - filter predicates on an element of unknown type, such as
  *   `context.additional.vehicles[model = …]`: the scope is undetermined and the engine
- *   accepts anything there (`Scope.isDynamic`);
- * - function call heads, which no inspection validates (see ROADMAP.md).
+ *   accepts anything there (`Scope.isDynamic`).
+ *
+ * Function call heads are not `KrakenRefExpr`s in the grammar, so they never reach it.
  *
  * This lets through errors the engine catches, but it must never underline valid code.
  */
@@ -39,7 +38,6 @@ class KrakenUnresolvedIdentifierInspection : LocalInspectionTool() {
             if (element !is KrakenRefExpr) return
             val name = element.referenceName
             if (name.isEmpty() || name == EXTERNAL_CONTEXT) return
-            if (isCallHead(element)) return
 
             // Outside a rule or function there is no reference scope. Naming an `On` target is not
             // enough: the context must exist, or no field is known and everything would look
@@ -66,25 +64,6 @@ class KrakenUnresolvedIdentifierInspection : LocalInspectionTool() {
         val target = KrakenScopeResolver.targetContextName(element) ?: return false
         return KrakenContexts.contextExists(element.containingFile, target)
     }
-
-    /**
-     * `Round(x)`: `Round` is a call head, not a reference to resolve.
-     *
-     * Qodana reports this expression as always false, which would mean every call head gets
-     * reported. It does not: `KrakenTypes` is generated into `src/main/gen`, which the
-     * Qodana container never receives (it copies the project minus what `.gitignore`
-     * excludes), and an unresolved symbol is enough for that conclusion, as with the
-     * `KotlinUnreachableCode` exclusions in `qodana.yaml`. Three tests in
-     * `KrakenUnresolvedIdentifierTest` pin the real behaviour.
-     *
-     * Suppressed here rather than for the whole rule: elsewhere a constant condition is
-     * still a defect worth seeing.
-     */
-    @Suppress("KotlinConstantConditions")
-    private fun isCallHead(element: KrakenRefExpr): Boolean = PsiTreeUtil.getParentOfType(element, KrakenFunctionCall::class.java, false)
-        ?.node?.findChildByType(KrakenTypes.CALL_ARGS)
-        ?.let { element.textRange.endOffset <= it.startOffset }
-        ?: false
 
     private companion object {
         /**

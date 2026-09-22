@@ -6,7 +6,7 @@ import com.kraken.plugin.lang.declarations
 /** Context declarations visible from a file, their members, and `Is` inheritance. */
 object KrakenContexts {
 
-    fun findContextNamesVisible(from: PsiFile?): List<String> = visibleContexts(from).mapNotNull { it.name }.distinct()
+    fun findContextNamesVisible(from: PsiFile?): List<String> = findContextsVisible(from).mapNotNull { it.name }.distinct()
 
     /**
      * Every visible declaration of this context name.
@@ -15,7 +15,7 @@ object KrakenContexts {
      * several products, or test fixtures next to the code). Keeping only one, by file
      * order, breaks resolution of fields that exist only in the others.
      */
-    fun findContextDecls(from: PsiFile?, name: String): List<KrakenContextDecl> = visibleContexts(from).filter { it.name == name }
+    fun findContextDecls(from: PsiFile?, name: String): List<KrakenContextDecl> = findContextsVisible(from).filter { it.name == name }
 
     fun findContextDecl(from: PsiFile?, name: String): KrakenContextDecl? = findContextDecls(from, name).firstOrNull()
 
@@ -40,5 +40,5 @@ object KrakenContexts {
         }
     }
 
-    private fun visibleContexts(from: PsiFile?): List<KrakenContextDecl> = KrakenNamespaces.visibleFiles(from).flatMap { it.declarations<KrakenContextDecl>() }
+    fun findContextsVisible(from: PsiFile?): List<KrakenContextDecl> = KrakenNamespaces.visibleFiles(from).flatMap { it.declarations<KrakenContextDecl>() }
 }

@@ -186,6 +186,11 @@ class KrakenScopeResolverTest : KrakenRuleBodyTestCase() {
         assertEquals(KrakenTypes.FIELD_DECL, target!!.node.elementType)
     }
 
+    fun testCompletionInAFilterOffersTheItemFields() {
+        configureRule("Assert Count(Coverage[limit > 0]) = 1")
+        assertTrue(KrakenScopeResolver.visibleNames(refNamed("limit")).contains("inheritedCd"))
+    }
+
     fun testNestedFilterUsesTheNearestBracket() {
         configureRule("Assert Count(AddressInfo[postalCode = Count(Coverage[limit > 0])]) = 1")
         assertNotNull("postalCode vient d'AddressInfo", resolve("postalCode"))

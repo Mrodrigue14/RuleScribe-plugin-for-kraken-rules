@@ -27,10 +27,7 @@ class KrakenUnresolvedIdentifierTest : KrakenRuleBodyTestCase() {
 
     private fun problems(body: String): List<String> = problemsIn(body, KrakenUnresolvedIdentifierInspection()).filter { it.startsWith("[kvr049] Reference ") }
 
-    /**
-     * A called name is not a reference to resolve. `isCallHead` excludes it, and Qodana
-     * reported that condition as always false, so this pins the real behaviour.
-     */
+    /** A called name is not a reference to resolve. */
     fun testNativeCallHeadIsNotReported() {
         assertEquals(emptyList<String>(), problems("Assert Round(Policy.policyCd) > 0"))
     }
