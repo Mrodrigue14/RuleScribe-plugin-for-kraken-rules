@@ -7,6 +7,7 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.kraken.plugin.inspection.KrakenUnusedRuleInspection
 import com.kraken.plugin.psi.KrakenNamespaces
 import com.kraken.plugin.psi.KrakenRuleDecl
+import com.kraken.plugin.psi.KrakenRuleRef
 
 /**
  * Strict namespace semantics: a reference in a namespace that cannot see the
@@ -92,6 +93,37 @@ class KrakenNamespaceStrictnessTest : BasePlatformTestCase() {
         PsiDocumentManager.getInstance(project).commitAllDocuments()
 
         assertTrue(KrakenNamespaces.sees(myFixture.file, declarations))
+    }
+
+    /** The cached namespace model sees a file added after it was built. */
+    fun testFileAddedLaterBecomesVisible() {
+        myFixture.configureByText(
+            "policy.rules",
+            """
+            Namespace Policy
+            Include Base
+
+            EntryPoint "Uses shared" {
+                "Shared"
+            }
+            """.trimIndent(),
+        )
+        val item = allOf<KrakenRuleRef>(myFixture.file).single()
+        assertNull(item.reference.resolve())
+
+        myFixture.addFileToProject(
+            "base.rules",
+            """
+            Namespace Base
+
+            Rule "Shared" On Widget.name {
+                Set Hidden
+            }
+            """.trimIndent(),
+        )
+        PsiDocumentManager.getInstance(project).commitAllDocuments()
+
+        assertNotNull(item.reference.resolve())
     }
 
     fun testVisibleReferenceStillCounts() {
