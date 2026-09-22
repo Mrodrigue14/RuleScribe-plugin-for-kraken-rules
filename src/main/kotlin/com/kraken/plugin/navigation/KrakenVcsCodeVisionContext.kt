@@ -4,6 +4,7 @@ import com.intellij.codeInsight.hints.VcsCodeVisionCurlyBracketLanguageContext
 import com.intellij.openapi.editor.Editor
 import com.intellij.psi.PsiElement
 import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.psi.KrakenContextDecl
 import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.psi.KrakenFunctionDecl
 import com.kraken.plugin.psi.KrakenRuleDecl
@@ -34,7 +35,7 @@ class KrakenVcsCodeVisionContext : VcsCodeVisionCurlyBracketLanguageContext() {
     override fun isAccepted(element: PsiElement): Boolean = element is KrakenRuleDecl ||
         element is KrakenEntryPointDecl ||
         element is KrakenFunctionDecl ||
-        element.node?.elementType == KrakenTypes.CONTEXT_DECL
+        element is KrakenContextDecl
 
     override fun isRBrace(element: PsiElement): Boolean = element.node?.elementType == KrakenTypes.RBRACE
 

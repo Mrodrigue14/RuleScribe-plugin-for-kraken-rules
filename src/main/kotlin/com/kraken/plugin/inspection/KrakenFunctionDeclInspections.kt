@@ -95,11 +95,11 @@ class KrakenFunctionTypeUnionGenericMixInspection : LocalInspectionTool() {
                 function.returnType,
                 RETURN_TYPE_UNION_GENERIC_MIX.of(function),
             )
-            for (parameter in function.parameterList) {
+            for (parameter in function.parameters) {
                 report(
                     holder,
                     parameter.typeElement,
-                    parameter.type,
+                    parameter.typeName,
                     PARAMETER_TYPE_UNION_GENERIC_MIX.of(function),
                 )
             }
@@ -134,7 +134,7 @@ class KrakenFunctionParameterDuplicateInspection : LocalInspectionTool() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor = object : KrakenFunctionDeclVisitor() {
         override fun check(function: KrakenFunctionDecl) {
             if (!function.hasBody()) return
-            for (duplicate in function.parameterList.afterFirstOccurrenceOf { it.name }) {
+            for (duplicate in function.parameters.afterFirstOccurrenceOf { it.name }) {
                 val element = duplicate.nameElement ?: continue
                 holder.registerProblem(
                     element,

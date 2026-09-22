@@ -64,7 +64,7 @@ class KrakenUnresolvedIdentifierInspection : LocalInspectionTool() {
 
     private fun hasResolvableTarget(element: PsiElement): Boolean {
         val target = KrakenScopeResolver.targetContextName(element) ?: return false
-        return KrakenContexts.findContextDecl(element.containingFile, target) != null
+        return KrakenContexts.contextExists(element.containingFile, target)
     }
 
     /**

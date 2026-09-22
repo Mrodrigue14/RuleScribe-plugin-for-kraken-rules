@@ -4,10 +4,13 @@ import com.intellij.psi.PsiElement
 import com.kraken.plugin.functions.KrakenFunctionCatalog
 import com.kraken.plugin.parser.KrakenLexer
 import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.psi.KrakenChildDecl
+import com.kraken.plugin.psi.KrakenContextMember
+import com.kraken.plugin.psi.KrakenFieldDecl
 import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenFunctionDecl
+import com.kraken.plugin.psi.KrakenFunctionParam
 import com.kraken.plugin.psi.KrakenPathSegment
-import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenRefExpr
 
 /**
@@ -136,34 +139,19 @@ object KrakenTypeInference {
      * parameter. Expression variables (`set`, `for`) are not typed here, since that would
      * require following the source expression.
      */
-    fun typeOfDeclaration(declaration: PsiElement?): KrakenType {
-        val node = declaration?.node ?: return KrakenType.Unknown
-        return when (node.elementType) {
-            KrakenTypes.FIELD_DECL -> fieldType(declaration)
-
-            // `Child Address` and `Child* Address`: the name is the context, and the star makes it
-            // a collection.
-            KrakenTypes.CHILD_DECL -> {
-                val name = KrakenPsiUtil.identifiersOf(declaration.node).firstOrNull() ?: return KrakenType.Unknown
-                val context = KrakenType.Context(name)
-                if (node.findChildByType(KrakenTypes.STAR) != null) KrakenType.Array(context) else context
-            }
-
-            KrakenTypes.FUNCTION_PARAM ->
-                KrakenPsiUtil.identifiersOf(declaration.node).firstOrNull()
-                    ?.let { KrakenType.fromDslName(it) }
-                    ?: KrakenType.Unknown
-
-            else -> KrakenType.Unknown
-        }
+    fun typeOfDeclaration(declaration: PsiElement?): KrakenType = when (declaration) {
+        is KrakenContextMember -> memberType(declaration)
+        is KrakenFunctionParam -> declaration.typeName?.let { KrakenType.fromDslName(it) } ?: KrakenType.Unknown
+        else -> KrakenType.Unknown
     }
 
-    /** `Money limitAmount` → Money; `Coverage* items` → Coverage[]. */
-    private fun fieldType(field: PsiElement): KrakenType {
-        val names = KrakenPsiUtil.identifiersOf(field.node)
-        if (names.size < 2) return KrakenType.Unknown
-        val base = KrakenType.fromDslName(names.first())
-        return if (field.node.findChildByType(KrakenTypes.STAR) != null) KrakenType.Array(base) else base
+    /** `Money limitAmount` → Money; `Child* Vehicle` → Vehicle[]. */
+    private fun memberType(member: KrakenContextMember): KrakenType {
+        val base = when (member) {
+            is KrakenFieldDecl -> member.typeName?.let { KrakenType.fromDslName(it) }
+            is KrakenChildDecl -> member.name?.let { KrakenType.Context(it) }
+        } ?: return KrakenType.Unknown
+        return if (member.isCollection) KrakenType.Array(base) else base
     }
 
     private fun singleExpressionIn(group: PsiElement): PsiElement? = significantChildren(group).singleOrNull { it.node.elementType == KrakenTypes.EXPRESSION }

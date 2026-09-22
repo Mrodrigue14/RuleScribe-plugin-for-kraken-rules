@@ -4,7 +4,7 @@ import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.lang.annotation.Annotator
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.psi.PsiElement
-import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.psi.KrakenContextDecl
 import com.kraken.plugin.psi.KrakenRefExpr
 import com.kraken.plugin.psi.KrakenScopeResolver
 
@@ -27,7 +27,7 @@ class KrakenReferenceAnnotator : Annotator {
         if (name.isEmpty()) return
 
         val target = KrakenScopeResolver.resolve(element, name) ?: return
-        val attribute = if (target.node?.elementType == KrakenTypes.CONTEXT_DECL) {
+        val attribute = if (target is KrakenContextDecl) {
             KrakenSyntaxHighlighter.CONTEXT_REFERENCE
         } else {
             KrakenSyntaxHighlighter.FIELD_REFERENCE

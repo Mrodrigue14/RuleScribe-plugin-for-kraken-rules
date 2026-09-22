@@ -12,6 +12,7 @@ import com.intellij.ide.util.treeView.smartTree.Sorter
 import com.intellij.ide.util.treeView.smartTree.TreeElement
 import com.intellij.lang.PsiStructureViewFactory
 import com.intellij.navigation.ItemPresentation
+import com.intellij.navigation.NavigationItem
 import com.intellij.openapi.editor.Editor
 import com.intellij.pom.Navigatable
 import com.intellij.psi.PsiElement
@@ -19,8 +20,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
 import com.kraken.plugin.lang.KrakenFile
 import com.kraken.plugin.lang.KrakenIcons
-import com.kraken.plugin.parser.KrakenTypes
-import com.kraken.plugin.psi.KrakenContexts
+import com.kraken.plugin.psi.KrakenContextDecl
 import com.kraken.plugin.psi.KrakenDimensionDecl
 import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.psi.KrakenFunctionDecl
@@ -79,16 +79,7 @@ class KrakenStructureViewElement(private val element: PsiElement) :
 
     private fun presentableText(): String = when (element) {
         is KrakenFile -> element.name
-        else -> declaredName() ?: kind?.label ?: element.text.take(30)
-    }
-
-    private fun declaredName(): String? = when (kind) {
-        Kind.RULE -> (element as KrakenRuleDecl).name
-        Kind.ENTRY_POINT -> (element as KrakenEntryPointDecl).name
-        Kind.DIMENSION -> (element as KrakenDimensionDecl).dimensionName
-        Kind.CONTEXT -> KrakenContexts.contextName(element)
-        Kind.FUNCTION -> (element as KrakenFunctionDecl).name
-        null -> null
+        else -> (element as? NavigationItem)?.name ?: kind?.label ?: element.text.take(30)
     }
 
     /** The declarations the structure view lists. */
@@ -106,7 +97,7 @@ class KrakenStructureViewElement(private val element: PsiElement) :
             element is KrakenEntryPointDecl -> Kind.ENTRY_POINT
             element is KrakenDimensionDecl -> Kind.DIMENSION
             element is KrakenFunctionDecl -> Kind.FUNCTION
-            element.node?.elementType == KrakenTypes.CONTEXT_DECL -> Kind.CONTEXT
+            element is KrakenContextDecl -> Kind.CONTEXT
             else -> null
         }
     }

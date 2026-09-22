@@ -164,7 +164,7 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
             result.addElement(
                 LookupElementBuilder.create(name)
                     .withIcon(KrakenPresentations.FUNCTION_ICON)
-                    .withTailText("(${declaration.parameters.joinToString(", ")})", true)
+                    .withTailText("(${declaration.parameterText()})", true)
                     .withTypeText(declaration.returnType ?: declaration.containingFile.name, true)
                     .withInsertHandler(ParenthesesInsertHandler.getInstance(declaration.arity > 0)),
             )

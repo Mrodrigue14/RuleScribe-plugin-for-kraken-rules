@@ -17,11 +17,15 @@ import com.intellij.psi.tree.TokenSet
 import com.kraken.plugin.parser.KrakenLexer
 import com.kraken.plugin.parser.KrakenParser
 import com.kraken.plugin.parser.KrakenTypes
+import com.kraken.plugin.psi.KrakenChildDecl
+import com.kraken.plugin.psi.KrakenContextDecl
 import com.kraken.plugin.psi.KrakenDimensionDecl
 import com.kraken.plugin.psi.KrakenEntryPointDecl
 import com.kraken.plugin.psi.KrakenEpRef
+import com.kraken.plugin.psi.KrakenFieldDecl
 import com.kraken.plugin.psi.KrakenFunctionCall
 import com.kraken.plugin.psi.KrakenFunctionDecl
+import com.kraken.plugin.psi.KrakenFunctionParam
 import com.kraken.plugin.psi.KrakenPathSegment
 import com.kraken.plugin.psi.KrakenRefExpr
 import com.kraken.plugin.psi.KrakenRuleDecl
@@ -48,6 +52,10 @@ class KrakenParserDefinition : ParserDefinition {
         KrakenTypes.EP_REF -> KrakenEpRef(node)
         KrakenTypes.DIMENSION_DECL -> KrakenDimensionDecl(node)
         KrakenTypes.FUNCTION_DECL -> KrakenFunctionDecl(node)
+        KrakenTypes.FUNCTION_PARAM -> KrakenFunctionParam(node)
+        KrakenTypes.CONTEXT_DECL -> KrakenContextDecl(node)
+        KrakenTypes.FIELD_DECL -> KrakenFieldDecl(node)
+        KrakenTypes.CHILD_DECL -> KrakenChildDecl(node)
         KrakenTypes.FUNCTION_CALL -> KrakenFunctionCall(node)
         KrakenTypes.REF_EXPR -> KrakenRefExpr(node)
         KrakenTypes.PATH_SEGMENT -> KrakenPathSegment(node)

@@ -1,6 +1,5 @@
 package com.kraken.plugin.psi
 
-import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.util.PsiTreeUtil
@@ -112,7 +111,7 @@ object KrakenScopeResolver {
     fun visibleNames(reference: PsiElement): List<String> {
         val names = LinkedHashSet<String>()
         variableScopes(reference).mapNotNullTo(names) { variableNameOf(it) }
-        enclosingFunction(reference)?.parameterList?.mapNotNullTo(names) { it.name }
+        enclosingFunction(reference)?.parameters?.mapNotNullTo(names) { it.name }
         targetContextName(reference)?.let {
             names.addAll(KrakenContexts.contextFieldNames(reference.containingFile, it))
         }
@@ -129,29 +128,24 @@ object KrakenScopeResolver {
         targetContextName(reference)?.let { target ->
             contextOfField(reference, target, name)?.let { return it }
         }
-        if (KrakenContexts.findContextDecl(reference.containingFile, name) != null) return name
+        if (KrakenContexts.contextExists(reference.containingFile, name)) return name
         return null
     }
 
     fun targetContextName(element: PsiElement): String? = PsiTreeUtil.getParentOfType(element, KrakenRuleDecl::class.java, false)?.targetContextLeaf()?.text
 
     /** Declaration of [field] in [context], including fields inherited through `Is`. */
-    fun findField(from: PsiElement, context: String, field: String): PsiElement? = KrakenContexts.contextMembers(from.containingFile, context)
-        .firstOrNull { KrakenContexts.memberName(it) == field }
-        ?.psi
+    fun findField(from: PsiElement, context: String, field: String): KrakenContextMember? = KrakenContexts.contextMembers(from.containingFile, context).firstOrNull { it.name == field }
 
     /**
      * Context denoted by field [name] of [context], if any: `Child Address` and
      * `Address address` both denote Address, a scalar field denotes nothing. This is how an
      * `a.b.c` chain advances one link.
      */
-    fun contextOfField(from: PsiElement, context: String, name: String): String? {
-        val field = findField(from, context, name) ?: return null
-        // `Child Address`: the child name is the context name.
-        if (field.node.elementType == KrakenTypes.CHILD_DECL) return name
-        // `Address address`: the first identifier is the type.
-        val type = fieldDeclType(field.node) ?: return null
-        return type.takeIf { KrakenContexts.findContextDecl(from.containingFile, it) != null }
+    fun contextOfField(from: PsiElement, context: String, name: String): String? = when (val member = findField(from, context, name)) {
+        is KrakenChildDecl -> name
+        is KrakenFieldDecl -> member.typeName?.takeIf { KrakenContexts.contextExists(from.containingFile, it) }
+        null -> null
     }
 
     /**
@@ -204,6 +198,4 @@ object KrakenScopeResolver {
     }
 
     private fun variableNameOf(scope: PsiElement): String? = variableLeaf(scope)?.text?.trim()?.takeIf { it.isNotEmpty() }
-
-    private fun fieldDeclType(field: ASTNode): String? = KrakenPsiUtil.identifiersOf(field).takeIf { it.size >= 2 }?.first()
 }

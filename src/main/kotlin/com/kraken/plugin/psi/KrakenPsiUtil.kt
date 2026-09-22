@@ -2,7 +2,6 @@ package com.kraken.plugin.psi
 
 import com.intellij.lang.ASTNode
 import com.intellij.openapi.util.TextRange
-import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.impl.source.tree.LeafElement
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
@@ -11,26 +10,12 @@ import com.kraken.plugin.parser.KrakenTypes
 /** Reading and editing the tokens of a declaration, where the grammar leaves no dedicated PSI. */
 object KrakenPsiUtil {
 
-    /** Identifiers of a declaration, stopping before the `: …` navigation. */
-    fun identifiersOf(node: ASTNode): List<String> {
-        val names = mutableListOf<String>()
-        var child = node.firstChildNode
-        while (child != null) {
-            when {
-                child.elementType == KrakenTypes.COLON -> return names
-                child.elementType == KrakenTypes.ANNOTATION -> Unit
-                child.psi is PsiWhiteSpace -> Unit
-                child.elementType == KrakenTypes.STAR -> Unit
-                child.elementType == KrakenTypes.LBRACKET -> Unit
-                child.elementType == KrakenTypes.RBRACKET -> Unit
-                child.elementType == KrakenTypes.CHILD_KW -> Unit
-                child.elementType == KrakenTypes.EXTERNAL_KW -> Unit
-                else -> child.text.trim().takeIf { it.isNotEmpty() }?.let { names += it }
-            }
-            child = child.treeNext
-        }
-        return names
-    }
+    /** Identifier tokens among [node]'s children, up to [stop] excluded. */
+    fun identifiersBefore(node: ASTNode, stop: IElementType): List<String> = generateSequence(node.firstChildNode) { it.treeNext }
+        .takeWhile { it.elementType != stop }
+        .filter { it.elementType in ID_TOKENS }
+        .map { it.text }
+        .toList()
 
     /** First identifier token among [node]'s children after [keyword]. */
     fun firstIdAfter(node: ASTNode, keyword: IElementType): ASTNode? {

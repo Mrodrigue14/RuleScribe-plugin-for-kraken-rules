@@ -8,6 +8,5 @@ import com.kraken.plugin.parser.KrakenTypes
 /** `Dimension "name" : Type` declaration. */
 class KrakenDimensionDecl(node: ASTNode) : ASTWrapperPsiElement(node) {
 
-    val dimensionName: String?
-        get() = node.findChildByType(KrakenTypes.STRING)?.text?.let(StringUtil::unquoteString)
+    override fun getName(): String? = node.findChildByType(KrakenTypes.STRING)?.text?.let(StringUtil::unquoteString)
 }
