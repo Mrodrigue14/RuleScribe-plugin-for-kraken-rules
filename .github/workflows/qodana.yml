@@ -47,7 +47,7 @@ jobs:
       # action input. The blocking gate is CodeQL and the tests, required on `main`;
       # results stay visible under Security.
       - name: Qodana Scan
-        uses: JetBrains/qodana-action@v2026.2.1
+        uses: JetBrains/qodana-action@v2026.2.2
         with:
           upload-result: true
           post-pr-comment: false
