@@ -9,7 +9,7 @@ plugins {
     id("org.jetbrains.intellij.platform") version "2.19.0"
     id("org.jetbrains.grammarkit") version "2022.3.2.2"
     id("org.owasp.dependencycheck") version "12.2.2"
-    id("org.jetbrains.kotlinx.kover") version "0.9.9"
+    id("org.jetbrains.kotlinx.kover") version "0.9.11"
     id("org.cyclonedx.bom") version "3.4.1"
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
 }
