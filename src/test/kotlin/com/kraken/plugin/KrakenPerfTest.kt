@@ -92,7 +92,7 @@ class KrakenPerfTest : BasePlatformTestCase() {
             "probes.rules",
             "Namespace Ns0\n\n" + (0 until 50).joinToString("\n") { "Rule \"Probe $it\" On Entity.id { Set Mandatory }" },
         )
-        val referenced = KrakenDeclarations.findRuleVisible(probes, "Rule 0_0")!!
+        val referenced = KrakenDeclarations.findRulesVisible(probes, "Rule 0_0").single()
         assertEquals(1, referenced.visibleUsages().size)
 
         val start = System.nanoTime()
