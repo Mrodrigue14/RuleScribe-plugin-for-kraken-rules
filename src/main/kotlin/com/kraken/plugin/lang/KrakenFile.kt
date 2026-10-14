@@ -6,7 +6,10 @@ import com.intellij.openapi.fileTypes.FileType
 import com.intellij.psi.FileViewProvider
 import com.intellij.psi.PsiElement
 import com.intellij.psi.SyntaxTraverser
+import com.intellij.psi.impl.source.tree.LeafElement
 import com.intellij.psi.tree.TokenSet
+import com.intellij.psi.util.CachedValueProvider
+import com.intellij.psi.util.CachedValuesManager
 import com.kraken.plugin.parser.KrakenTypes
 import com.kraken.plugin.psi.KrakenRuleImportDecl
 import com.kraken.plugin.psi.RuleImport
@@ -32,11 +35,17 @@ class KrakenFile(viewProvider: FileViewProvider) : PsiFileBase(viewProvider, Kra
      * Declarations of type [T] at top level or in `Rules`, `EntryPoints` and `Contexts`
      * blocks, the only places the grammar puts them. Rule bodies are not walked.
      */
-    fun <T : PsiElement> declarations(type: Class<T>): List<T> = SyntaxTraverser.psiTraverser(this as PsiElement)
-        .expand { it === this || it.node?.elementType in DECLARATION_BLOCKS }
-        .traverse()
-        .filter(type)
-        .toList()
+    fun <T : PsiElement> declarations(type: Class<T>): List<T> = allDeclarations().filterIsInstance(type)
+
+    /** Cached until this file changes: nearly every resolution reads the declarations of every visible file. */
+    private fun allDeclarations(): List<PsiElement> = CachedValuesManager.getCachedValue(this) {
+        val declarations = SyntaxTraverser.psiTraverser(this as PsiElement)
+            .expand { it === this || it.node?.elementType in DECLARATION_BLOCKS }
+            .traverse()
+            .filter { it !== this && it.node !is LeafElement }
+            .toList()
+        CachedValueProvider.Result.create(declarations, this)
+    }
 
     private companion object {
         val INCLUDES = TokenSet.create(KrakenTypes.INCLUDE_DECL)
