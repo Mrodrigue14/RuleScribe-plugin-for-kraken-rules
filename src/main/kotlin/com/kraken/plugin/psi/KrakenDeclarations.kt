@@ -90,13 +90,11 @@ object KrakenDeclarations {
     fun findFunctionCallsVisibleTo(declaration: KrakenFunctionDecl): List<KrakenFunctionCall> {
         val name = declaration.name ?: return emptyList()
         val declarationFile = declaration.containingFile
-        return KrakenNamespaces.krakenFiles(declaration.project)
-            .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenFunctionCall::class.java) }
-            .filter {
-                it.functionName == name &&
-                    it.argumentCount == declaration.arity &&
-                    KrakenNamespaces.sees(it.containingFile, declarationFile)
-            }
+        return referencesTo<KrakenFunctionCall>(declaration.project, KrakenReferenceIndex.Kind.FUNCTION, name).filter {
+            it.functionName == name &&
+                it.argumentCount == declaration.arity &&
+                KrakenNamespaces.sees(it.containingFile, declarationFile)
+        }
     }
 
     /**
@@ -118,12 +116,14 @@ object KrakenDeclarations {
     }
 
     /** Nested `EntryPoint "name"` references with this name, across the project. */
-    private fun findEpRefs(project: Project, name: String): List<KrakenEpRef> = KrakenNamespaces.krakenFiles(project)
-        .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenEpRef::class.java) }
+    private fun findEpRefs(project: Project, name: String): List<KrakenEpRef> = referencesTo<KrakenEpRef>(project, KrakenReferenceIndex.Kind.ENTRY_POINT, name)
         .filter { it.entryPointName == name }
 
     /** EntryPoint rule items with this name, across the project. */
-    private fun findRuleRefs(project: Project, name: String): List<KrakenRuleRef> = KrakenNamespaces.krakenFiles(project)
-        .flatMap { PsiTreeUtil.findChildrenOfType(it, KrakenRuleRef::class.java) }
+    private fun findRuleRefs(project: Project, name: String): List<KrakenRuleRef> = referencesTo<KrakenRuleRef>(project, KrakenReferenceIndex.Kind.RULE, name)
         .filter { it.ruleName == name }
+
+    /** Elements of type [T] in the files the reference index lists for [name]. */
+    private inline fun <reified T : PsiElement> referencesTo(project: Project, kind: KrakenReferenceIndex.Kind, name: String): List<T> = KrakenReferenceIndex.filesReferencing(project, kind, name)
+        .flatMap { PsiTreeUtil.findChildrenOfType(it, T::class.java) }
 }

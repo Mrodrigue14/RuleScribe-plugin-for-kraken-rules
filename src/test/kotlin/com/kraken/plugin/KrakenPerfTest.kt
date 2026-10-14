@@ -1,6 +1,8 @@
 package com.kraken.plugin
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.kraken.plugin.psi.KrakenDeclarations
+import com.kraken.plugin.psi.KrakenRuleDecl
 import com.kraken.plugin.psi.KrakenRuleRef
 
 /**
@@ -61,5 +63,42 @@ class KrakenPerfTest : BasePlatformTestCase() {
                 "did the namespace model cache regress?",
             elapsedMs < 10_000,
         )
+    }
+
+    /**
+     * Find Usages, the usages inlay and the unused rule inspection look up the references
+     * to every rule of a file on each pass, so a lookup must not walk every file.
+     */
+    fun testUsageSearchScalesToFiveHundredFiles() {
+        for (n in 0 until 10) {
+            for (i in 0 until 50) {
+                myFixture.addFileToProject(
+                    "ns$n/file_${n}_$i.rules",
+                    """
+                    Namespace Ns$n
+
+                    Rule "Rule ${n}_$i" On Entity.id {
+                        Assert Round(id) > 0
+                    }
+
+                    EntryPoint "EP ${n}_$i" {
+                        "Rule ${n}_$i"
+                    }
+                    """.trimIndent(),
+                )
+            }
+        }
+        val probes = myFixture.addFileToProject(
+            "probes.rules",
+            "Namespace Ns0\n\n" + (0 until 50).joinToString("\n") { "Rule \"Probe $it\" On Entity.id { Set Mandatory }" },
+        )
+        val referenced = KrakenDeclarations.findRuleVisible(probes, "Rule 0_0")!!
+        assertEquals(1, referenced.visibleUsages().size)
+
+        val start = System.nanoTime()
+        for (probe in allOf<KrakenRuleDecl>(probes)) assertEmpty(probe.visibleUsages())
+        val elapsedMs = (System.nanoTime() - start) / 1_000_000
+        println("Usage search for 50 rules over 500 files: $elapsedMs ms")
+        assertTrue("Usage search took $elapsedMs ms; does it walk every file again?", elapsedMs < 10_000)
     }
 }

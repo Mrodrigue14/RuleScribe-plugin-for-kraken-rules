@@ -1,6 +1,7 @@
 package com.kraken.plugin
 
 import com.intellij.navigation.NavigationItem
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiPolyVariantReference
@@ -324,5 +325,25 @@ class KrakenBidirectionalNavigationTest : BasePlatformTestCase() {
         )
 
         assertEquals("no usages", codeVisionHintOf(allOf<KrakenRuleDecl>(file).single()))
+    }
+
+    /** Usages come from an index, which must also see text typed in an unsaved editor. */
+    fun testUsageTypedInAnOpenEditorIsCounted() {
+        val rules = myFixture.addFileToProject(
+            "rules.rules",
+            """
+            Rule "Typed later" On Policy.state {
+                Assert true
+            }
+            """.trimIndent(),
+        )
+        myFixture.configureByText("entrypoints.rules", "EntryPoint \"Validation\" {\n    <caret>\n}")
+        val rule = allOf<KrakenRuleDecl>(rules).single()
+        assertEmpty(rule.visibleUsages())
+
+        myFixture.type("\"Typed later\"")
+        PsiDocumentManager.getInstance(project).commitAllDocuments()
+
+        assertEquals(1, rule.visibleUsages().size)
     }
 }

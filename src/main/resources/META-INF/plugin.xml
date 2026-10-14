@@ -439,6 +439,8 @@
 
         <stubIndex implementation="com.kraken.plugin.psi.stubs.KrakenRuleNameIndex"/>
 
+        <fileBasedIndex implementation="com.kraken.plugin.psi.KrakenReferenceIndex"/>
+
         <lang.syntaxHighlighterFactory
                 language="Kraken"
                 implementationClass="com.kraken.plugin.highlighter.KrakenSyntaxHighlighterFactory"/>
