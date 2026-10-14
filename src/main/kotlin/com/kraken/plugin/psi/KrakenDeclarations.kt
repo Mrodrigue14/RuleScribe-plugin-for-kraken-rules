@@ -35,8 +35,6 @@ object KrakenDeclarations {
         return (declared + listOfNotNull(findImportedRule(from, name))).distinct()
     }
 
-    fun findRuleVisible(from: PsiElement, name: String): KrakenRuleDecl? = findRulesVisible(from, name).firstOrNull()
-
     /** Resolves a rule declared in namespace [ns], bypassing Include visibility as `Import Rule` does. */
     fun findRuleInNamespace(project: Project, ns: String?, name: String): KrakenRuleDecl? {
         val files = KrakenNamespaces.filesOfNamespace(project, ns)
@@ -66,8 +64,6 @@ object KrakenDeclarations {
 
     /** Same as for rules: an EntryPoint can have `@Dimension` variants too. */
     fun findEntryPointsVisible(from: PsiElement, name: String): List<KrakenEntryPointDecl> = findEntryPointsVisible(from).filter { it.name == name }
-
-    fun findEntryPointVisible(from: PsiElement, name: String): KrakenEntryPointDecl? = findEntryPointsVisible(from, name).firstOrNull()
 
     fun findFunctionsVisible(from: PsiElement): List<KrakenFunctionDecl> = KrakenNamespaces.visibleFiles(from.containingFile)
         .flatMap { it.declarations<KrakenFunctionDecl>() }
