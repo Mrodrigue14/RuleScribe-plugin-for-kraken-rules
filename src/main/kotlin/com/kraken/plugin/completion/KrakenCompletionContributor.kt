@@ -20,7 +20,9 @@ import com.kraken.plugin.psi.KrakenContexts
 import com.kraken.plugin.psi.KrakenDeclaration
 import com.kraken.plugin.psi.KrakenDeclarations
 import com.kraken.plugin.psi.KrakenEntryPointDecl
+import com.kraken.plugin.psi.KrakenPsiUtil
 import com.kraken.plugin.psi.KrakenQuotedNameElement
+import com.kraken.plugin.psi.KrakenScopeResolver
 
 class KrakenCompletionContributor : CompletionContributor() {
 
@@ -61,8 +63,11 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
                 addKeywords(result, ANNOTATION_KEYWORDS)
             }
 
-            // "On Context.<caret>" and "Context.<caret>" in an expression (When, Assert, Default To…).
-            dot != null && (!inRuleTarget || prevType == KrakenTypes.DOT) -> addFieldCompletions(file, dot, result)
+            // "On Policy.address.<caret>". After a dot in an expression, the path segment's
+            // reference already offers the fields of the context the chain denotes.
+            dot != null && inRuleTarget && prevType == KrakenTypes.DOT -> addFieldCompletions(dot, result)
+
+            dot != null && !inRuleTarget -> Unit
 
             inRuleTarget -> {
                 for (name in KrakenContexts.findContextNamesVisible(file)) {
@@ -91,11 +96,28 @@ private class KrakenCompletionProvider : CompletionProvider<CompletionParameters
         }
     }
 
-    /** Fields and children of the context named just before [dot]. */
-    private fun addFieldCompletions(file: KrakenFile, dot: PsiElement, result: CompletionResultSet) {
-        val contextName = PsiTreeUtil.prevCodeLeaf(dot)?.text ?: return
-        for (field in KrakenContexts.contextFieldNames(file, contextName)) {
+    /** Fields and children of the context that the chain before [dot] denotes. */
+    private fun addFieldCompletions(dot: PsiElement, result: CompletionResultSet) {
+        val (head, segments) = chainBefore(dot) ?: return
+        var context = KrakenScopeResolver.contextDenotedBy(dot, head) ?: return
+        for (segment in segments) {
+            context = KrakenScopeResolver.contextOfField(dot, context, segment) ?: return
+        }
+        for (field in KrakenContexts.contextFieldNames(dot.containingFile, context)) {
             result.addElement(LookupElementBuilder.create(field).withTypeText("field", true))
+        }
+    }
+
+    /** `Policy.address.` before [dot]: the head name, then each segment; null if a link is not a plain name. */
+    private fun chainBefore(dot: PsiElement): Pair<String, List<String>>? {
+        val names = ArrayDeque<String>()
+        var link = PsiTreeUtil.prevCodeLeaf(dot)
+        while (true) {
+            val name = link?.takeIf { it.node.elementType in KrakenPsiUtil.ID_TOKENS } ?: return null
+            names.addFirst(name.text)
+            val separator = PsiTreeUtil.prevCodeLeaf(name)?.takeIf { it.node.elementType == KrakenTypes.DOT }
+                ?: return names.first() to names.drop(1)
+            link = PsiTreeUtil.prevCodeLeaf(separator)
         }
     }
 

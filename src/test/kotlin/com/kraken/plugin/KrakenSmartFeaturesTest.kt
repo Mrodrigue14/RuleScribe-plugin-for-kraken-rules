@@ -52,6 +52,49 @@ class KrakenSmartFeaturesTest : BasePlatformTestCase() {
         assertTrue("Expected 'policyCd' in $strings", strings.contains("policyCd"))
     }
 
+    private val chainModel = """
+        Context Policy {
+            String policyCd
+            Child Address
+            Vehicle vehicle
+        }
+
+        Context Address {
+            String postalCode
+        }
+
+        Context Vehicle {
+            String model
+        }
+    """.trimIndent()
+
+    private fun completionsIn(source: String): List<String> {
+        myFixture.configureByText("chain.rules", "$chainModel\n\n$source")
+        myFixture.complete(CompletionType.BASIC)
+        return myFixture.lookupElementStrings.orEmpty()
+    }
+
+    fun testRuleTargetCompletionFollowsAChild() {
+        assertEquals(listOf("postalCode"), completionsIn("Rule \"r\" On Policy.Address.<caret>"))
+    }
+
+    fun testRuleTargetCompletionFollowsATypedField() {
+        assertEquals(listOf("model"), completionsIn("Rule \"r\" On Policy.vehicle.<caret>"))
+    }
+
+    fun testExpressionCompletionListsEachFieldOnce() {
+        val fields = completionsIn("Rule \"r\" On Policy.policyCd {\n    When Policy.<caret>\n}")
+        assertEquals(listOf("Address", "policyCd", "vehicle"), fields.sorted())
+    }
+
+    fun testExpressionCompletionFollowsATypedField() {
+        assertEquals(listOf("model"), completionsIn("Rule \"r\" On Policy.policyCd {\n    When Policy.vehicle.<caret>\n}"))
+    }
+
+    fun testExpressionCompletionStartsFromAFieldOfTheTarget() {
+        assertEquals(listOf("model"), completionsIn("Rule \"r\" On Policy.policyCd {\n    When vehicle.<caret>\n}"))
+    }
+
     fun testUnknownContextInspection() {
         myFixture.enableInspections(KrakenUnknownContextInspection())
         myFixture.configureByText(
