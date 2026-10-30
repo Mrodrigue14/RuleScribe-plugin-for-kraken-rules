@@ -76,8 +76,6 @@ class KrakenFunctionDecl(node: ASTNode) :
             }
             .orEmpty()
 
-    fun parameterNamed(name: String): KrakenFunctionParam? = parameters.firstOrNull { it.name == name }
-
     private val parameterListElement: PsiElement?
         get() = node.findChildByType(KrakenTypes.FUNCTION_PARAMS)?.psi
 

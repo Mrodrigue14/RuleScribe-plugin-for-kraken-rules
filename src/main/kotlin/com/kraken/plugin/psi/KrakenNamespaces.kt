@@ -26,8 +26,6 @@ import java.util.concurrent.ConcurrentHashMap
  */
 object KrakenNamespaces {
 
-    fun krakenFiles(project: Project): List<KrakenFile> = namespaceModel(project).allFiles
-
     fun namespaceOf(file: PsiFile?): String? = (file as? KrakenFile)?.namespace
 
     /**
