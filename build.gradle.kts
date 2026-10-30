@@ -1,11 +1,12 @@
 import org.jetbrains.grammarkit.tasks.GenerateParserTask
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("java")
-    id("org.jetbrains.kotlin.jvm") version "1.9.25"
+    id("org.jetbrains.kotlin.jvm") version "2.1.21"
     id("org.jetbrains.intellij.platform") version "2.19.0"
     id("org.jetbrains.grammarkit") version "2022.3.2.2"
     id("org.owasp.dependencycheck") version "12.2.2"
@@ -42,6 +43,12 @@ dependencies {
 
 kotlin {
     jvmToolchain(17)
+    compilerOptions {
+        // IntelliJ 2024.1, the oldest supported IDE, bundles the Kotlin 1.9 standard library
+        // the plugin runs against, so the code must not use anything newer.
+        apiVersion = KotlinVersion.KOTLIN_1_9
+        languageVersion = KotlinVersion.KOTLIN_1_9
+    }
 }
 
 // Declared once: the signing extension reads this path and writeCertificateChain
@@ -165,7 +172,7 @@ tasks {
     withType<KotlinCompile> {
         dependsOn(generateKrakenParser)
         // Lenient locally, strict in CI (-PwarningsAsErrors=true).
-        kotlinOptions.allWarningsAsErrors =
+        compilerOptions.allWarningsAsErrors =
             (project.findProperty("warningsAsErrors") as String?)?.toBooleanStrictOrNull() ?: false
     }
     compileJava {
